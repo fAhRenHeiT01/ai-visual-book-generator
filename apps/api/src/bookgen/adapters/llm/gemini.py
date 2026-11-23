@@ -15,6 +15,40 @@ from bookgen.schemas import ComponentType, PageLayoutAST, SurfaceRole
 from .context import request_context
 
 
+_GEMINI_JSON_SCHEMA_KEYS = frozenset({
+    "$id", "$defs", "$ref", "$anchor", "type", "format", "title", "description",
+    "enum", "items", "prefixItems", "minItems", "maxItems", "minimum", "maximum",
+    "anyOf", "oneOf", "properties", "additionalProperties", "required", "propertyOrdering",
+})
+
+
+def _gemini_json_schema(model):
+    """Return Pydantic's schema using only Gemini responseJsonSchema keywords.
+
+    Pydantic remains the authoritative validator after generation. Gemini's JSON
+    Schema subset omits several JSON Schema validation keywords such as defaults
+    and string length bounds, so those are intentionally left to local validation.
+    """
+    def supported(value):
+        if isinstance(value, dict):
+            result = {}
+            for key, item in value.items():
+                if key not in _GEMINI_JSON_SCHEMA_KEYS:
+                    continue
+                if key in {"properties", "$defs"} and isinstance(item, dict):
+                    # These objects are maps whose names are user schema keys,
+                    # rather than JSON Schema keywords themselves.
+                    result[key] = {name: supported(schema) for name, schema in item.items()}
+                else:
+                    result[key] = supported(item)
+            return result
+        if isinstance(value, list):
+            return [supported(item) for item in value]
+        return value
+
+    return supported(model.model_json_schema())
+
+
 class GeminiProvider:
     def __init__(self, *, storage, settings, transport=None, client=None):
         self.storage = storage
@@ -102,7 +136,8 @@ class GeminiProvider:
         content = {"strategy_directive": request["strategy_directive"], "context": payload}
         if "repair" in request:
             content.update(repair_directive=request["repair_directive"], repair=request["repair"])
-        config = dict(temperature=request["temperature"], response_mime_type="application/json", response_schema=request["response_schema"])
+        config = dict(temperature=request["temperature"], response_mime_type="application/json",
+                      response_json_schema=_gemini_json_schema(request["response_schema"]))
         if self.settings.llm.explicit_cache and request["cache_ttl_seconds"]:
             async with self._cache_lock:
                 entry = self._caches.get(request["cache_key"])

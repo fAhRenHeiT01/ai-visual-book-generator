@@ -1,0 +1,6 @@
+version: "1.0"
+text: |
+  Return a minimal valid PageLayoutAST JSON object for a connectivity check. Use
+  option_id "provider_check", strategy_tag "provider_check", archetype
+  "minimalist_swiss", rationale "Connectivity check", and an empty components
+  list. Include only fields allowed by the supplied schema.

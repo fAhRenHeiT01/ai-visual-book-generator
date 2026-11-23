@@ -138,7 +138,12 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     kwargs = dict(context=BookContext(title="Fixed global"), blocks=source.blocks, assets=source.assets, strategy_tag="editorial_visual")
     assert isinstance(await provider.generate_candidate(**kwargs), PageLayoutAST)
     request = requests[0]
-    assert request["config"].response_schema is PageLayoutAST
+    assert request["config"].response_schema is None
+    assert request["config"].response_json_schema["additionalProperties"] is False
+    assert "option_id" in request["config"].response_json_schema["properties"]
+    assert set(request["config"].response_json_schema["required"]).issubset(request["config"].response_json_schema["properties"])
+    assert "maxLength" not in str(request["config"].response_json_schema)
+    assert "default" not in str(request["config"].response_json_schema)
     assert request["config"].response_mime_type == "application/json"
     assert request["config"].system_instruction
     assert request["contents"][1].inline_data.mime_type == "image/png"
