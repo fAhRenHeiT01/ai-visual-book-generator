@@ -1,0 +1,21 @@
+thumbnail_max_px: 768
+allowed_mime_types:
+  - image/png
+  - image/jpeg
+  - image/webp
+min_dpi: 150
+aspect_ratio_min: 0.2
+aspect_ratio_max: 5.0
+block_patterns:
+  heading: '^\s*#{1,6}\s+'
+  list: '^\s*(?:[-*+]\s+|\d+[.)]\s+)'
+  quote: '^\s*>\s?'
+  blank: '^\s*$'
+  word: '\S+'
+chart_heuristics:
+  chart:
+    - '(?i)\b(?:chart|graph|plot|histogram|dashboard)\b'
+  diagram:
+    - '(?i)\b(?:diagram|workflow|flowchart|schematic)\b'
+  logo:
+    - '(?i)\b(?:logo|wordmark)\b'
