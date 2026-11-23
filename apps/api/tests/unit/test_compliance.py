@@ -97,6 +97,34 @@ def test_masking_replaces_exact_spans_without_mutating_other_numbers_or_words():
     assert all(metric.context_snippet == published.input_blocks[0].text for metric in published.metrics_ledger)
 
 
+@pytest.mark.parametrize('excerpt,expected', [
+    ('[INTERNAL] 42% YoY versus 42% YoY', '[INTERNAL] [REDACTED] versus 42% YoY'),
+    ('42% YoY versus 42% YoY', '[REDACTED] versus 42% YoY'),
+    ('versus 42% YoY', 'versus 42% YoY'),
+    ('42% YoY', '[REDACTED]'),
+])
+def test_publishable_excerpt_redacts_source_occurrences_only(excerpt, expected):
+    from bookgen.domain.compliance import compliance_metrics_scan, require_export_approval
+    from bookgen.domain.fallback import safe_fallback_builder
+    from bookgen.domain.validator import deterministic_validator
+    from bookgen.schemas import AudienceMode, BookContext, PageGenerationResult, PlacedComponent
+    from bookgen.schemas.sessions import SessionSnapshot
+    blocks = [block('[INTERNAL] 42% YoY versus 42% YoY')]
+    metrics = compliance_metrics_scan(blocks)
+    options = safe_fallback_builder(blocks, [])
+    options[0].components.append(PlacedComponent(component_id='quote', component_type='pull_quote',
+        slot_id=options[0].components[0].slot_id, source_block_ids=['b1'], extracted_excerpt=excerpt))
+    assert deterministic_validator(options, blocks, [], metrics=metrics, audience_mode=AudienceMode.CLIENT_FACING) == []
+    page = PageGenerationResult(page_id='p', page_number=1, input_blocks=blocks, input_assets=[],
+        metrics_ledger=metrics, option_a=options[0], option_b=options[1], selected_option_id='option_a')
+    snapshot = SessionSnapshot(session_id='s', context=BookContext(audience_mode='client_facing'), committed_pages=[page])
+    decisions = {('p', metric.metric_id): 'redact' if index == 0 else 'approve' for index, metric in enumerate(metrics)}
+    published = require_export_approval(snapshot, decisions=decisions)[0]
+    assert published.option_a.components[-1].extracted_excerpt == expected
+    assert page.option_a.components[-1].extracted_excerpt == excerpt
+    assert blocks[0].text == '[INTERNAL] 42% YoY versus 42% YoY'
+
+
 def test_validator_allows_exact_public_excerpt_and_blocks_approved_internal():
     from bookgen.domain.compliance import compliance_metrics_scan
     from bookgen.domain.fallback import safe_fallback_builder

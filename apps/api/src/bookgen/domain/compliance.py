@@ -69,7 +69,7 @@ def mask_blocks(blocks, ledger):
     return [block.model_copy(update={'text': _mask_block(block, [m for m in _restricted(ledger) if m.source_block_id == block.block_id])}) for block in blocks]
 
 
-def _mask_block(block, metrics, *, redaction=False):
+def _metric_spans(block, metrics):
     """Recover exact occurrence offsets locally without changing public schemas."""
     spans = []
     for metric in metrics:
@@ -77,15 +77,49 @@ def _mask_block(block, metrics, *, redaction=False):
         while start >= 0:
             end = start + len(metric.raw_value)
             if _source_version(block, start, end, metric.classification) == metric.metric_id:
-                spans.append((start, end, '[REDACTED]' if redaction else _placeholder(metric)))
+                spans.append((start, end, metric))
                 break
             start = block.text.find(metric.raw_value, start + 1)
         else:
             raise ValueError('Metric source version does not match source block')
+    return spans
+
+
+def _mask_block(block, metrics, *, redaction=False):
     text = block.text
-    for start, end, replacement in sorted(spans, reverse=True):
+    for start, end, metric in sorted(_metric_spans(block, metrics), key=lambda span: span[0], reverse=True):
+        replacement = '[REDACTED]' if redaction else _placeholder(metric)
         text = text[:start] + replacement + text[end:]
     return text
+
+
+def _redact_excerpt(excerpt, source_ids, blocks, metrics):
+    """Project source occurrences into a validated excerpt's character offsets.
+
+    The pointer schema has no excerpt offset. When an excerpt occurs more than
+    once, mask the union of redactions from its possible source occurrences.
+    """
+    ranges = []
+    for block in blocks:
+        if block.block_id not in source_ids:
+            continue
+        spans = _metric_spans(block, [metric for metric in metrics if metric.source_block_id == block.block_id])
+        origin = block.text.find(excerpt)
+        while origin >= 0:
+            for start, end, _ in spans:
+                start, end = max(0, start - origin), min(len(excerpt), end - origin)
+                if start < end:
+                    ranges.append((start, end))
+            origin = block.text.find(excerpt, origin + 1)
+    merged = []
+    for start, end in sorted(set(ranges)):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    for start, end in reversed(merged):
+        excerpt = excerpt[:start] + '[REDACTED]' + excerpt[end:]
+    return excerpt
 
 
 def _mask_text(text, metrics, *, redaction=False):
@@ -169,7 +203,8 @@ def compliance_report(session_snapshot, *, decisions=None, config=None):
             option.rationale = _mask_text(option.rationale, redactions, redaction=True)
             for component in option.components:
                 if component.extracted_excerpt:
-                    component.extracted_excerpt = _mask_text(component.extracted_excerpt, [m for m in redactions if m.source_block_id in component.source_block_ids], redaction=True)
+                    component.extracted_excerpt = _redact_excerpt(component.extracted_excerpt,
+                        component.source_block_ids, page.input_blocks, redactions)
         published_text = {block.block_id: block.text for block in copy.input_blocks}
         copy.metrics_ledger = [metric.model_copy(update={
             'raw_value': '[REDACTED]' if metric in redactions else metric.raw_value,
