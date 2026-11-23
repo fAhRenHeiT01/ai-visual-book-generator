@@ -1,0 +1,29 @@
+default_preset: default
+contrast_min_ratio: 4.5
+max_response_bytes: 1048576
+timeout_seconds: 5
+max_redirects: 3
+color_pattern: '^#[0-9A-Fa-f]{6}$'
+css_color_pattern: '(--[\w-]+|background-color|background|color)\s*:\s*(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b'
+css_primary_names: ['--brand-primary', '--color-primary', '--primary', 'background-color', 'background']
+css_accent_names: ['--brand-accent', '--color-accent', '--accent']
+logo_thumbnail_size: 128
+preset_palettes:
+  default:
+    theme_id: default
+    palette_source: preset
+    color_paper: '#FFFFFF'
+    color_ink_primary: '#111827'
+    color_ink_muted: '#4B5563'
+    color_brand_primary: '#1D4ED8'
+    color_brand_accent: '#0369A1'
+    color_surface_tint: '#F3F4F6'
+  ocean:
+    theme_id: ocean
+    palette_source: preset
+    color_paper: '#FFFFFF'
+    color_ink_primary: '#0F172A'
+    color_ink_muted: '#475569'
+    color_brand_primary: '#164E63'
+    color_brand_accent: '#0E7490'
+    color_surface_tint: '#ECFEFF'

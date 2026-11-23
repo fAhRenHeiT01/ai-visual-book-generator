@@ -1,5 +1,10 @@
 """Frozen theme extraction and persisted session appearance interfaces."""
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
+from starlette.concurrency import run_in_threadpool
+
+from bookgen.adapters.http.theme_fetcher import ThemeFetcher
+from bookgen.config import load_settings
+from bookgen.domain.theme import extract_theme as extract_brand, sanitize_tokens
 
 from bookgen.routes.sessions import load_snapshot, workflow
 from bookgen.schemas.publishing import AppearanceResponse, SessionAppearance, ThemeExtractRequest, ThemeExtractResponse
@@ -9,17 +14,46 @@ router = APIRouter(tags=["appearance"])
 
 @router.post("/api/v1/themes/extract", response_model=ThemeExtractResponse)
 async def extract_theme(body: ThemeExtractRequest):
-    return ThemeExtractResponse()
+    settings = load_settings().theme
+    try:
+        tokens = await run_in_threadpool(extract_brand, str(body.url), fetcher=ThemeFetcher(settings), settings=settings)
+        return ThemeExtractResponse(status='available', tokens=tokens)
+    except (ValueError, OSError):
+        return ThemeExtractResponse()
 
 
 @router.get("/api/v1/sessions/{session_id}/appearance", response_model=AppearanceResponse)
 async def get_appearance(session_id: str, request: Request):
-    await load_snapshot(request, session_id)
-    return AppearanceResponse(**workflow(request).repository.load_appearance(session_id).model_dump())
+    service = workflow(request)
+    async with service._locks[session_id]:
+        await load_snapshot(request, session_id)
+        appearance = service.repository.load_appearance(session_id)
+        tokens = sanitize_tokens(appearance.tokens, service.settings.theme)
+        if tokens != appearance.tokens:
+            appearance = appearance.model_copy(update={'tokens': tokens})
+            service.repository.save_appearance(session_id, appearance)
+        return AppearanceResponse(status='available', **appearance.model_dump())
 
 
 @router.put("/api/v1/sessions/{session_id}/appearance", response_model=AppearanceResponse)
 async def update_appearance(session_id: str, body: SessionAppearance, request: Request):
-    await load_snapshot(request, session_id)
-    workflow(request).repository.save_appearance(session_id, body)
-    return AppearanceResponse(**body.model_dump())
+    service = workflow(request)
+    # Share the graph's per-session lock so a concurrent edit cannot pass generation.
+    async with service._locks[session_id]:
+        snapshot = await load_snapshot(request, session_id)
+        async with service._graph() as graph:
+            checkpoint = await graph.aget_state(service._config(session_id))
+        if snapshot.pending_review or snapshot.committed_pages or checkpoint.values or checkpoint.next:
+            raise HTTPException(409, 'Appearance is locked after generation starts')
+        settings = service.settings.theme
+        try:
+            tokens = body.tokens
+            if tokens.palette_source == 'preset':
+                tokens = settings.preset_palettes[tokens.theme_id]
+            elif tokens.palette_source not in ('manual', 'website_extracted'):
+                raise ValueError('Unknown palette source')
+            body = body.model_copy(update={'tokens': sanitize_tokens(tokens, settings)})
+        except (KeyError, ValueError) as exc:
+            raise HTTPException(422, 'Choose a configured preset or valid accessible colors') from exc
+        service.repository.save_appearance(session_id, body)
+        return AppearanceResponse(status='available', **body.model_dump())
