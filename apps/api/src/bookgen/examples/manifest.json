@@ -1,0 +1,3911 @@
+{
+  "schema_version": 1,
+  "description": "Offline fictional marketing corpus. Copy and original artwork are CC0-1.0; NASA photo derivatives retain their documented public-domain origin. Historical portrait is a specimen, not a testimonial attribution.",
+  "copy_provenance": {
+    "creator": "Visual Book Generator project contributors",
+    "license": "CC0-1.0",
+    "origin": "Original fictional copy authored for Ticket 13; no real company performance or customer endorsements."
+  },
+  "visual_review_fixtures": {
+    "opener": "chapter-opener",
+    "two_chart_comparison": "financial-comparison",
+    "portrait_testimonial": "portrait-testimonial"
+  },
+  "assets": {
+    "earthrise-original": {
+      "path": "assets/earthrise-original.jpg",
+      "kind": "photo",
+      "mime_type": "image/jpeg",
+      "width_px": 2400,
+      "height_px": 2400,
+      "alt_caption": "Earthrise photographed by William Anders during Apollo 8; original square composition.",
+      "sha256": "0014f61fccf243e0937207a332a3911529d55f8d0d1f0caccc37337277e8f65a",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Full square source composition retained at 2400 by 2400 pixels; re-encoded locally at JPEG quality 90.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "earthrise-wide": {
+      "path": "assets/earthrise-wide.jpg",
+      "kind": "photo",
+      "mime_type": "image/jpeg",
+      "width_px": 1200,
+      "height_px": 500,
+      "alt_caption": "Wide crop of Earth rising above the lunar horizon, NASA / William Anders.",
+      "sha256": "d7fae007f6c4fe722ac7e36026d101794f64312490003a4675a3386312bb39a0",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Cropped source rectangle (0, 1050, 2400, 2050), keeping Earth and the lunar horizon; resized to 1200 by 500; JPEG quality 90.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "historical-portrait": {
+      "path": "assets/historical-portrait.jpg",
+      "kind": "photo",
+      "mime_type": "image/jpeg",
+      "width_px": 600,
+      "height_px": 750,
+      "alt_caption": "Historical NASA portrait of Buzz Aldrin; layout specimen, not the fictional testimonial author.",
+      "sha256": "0634988ed5a57922dd8e5bc1f721b2174771a30a862ae28f2b6fe3751ff2773d",
+      "provenance": {
+        "creator": "NASA, Johnson Space Center; photograph S69-31743",
+        "origin": "https://commons.wikimedia.org/wiki/File:Buzz_Aldrin.jpg",
+        "source_url": "https://images-assets.nasa.gov/image/S69-31743/S69-31743~orig.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Historical portrait is a layout specimen only; Buzz Aldrin is not the fictional testimonial author or an endorser. Personality/endorsement rights are not licensed.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:Buzz_Aldrin.jpg#Licensing",
+        "modifications": "Resized to 600 by 750 pixels and re-encoded as JPEG; historical portrait retained.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "boundary-767": {
+      "path": "assets/boundary-767.png",
+      "kind": "photo",
+      "mime_type": "image/png",
+      "width_px": 767,
+      "height_px": 320,
+      "alt_caption": "Earthrise derivative with longest edge exactly 767 pixels.",
+      "sha256": "72ce22a8ab35a2313a5fa3eefed3ce3a6704829d4bd4363b941910cd859fed1d",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Wide crop resized to 767 by 320; PNG encoding.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "boundary-768": {
+      "path": "assets/boundary-768.png",
+      "kind": "photo",
+      "mime_type": "image/png",
+      "width_px": 768,
+      "height_px": 320,
+      "alt_caption": "Earthrise derivative with longest edge exactly 768 pixels.",
+      "sha256": "b169183bcb828866e5725ff32339dc978565cc455345692c13e7068b11de84c7",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Wide crop resized to 768 by 320; PNG encoding.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "boundary-769": {
+      "path": "assets/boundary-769.png",
+      "kind": "photo",
+      "mime_type": "image/png",
+      "width_px": 769,
+      "height_px": 320,
+      "alt_caption": "Earthrise derivative with longest edge exactly 769 pixels.",
+      "sha256": "7f508455eafb960253b6202f1dc791c20217fb86dbc5122da7b4898828cb76c3",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Wide crop resized to 769 by 320; PNG encoding.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "low-resolution": {
+      "path": "assets/low-resolution.jpg",
+      "kind": "photo",
+      "mime_type": "image/jpeg",
+      "width_px": 96,
+      "height_px": 40,
+      "alt_caption": "Deliberately small Earthrise derivative for low resolution review.",
+      "sha256": "e07c968ed56a10a66742b052d6340cc167bc72ef337187bfdffdf3c81ed0ddf2",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Wide crop reduced to 96 by 40 pixels; JPEG encoded with 72 DPI metadata.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "extreme-wide": {
+      "path": "assets/extreme-wide.webp",
+      "kind": "photo",
+      "mime_type": "image/webp",
+      "width_px": 1800,
+      "height_px": 180,
+      "alt_caption": "Extreme panoramic lunar horizon crop, ten to one aspect ratio.",
+      "sha256": "d2bdf4fe9239479d152d04b4309b6b3e5e9cee2fef7a5267d915cb1449f46124",
+      "provenance": {
+        "creator": "NASA / William Anders",
+        "origin": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg",
+        "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/NASA-Apollo8-Dec24-Earthrise.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Used as editorial layout test imagery without implying NASA endorsement.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:NASA-Apollo8-Dec24-Earthrise.jpg#Licensing",
+        "modifications": "Lunar horizon strip (0, 1750, 2400, 1990) cropped and resized to 1800 by 180 pixels; WebP encoding.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "extreme-tall": {
+      "path": "assets/extreme-tall.png",
+      "kind": "photo",
+      "mime_type": "image/png",
+      "width_px": 180,
+      "height_px": 1800,
+      "alt_caption": "Deliberate narrow crop of the historical portrait for extreme tall media review.",
+      "sha256": "63391bf7f57f0a9e206da47e74a47f4c5b7fc959e4f44640987c9d0e0b843481",
+      "provenance": {
+        "creator": "NASA, Johnson Space Center; photograph S69-31743",
+        "origin": "https://commons.wikimedia.org/wiki/File:Buzz_Aldrin.jpg",
+        "source_url": "https://images-assets.nasa.gov/image/S69-31743/S69-31743~orig.jpg",
+        "license": "Public Domain",
+        "reuse_rights": "NASA federal-government photograph, public domain in the United States (PD-USGov-NASA). Historical portrait is a layout specimen only; Buzz Aldrin is not the fictional testimonial author or an endorser. Personality/endorsement rights are not licensed.",
+        "license_url": "https://commons.wikimedia.org/wiki/File:Buzz_Aldrin.jpg#Licensing",
+        "modifications": "Narrow portrait detail cropped then resized to 180 by 1800 pixels; PNG encoding.",
+        "verified_on": "2026-11-24"
+      }
+    },
+    "revenue-chart": {
+      "path": "assets/revenue-chart.png",
+      "kind": "chart",
+      "mime_type": "image/png",
+      "width_px": 1000,
+      "height_px": 600,
+      "alt_caption": "Fictional revenue index: Q1 100, Q2 112, Q3 128, Q4 144; fully labeled bars.",
+      "sha256": "e8bd7b4d1358c77d2e73a124bcfe0773792b911faea0145c5664999ca9315204",
+      "provenance": {
+        "creator": "Visual Book Generator project contributors",
+        "origin": "Original fixture artwork authored for Ticket 13 using Pillow drawing primitives; no external source imagery or third-party brand marks.",
+        "license": "CC0-1.0",
+        "reuse_rights": "Dedicated to the public domain under CC0 1.0; reuse, modify and redistribute for any purpose. Fictional brands and synthetic data only.",
+        "modifications": "Original raster composition; no upstream work.",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    },
+    "margin-chart": {
+      "path": "assets/margin-chart.webp",
+      "kind": "chart",
+      "mime_type": "image/webp",
+      "width_px": 1000,
+      "height_px": 600,
+      "alt_caption": "Fictional operating margin: Q1 18%, Q2 20%, Q3 23%, Q4 25%; fully labeled bars.",
+      "sha256": "bc5573c2675d43a46534fce64fcadad10303a103ffa073dd8e4c9439c38c20bf",
+      "provenance": {
+        "creator": "Visual Book Generator project contributors",
+        "origin": "Original fixture artwork authored for Ticket 13 using Pillow drawing primitives; no external source imagery or third-party brand marks.",
+        "license": "CC0-1.0",
+        "reuse_rights": "Dedicated to the public domain under CC0 1.0; reuse, modify and redistribute for any purpose. Fictional brands and synthetic data only.",
+        "modifications": "Original raster composition; no upstream work.",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    },
+    "adoption-chart": {
+      "path": "assets/adoption-chart.png",
+      "kind": "chart",
+      "mime_type": "image/png",
+      "width_px": 1000,
+      "height_px": 600,
+      "alt_caption": "Fictional active-team counts across four launch phases.",
+      "sha256": "987adf15fd212aa2f437f4670263d6740abd7e80d3faca63639583b473d004ab",
+      "provenance": {
+        "creator": "Visual Book Generator project contributors",
+        "origin": "Original fixture artwork authored for Ticket 13 using Pillow drawing primitives; no external source imagery or third-party brand marks.",
+        "license": "CC0-1.0",
+        "reuse_rights": "Dedicated to the public domain under CC0 1.0; reuse, modify and redistribute for any purpose. Fictional brands and synthetic data only.",
+        "modifications": "Original raster composition; no upstream work.",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    },
+    "service-diagram": {
+      "path": "assets/service-diagram.png",
+      "kind": "diagram",
+      "mime_type": "image/png",
+      "width_px": 1100,
+      "height_px": 550,
+      "alt_caption": "Three labeled workflow stages: Discover, Shape, Deliver, connected left to right.",
+      "sha256": "0f7fedbd84d16e1335b0ba05e8a6aa30859df954b7d2ab8339be3de41cb0d337",
+      "provenance": {
+        "creator": "Visual Book Generator project contributors",
+        "origin": "Original fixture artwork authored for Ticket 13 using Pillow drawing primitives; no external source imagery or third-party brand marks.",
+        "license": "CC0-1.0",
+        "reuse_rights": "Dedicated to the public domain under CC0 1.0; reuse, modify and redistribute for any purpose. Fictional brands and synthetic data only.",
+        "modifications": "Original raster composition; no upstream work.",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    },
+    "northstar-logo": {
+      "path": "assets/northstar-logo.webp",
+      "kind": "logo",
+      "mime_type": "image/webp",
+      "width_px": 640,
+      "height_px": 240,
+      "alt_caption": "Original fictional Northstar Studio star symbol and wordmark on transparent background.",
+      "sha256": "b3759ecb8a3ca164ba046dc3106f45ddb548ea40cb687cc61e3213cf77da6fe7",
+      "provenance": {
+        "creator": "Visual Book Generator project contributors",
+        "origin": "Original fixture artwork authored for Ticket 13 using Pillow drawing primitives; no external source imagery or third-party brand marks.",
+        "license": "CC0-1.0",
+        "reuse_rights": "Dedicated to the public domain under CC0 1.0; reuse, modify and redistribute for any purpose. Fictional brands and synthetic data only.",
+        "modifications": "Original raster composition; no upstream work.",
+        "license_url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "executive-500",
+      "title": "Executive strategy",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "Our growth strategy begins with a straightforward promise: make complex work easier for the people who depend on us. Customers do not buy an operating model. They buy confidence that their teams can move from uncertainty to useful action without losing the detail that makes their business distinctive. This year, we will focus our attention on the moments where that confidence is earned. We will listen carefully during discovery, make decisions visible during delivery, and close each engagement with a clear account of what changed. These habits turn an ambitious proposition into a service people can understand and recommend.\n\nThe market is crowded with broad claims about speed and transformation. Our opportunity is to be specific about the problems we solve and honest about the conditions required for success. We will describe the work in plain language, show the responsibilities shared with each customer, and explain how progress will be reviewed. A credible message should survive a conversation with an experienced buyer. It should also help a new colleague understand why our approach matters. Marketing will therefore work alongside delivery teams to build evidence from the actual experience of using our services, rather than relying on attractive promises alone.\n\nWe will organize our portfolio around customer needs instead of internal reporting lines. Each offer will have a clear starting point, a practical outcome, and a named owner who can answer difficult questions. Shared methods will support consistency while leaving room for informed judgment. Teams will be encouraged to bring examples of friction into regular reviews, especially when a handoff creates extra work for a customer. The purpose of those reviews is learning. When a process fails, we will improve the process and communicate the change clearly, so that good intentions become dependable behavior across the whole organization.\n\nOur commercial approach will emphasize lasting fit. We will qualify opportunities against the needs we can serve well, the capacity we can sustain, and the commitments we can explain openly. Sales conversations will include delivery colleagues early enough to surface assumptions before they become obligations. Customer stories will distinguish observed outcomes from future ambitions. Any sensitive evidence will remain subject to the appropriate review before publication. This discipline protects trust and gives our people permission to be precise. It also creates a stronger foundation for partnerships, because both sides can see where value is expected and where uncertainty remains.\n\nExecution will depend on a small set of visible routines. Leaders will connect priorities to decisions about people, time, and investment. Managers will make room for feedback from customers and colleagues who see the work most closely. Marketing will translate that learning into useful materials that help buyers assess the offer for themselves. We will review the strategy as conditions change while holding our promise steady. Success means that the story we tell outside the business matches the experience we create inside it. That alignment is the foundation for responsible growth and for the reputation we want to earn through consistent, thoughtful, everyday action.",
+      "assets": [],
+      "coverage_tags": [
+        "dense-prose",
+        "no-imagery",
+        "exact-500-words"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Render exactly 500 words of executive prose with no imagery in a reflowing two-column treatment; every paragraph must remain complete.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "text_blk_05",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_05"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "text_blk_05",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_05"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chapter-opener",
+      "title": "A new perspective",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "A new perspective gives ambitious teams the confidence to build what comes next.",
+      "assets": [
+        "earthrise-wide"
+      ],
+      "coverage_tags": [
+        "one-sentence-opener",
+        "wide-photo",
+        "visual-review"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Treat the single sentence as a chapter opener with one wide landscape photograph; compare a full-bleed hero against a sparse Swiss treatment.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "full_bleed_hero",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "cover"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "financial-comparison",
+      "title": "Growth with discipline",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# Growth with discipline\n\n[PUBLIC] Illustrative revenue index increased from 100 to 144 while operating margin moved from 18% to 25%.\n\n- Revenue and margin advanced together.\n- The comparison uses fictional data for layout review.",
+      "assets": [
+        "revenue-chart",
+        "margin-chart"
+      ],
+      "coverage_tags": [
+        "paired-financial-charts",
+        "bulleted-insights",
+        "mixed-formats",
+        "visual-review"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [
+          "public"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Place both financial charts side by side in the dashboard option, with the bullet insights below or alongside; retain both complete axes and source notes.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "bullet_list",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "dashboard_split",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portrait-testimonial",
+      "title": "A partnership built on clarity",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# A partnership built on clarity\n\nOur fictional customer team uses a shared brief to make every handoff visible.\n\n> The clearest plan is the one our whole team can use.\n\nHistorical NASA portrait of Buzz Aldrin, used only as a layout specimen; the testimonial is fictional and is not attributed to him.",
+      "assets": [
+        "historical-portrait",
+        "service-diagram"
+      ],
+      "coverage_tags": [
+        "portrait-headshot",
+        "landscape-diagram",
+        "testimonial",
+        "visual-review"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Balance a portrait headshot against a landscape workflow diagram, promote the exact testimonial excerpt and retain the historical-photo disclaimer as a caption.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "caption",
+          "divider_rule",
+          "heading",
+          "image_frame",
+          "pull_quote"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "guided_alternating",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "caption",
+              "slot_id": "footer",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_03"
+              ],
+              "extracted_excerpt": "The clearest plan is the one our whole team can use."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "caption",
+              "slot_id": "footer",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_03"
+              ],
+              "extracted_excerpt": "The clearest plan is the one our whole team can use."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "restricted-client-metrics",
+      "title": "Private evidence for review",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "A4"
+      },
+      "copy": "# Evidence awaiting approval\n\n[INTERNAL] Pilot revenue reached $4.2M ARR.\n\n[UNDISCLOSED] Forecast margin is 37%.\n\nThese figures are fictional and require review before external distribution.",
+      "assets": [
+        "revenue-chart"
+      ],
+      "coverage_tags": [
+        "restricted-metrics",
+        "approval-required"
+      ],
+      "expected": {
+        "outcome": "export-blocked",
+        "export_blocked": true,
+        "metric_classifications": [
+          "internal",
+          "undisclosed"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Keep restricted figures in source prose without statistical promotion; the chart must remain fully contained and export must wait for review.",
+        "compliance_notes": "Block export until restricted metrics receive explicit review; do not promote restricted metrics.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "chart_focus_band",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "section-divider",
+      "title": "From promise to practice",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# From promise to practice\n\nA shared operating rhythm turns an agreed direction into dependable action.",
+      "assets": [],
+      "coverage_tags": [
+        "chapter-break",
+        "text-only"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Use a concise chapter break with an explicit heading and supporting sentence; provide a restrained alternative without imagery.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "section_divider",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "editorial-story",
+      "title": "The value of a better question",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# Start with a better question\n\nBefore a team changes its tools, it needs a common account of the problem. Listening reveals where expectations differ and where effort disappears between functions.\n\nA good brief captures those differences without flattening them. It gives the work a clear direction while leaving room for discovery.",
+      "assets": [
+        "earthrise-original"
+      ],
+      "coverage_tags": [
+        "editorial-narrative",
+        "large-source-image"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Use an asymmetric image-and-story treatment and compare it with a reflowing executive treatment; keep the original large source locally.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "top-media-story",
+      "title": "See the whole journey",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# See the whole journey\n\nCustomer experience begins long before delivery. A clear view of discovery, planning and review helps people understand what comes next.\n\nUse the workflow as a conversation guide, keeping its labels readable at every stage.",
+      "assets": [
+        "service-diagram"
+      ],
+      "coverage_tags": [
+        "diagram-first",
+        "protected-media"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Keep every source block and asset in reading order. Charts and diagrams use contain with no text overlay; excerpts are exact source substrings.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "guided_alternating",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chart-focus",
+      "title": "Adoption follows usefulness",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# Adoption follows usefulness\n\n[PUBLIC] Illustrative weekly active teams grew from 24 in the pilot to 58 at scale.\n\nThe chart uses synthetic data; it demonstrates a readable evidence band rather than an investment claim.",
+      "assets": [
+        "adoption-chart"
+      ],
+      "coverage_tags": [
+        "public-metric",
+        "stat-promotion"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [
+          "public"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Give the adoption chart a dedicated band, retain all labels, and promote only the exact public metric substring from source prose.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame",
+          "stat_callout"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "chart_focus_band",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "stat_01",
+              "component_type": "stat_callout",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_02"
+              ],
+              "extracted_excerpt": "58"
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "stat_01",
+              "component_type": "stat_callout",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_02"
+              ],
+              "extracted_excerpt": "58"
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "modular-offers",
+      "title": "Three ways to begin",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Choose a useful starting point\n\n- Discovery aligns the team around the problem.\n- Service design shapes a practical response.\n- Delivery support turns the response into a repeatable habit.\n\nStart with the question that matters most to your customers.",
+      "assets": [
+        "northstar-logo"
+      ],
+      "coverage_tags": [
+        "service-cards",
+        "logo",
+        "transparent-asset"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Keep every source block and asset in reading order. Charts and diagrams use contain with no text overlay; excerpts are exact source substrings.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "bullet_list",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "modular_cards",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 3,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "low-resolution-review",
+      "title": "A small source image",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# Expertise close to the work\n\nOur specialists work alongside your team to understand the decisions that shape the customer experience. A focused engagement helps you make progress with the resources already at hand.",
+      "assets": [
+        "low-resolution"
+      ],
+      "coverage_tags": [
+        "low-resolution",
+        "preflight-warning"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [
+          "LOW_DPI"
+        ],
+        "design_notes": "Keep the 96 by 40 pixel photograph in a supporting role; retain its low-DPI warning without upscaling the provider thumbnail.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boundary-below",
+      "title": "Just below the thumbnail boundary",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Small beginnings, lasting momentum\n\nA useful first step gives people something they can learn from together. Start with a clear question, bring the right voices into the conversation, and build confidence through practical progress.",
+      "assets": [
+        "boundary-767"
+      ],
+      "coverage_tags": [
+        "boundary-767",
+        "no-upscale"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Retain the 767-pixel longest edge without upscaling the provider thumbnail.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boundary-exact",
+      "title": "Exactly at the thumbnail boundary",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# A direction everyone can share\n\nWhen teams can explain the purpose of the work in their own words, decisions become easier. We help turn an ambitious direction into a brief that people can use.",
+      "assets": [
+        "boundary-768"
+      ],
+      "coverage_tags": [
+        "boundary-768",
+        "no-upscale"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Retain the 768-pixel longest edge exactly at the configured provider-thumbnail boundary.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "boundary-above",
+      "title": "Just above the thumbnail boundary",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Make room for what comes next\n\nGrowth asks teams to revisit familiar assumptions. A fresh perspective can reveal where a stronger handoff or a clearer promise will make the next stage possible.",
+      "assets": [
+        "boundary-769"
+      ],
+      "coverage_tags": [
+        "boundary-769",
+        "bounded-derivative"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Downsample only the provider thumbnail from the 769-pixel source; keep the source original available locally.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "extreme-panorama",
+      "title": "A horizon without cropping surprises",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# A broader view of opportunity\n\nThe strongest ideas often begin outside the usual frame. We connect customer needs with the work happening across your organization, helping teams see where their efforts can create shared value.",
+      "assets": [
+        "extreme-wide"
+      ],
+      "coverage_tags": [
+        "extreme-wide",
+        "preflight-warning"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [
+          "ASPECT_RATIO_OUT_OF_RANGE"
+        ],
+        "design_notes": "Preserve the ten-to-one panoramic media proportions and surface the aspect-ratio preflight warning.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "extreme-portrait",
+      "title": "A narrow portrait detail",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Focus on the people behind progress\n\nLasting change depends on the people who turn a plan into daily decisions. Our approach gives those colleagues a voice in shaping the work and the support to carry it forward.",
+      "assets": [
+        "extreme-tall"
+      ],
+      "coverage_tags": [
+        "extreme-tall",
+        "preflight-warning"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [
+          "ASPECT_RATIO_OUT_OF_RANGE"
+        ],
+        "design_notes": "Preserve the one-to-ten tall media proportions and surface the aspect-ratio preflight warning.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "guided_alternating",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mixed-format-kit",
+      "title": "A complete brand conversation",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# One conversation, several formats\n\nA photograph sets the context, a diagram explains the method, and a fictional brand mark identifies the offer. Each asset has a different job.\n\nKeep all three visible and use the full source text.",
+      "assets": [
+        "earthrise-wide",
+        "service-diagram",
+        "northstar-logo"
+      ],
+      "coverage_tags": [
+        "mixed-formats",
+        "photo-diagram-logo"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Place all JPEG photograph, PNG diagram and transparent WebP logo assets; keep text out of protected diagram media slots.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "modular_cards",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 3,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_03",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_03",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_02",
+              "component_type": "image_frame",
+              "slot_id": "media_secondary",
+              "source_asset_id": "img_02",
+              "object_fit": "contain"
+            },
+            {
+              "component_id": "frame_img_03",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_03",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chart-crop-repair",
+      "title": "Repair an unsafe chart crop",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Grow with a clear view of performance\n\n[PUBLIC] Illustrative revenue index reached 144 in the final period.\n\nDisciplined expansion pairs a stronger demand picture with regular conversations about capacity and customer experience.",
+      "assets": [
+        "revenue-chart"
+      ],
+      "coverage_tags": [
+        "repair",
+        "chart-contain"
+      ],
+      "expected": {
+        "outcome": "repair",
+        "export_blocked": false,
+        "metric_classifications": [
+          "public"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Reject a scripted cover treatment for the chart, then restore contain in the repaired candidate.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "failure_probe": {
+          "mutation": "cover_protected",
+          "issue_code": "CHART_CROP_FORBIDDEN",
+          "recovery": "Return the reference options on the repair attempt."
+        },
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "chart_focus_band",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diagram-crop-repair",
+      "title": "Repair an unsafe diagram crop",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# A better handoff creates confidence\n\nOur service connects discovery, shaping and delivery through a shared brief. Each stage gives the next team the context it needs to move forward with confidence.",
+      "assets": [
+        "service-diagram"
+      ],
+      "coverage_tags": [
+        "repair",
+        "diagram-contain"
+      ],
+      "expected": {
+        "outcome": "repair",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Reject a scripted cover treatment for the workflow diagram, then restore contain in the repaired candidate.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "failure_probe": {
+          "mutation": "cover_protected",
+          "issue_code": "CHART_CROP_FORBIDDEN",
+          "recovery": "Return the reference options on the repair attempt."
+        },
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "top_media_narrative",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "quote-exact-repair",
+      "title": "Repair a rewritten testimonial",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Shared language, shared direction\n\n> We finally had a shared language for the work.\n\nIn this fictional customer story, a clear brief helped colleagues bring different perspectives into a practical plan.",
+      "assets": [],
+      "coverage_tags": [
+        "repair",
+        "exact-excerpt",
+        "testimonial"
+      ],
+      "expected": {
+        "outcome": "repair",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Reject the invented testimonial excerpt and repair it to an exact substring of the source quote; retain the full source quote too.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "failure_probe": {
+          "mutation": "invent_excerpt",
+          "invalid_excerpt": "We found the perfect solution.",
+          "issue_code": "HALLUCINATED_EXCERPT",
+          "recovery": "Return the exact source excerpt in the reference options."
+        },
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "pull_quote"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_02"
+              ],
+              "extracted_excerpt": "We finally had a shared language for the work."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_02"
+              ],
+              "extracted_excerpt": "We finally had a shared language for the work."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "source-drop-fallback",
+      "title": "A complete page after failed repair",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# A dependable path from brief to review\n\nThe service begins with a shared brief and closes with an agreed review.\n\n- Agree responsibilities before delivery begins.\n- Review progress with the people doing the work.\n\nA dependable service leaves each team clear about its next step.",
+      "assets": [
+        "service-diagram"
+      ],
+      "coverage_tags": [
+        "fallback",
+        "source-completeness"
+      ],
+      "expected": {
+        "outcome": "fallback",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Repeat a scripted missing-source failure through the configured repair budget, then build a complete safe-flow fallback; never drop the final paragraph.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "failure_probe": {
+          "mutation": "drop_source",
+          "issue_code": "MISSING_BLOCK_ID",
+          "recovery": "Repeat the invalid pair through the configured repair budget; expect safe fallback with complete source placement."
+        },
+        "component_types": [
+          "body_prose",
+          "bullet_list",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "safe_flow_fallback",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "bullet_list",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "internal-evidence",
+      "title": "Evidence for the internal team",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "LETTER"
+      },
+      "copy": "# Internal planning evidence\n\n[INTERNAL] The fictional pilot served 42 teams.\n\n[UNDISCLOSED] The proposed expansion budget is $750K.\n\nThis planning page stays within the internal audience policy.",
+      "assets": [],
+      "coverage_tags": [
+        "internal-metrics",
+        "internal-audience"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [
+          "internal",
+          "undisclosed"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Keep internal and undisclosed planning figures available under the internal audience policy, preserving all source wording.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "modular_cards",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 3,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unverified-client-metrics",
+      "title": "An estimate awaiting review",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "A4"
+      },
+      "copy": "# An estimate awaiting review\n\n[UNVERIFIED] The fictional campaign may reach 1800 contacts.\n\nTreat this as an estimate awaiting evidence and a publication decision.",
+      "assets": [],
+      "coverage_tags": [
+        "unverified-metric",
+        "approval-required"
+      ],
+      "expected": {
+        "outcome": "export-blocked",
+        "export_blocked": true,
+        "metric_classifications": [
+          "unverified"
+        ],
+        "preflight_issue_codes": [],
+        "design_notes": "Keep the estimate in prose with no statistical callout; require a publication decision before client-facing export.",
+        "compliance_notes": "Block export until restricted metrics receive explicit review; do not promote restricted metrics.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "unicode-source-fidelity",
+      "title": "A message that travels",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "client_facing",
+        "page_size": "LETTER"
+      },
+      "copy": "# Clear language travels\n\nCafé teams in Montréal and São Paulo share the same promise: listen carefully, explain clearly, and keep the customer’s words intact.\n\n> Clarity works across languages — not around them.\n\nRésumé: thoughtful communication helps people understand each other and move forward together.",
+      "assets": [],
+      "coverage_tags": [
+        "unicode",
+        "exact-excerpt",
+        "source-fidelity"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Preserve accents, curly punctuation and the em dash exactly; the pull quote must match its source substring.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "pull_quote"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "editorial_asymmetric",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_03"
+              ],
+              "extracted_excerpt": "Clarity works across languages — not around them."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "two_col_executive",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 2,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "text_blk_04",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_04"
+              ]
+            },
+            {
+              "component_id": "quote_01",
+              "component_type": "pull_quote",
+              "slot_id": "callout",
+              "source_block_ids": [
+                "blk_03"
+              ],
+              "extracted_excerpt": "Clarity works across languages — not around them."
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "closing-invitation",
+      "title": "The next useful conversation",
+      "book_context": {
+        "title": "Northstar Studio | A clearer path to growth",
+        "objective": "Help enterprise buyers understand a fictional service offer and assess its evidence.",
+        "tone_keywords": [
+          "clear",
+          "assured",
+          "human"
+        ],
+        "audience_mode": "internal",
+        "page_size": "A4"
+      },
+      "copy": "# Let us make the next step clear\n\nBring the question your team is working through. We will help you frame the decision, identify the people who need to be involved, and agree a useful way forward.\n\nA good partnership starts with a conversation both sides can understand.",
+      "assets": [
+        "northstar-logo"
+      ],
+      "coverage_tags": [
+        "closing-page",
+        "logo",
+        "call-to-action"
+      ],
+      "expected": {
+        "outcome": "normal",
+        "export_blocked": false,
+        "metric_classifications": [],
+        "preflight_issue_codes": [],
+        "design_notes": "Use a concise closing invitation with the transparent fictional brand mark; compare sparse Swiss and section-divider treatments.",
+        "compliance_notes": "Public metrics may be promoted; internal metrics follow the internal audience policy. Preserve all copy verbatim.",
+        "component_types": [
+          "body_prose",
+          "divider_rule",
+          "heading",
+          "image_frame"
+        ]
+      },
+      "reference_options": [
+        {
+          "option_id": "option_a",
+          "strategy_tag": "editorial",
+          "archetype": "minimalist_swiss",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        },
+        {
+          "option_id": "option_b",
+          "strategy_tag": "structured",
+          "archetype": "section_divider",
+          "rationale": "Preserve the supplied copy and all media with a clear reading order.",
+          "column_count": 1,
+          "components": [
+            {
+              "component_id": "text_blk_01",
+              "component_type": "heading",
+              "slot_id": "header",
+              "source_block_ids": [
+                "blk_01"
+              ]
+            },
+            {
+              "component_id": "text_blk_02",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_02"
+              ]
+            },
+            {
+              "component_id": "text_blk_03",
+              "component_type": "body_prose",
+              "slot_id": "body",
+              "source_block_ids": [
+                "blk_03"
+              ]
+            },
+            {
+              "component_id": "rule_01",
+              "component_type": "divider_rule",
+              "slot_id": "footer",
+              "source_block_ids": []
+            },
+            {
+              "component_id": "frame_img_01",
+              "component_type": "image_frame",
+              "slot_id": "media_main",
+              "source_asset_id": "img_01",
+              "object_fit": "contain"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "coverage_matrix": {
+    "archetypes": {
+      "full_bleed_hero": [
+        "chapter-opener"
+      ],
+      "minimalist_swiss": [
+        "chapter-opener",
+        "section-divider",
+        "low-resolution-review",
+        "boundary-exact",
+        "quote-exact-repair",
+        "unverified-client-metrics",
+        "closing-invitation"
+      ],
+      "section_divider": [
+        "section-divider",
+        "closing-invitation"
+      ],
+      "editorial_asymmetric": [
+        "executive-500",
+        "financial-comparison",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "editorial-story",
+        "chart-focus",
+        "low-resolution-review",
+        "boundary-below",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "diagram-crop-repair",
+        "unicode-source-fidelity"
+      ],
+      "two_col_executive": [
+        "executive-500",
+        "editorial-story",
+        "modular-offers",
+        "boundary-above",
+        "chart-crop-repair",
+        "quote-exact-repair",
+        "source-drop-fallback",
+        "internal-evidence",
+        "unverified-client-metrics",
+        "unicode-source-fidelity"
+      ],
+      "top_media_narrative": [
+        "top-media-story",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "diagram-crop-repair"
+      ],
+      "chart_focus_band": [
+        "restricted-client-metrics",
+        "chart-focus",
+        "chart-crop-repair"
+      ],
+      "guided_alternating": [
+        "portrait-testimonial",
+        "top-media-story",
+        "extreme-portrait"
+      ],
+      "dashboard_split": [
+        "financial-comparison"
+      ],
+      "modular_cards": [
+        "modular-offers",
+        "mixed-format-kit",
+        "internal-evidence"
+      ],
+      "safe_flow_fallback": [
+        "source-drop-fallback"
+      ]
+    },
+    "component_types": {
+      "heading": [
+        "financial-comparison",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "section-divider",
+        "editorial-story",
+        "top-media-story",
+        "chart-focus",
+        "modular-offers",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "chart-crop-repair",
+        "diagram-crop-repair",
+        "quote-exact-repair",
+        "source-drop-fallback",
+        "internal-evidence",
+        "unverified-client-metrics",
+        "unicode-source-fidelity",
+        "closing-invitation"
+      ],
+      "body_prose": [
+        "executive-500",
+        "chapter-opener",
+        "financial-comparison",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "section-divider",
+        "editorial-story",
+        "top-media-story",
+        "chart-focus",
+        "modular-offers",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "chart-crop-repair",
+        "diagram-crop-repair",
+        "quote-exact-repair",
+        "source-drop-fallback",
+        "internal-evidence",
+        "unverified-client-metrics",
+        "unicode-source-fidelity",
+        "closing-invitation"
+      ],
+      "bullet_list": [
+        "financial-comparison",
+        "modular-offers",
+        "source-drop-fallback"
+      ],
+      "image_frame": [
+        "chapter-opener",
+        "financial-comparison",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "editorial-story",
+        "top-media-story",
+        "chart-focus",
+        "modular-offers",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "chart-crop-repair",
+        "diagram-crop-repair",
+        "source-drop-fallback",
+        "closing-invitation"
+      ],
+      "pull_quote": [
+        "portrait-testimonial",
+        "quote-exact-repair",
+        "unicode-source-fidelity"
+      ],
+      "stat_callout": [
+        "chart-focus"
+      ],
+      "caption": [
+        "portrait-testimonial"
+      ],
+      "divider_rule": [
+        "executive-500",
+        "chapter-opener",
+        "financial-comparison",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "section-divider",
+        "editorial-story",
+        "top-media-story",
+        "chart-focus",
+        "modular-offers",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "chart-crop-repair",
+        "diagram-crop-repair",
+        "quote-exact-repair",
+        "source-drop-fallback",
+        "internal-evidence",
+        "unverified-client-metrics",
+        "unicode-source-fidelity",
+        "closing-invitation"
+      ]
+    },
+    "asset_kinds": {
+      "photo": [
+        "chapter-opener",
+        "portrait-testimonial",
+        "editorial-story",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit"
+      ],
+      "chart": [
+        "financial-comparison",
+        "restricted-client-metrics",
+        "chart-focus",
+        "chart-crop-repair"
+      ],
+      "diagram": [
+        "portrait-testimonial",
+        "top-media-story",
+        "mixed-format-kit",
+        "diagram-crop-repair",
+        "source-drop-fallback"
+      ],
+      "logo": [
+        "modular-offers",
+        "mixed-format-kit",
+        "closing-invitation"
+      ]
+    },
+    "audiences": {
+      "internal": [
+        "executive-500",
+        "financial-comparison",
+        "editorial-story",
+        "chart-focus",
+        "low-resolution-review",
+        "boundary-exact",
+        "extreme-panorama",
+        "mixed-format-kit",
+        "diagram-crop-repair",
+        "source-drop-fallback",
+        "internal-evidence",
+        "closing-invitation"
+      ],
+      "client_facing": [
+        "chapter-opener",
+        "portrait-testimonial",
+        "restricted-client-metrics",
+        "section-divider",
+        "top-media-story",
+        "modular-offers",
+        "boundary-below",
+        "boundary-above",
+        "extreme-portrait",
+        "chart-crop-repair",
+        "quote-exact-repair",
+        "unverified-client-metrics",
+        "unicode-source-fidelity"
+      ]
+    },
+    "paper_sizes": {
+      "A4": [
+        "executive-500",
+        "financial-comparison",
+        "restricted-client-metrics",
+        "editorial-story",
+        "chart-focus",
+        "low-resolution-review",
+        "boundary-exact",
+        "extreme-panorama",
+        "mixed-format-kit",
+        "diagram-crop-repair",
+        "source-drop-fallback",
+        "unverified-client-metrics",
+        "closing-invitation"
+      ],
+      "LETTER": [
+        "chapter-opener",
+        "portrait-testimonial",
+        "section-divider",
+        "top-media-story",
+        "modular-offers",
+        "boundary-below",
+        "boundary-above",
+        "extreme-portrait",
+        "chart-crop-repair",
+        "quote-exact-repair",
+        "internal-evidence",
+        "unicode-source-fidelity"
+      ]
+    },
+    "outcomes": {
+      "normal": [
+        "executive-500",
+        "chapter-opener",
+        "financial-comparison",
+        "portrait-testimonial",
+        "section-divider",
+        "editorial-story",
+        "top-media-story",
+        "chart-focus",
+        "modular-offers",
+        "low-resolution-review",
+        "boundary-below",
+        "boundary-exact",
+        "boundary-above",
+        "extreme-panorama",
+        "extreme-portrait",
+        "mixed-format-kit",
+        "internal-evidence",
+        "unicode-source-fidelity",
+        "closing-invitation"
+      ],
+      "repair": [
+        "chart-crop-repair",
+        "diagram-crop-repair",
+        "quote-exact-repair"
+      ],
+      "fallback": [
+        "source-drop-fallback"
+      ],
+      "export-blocked": [
+        "restricted-client-metrics",
+        "unverified-client-metrics"
+      ]
+    }
+  }
+}
