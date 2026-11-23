@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@source "./**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
+@source "../engine/**/*.{ts,tsx}";
+
+:root {
+  --color-paper: white;
+  --color-ink: #172033;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: Arial, Helvetica, sans-serif;
+}

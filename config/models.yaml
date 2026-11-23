@@ -1,0 +1,4 @@
+model: gemini-3.8-flash
+max_repair_retries: 2
+temperature: 0.7
+prompt_cache_ttl_seconds: 3600

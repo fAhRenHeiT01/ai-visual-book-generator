@@ -1,0 +1,4 @@
+storage_root: uploads
+sqlite_uri: sqlite:///./bookgen.db
+cors_origins:
+  - http://localhost:3000
