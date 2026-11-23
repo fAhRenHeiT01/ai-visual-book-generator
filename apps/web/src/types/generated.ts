@@ -281,6 +281,17 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivePage */
+        ActivePage: {
+            /** Asset Ids */
+            asset_ids?: string[];
+            /** Page Id */
+            page_id: string;
+            /** Page Number */
+            page_number: number;
+            /** Text */
+            text: string;
+        };
         /** AppearanceResponse */
         AppearanceResponse: {
             chrome: components["schemas"]["MasterChromeConfig"];
@@ -563,6 +574,13 @@ export interface components {
         GeneratePageRequest: {
             /** Asset Ids */
             asset_ids?: string[];
+            /** Page Id */
+            page_id?: string | null;
+            /**
+             * Revise
+             * @default false
+             */
+            revise: boolean;
             /**
              * Text
              * @default
@@ -808,6 +826,7 @@ export interface components {
         };
         /** SessionSnapshot */
         SessionSnapshot: {
+            active_page?: components["schemas"]["ActivePage"] | null;
             /** Assets */
             assets?: components["schemas"]["ImageAssetMeta"][];
             /** Committed Pages */

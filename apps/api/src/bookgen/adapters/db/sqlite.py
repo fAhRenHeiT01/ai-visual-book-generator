@@ -1,5 +1,8 @@
 """SQLite session metadata and insert-once canonical selected page snapshots."""
 
+from hashlib import sha256
+import errno
+import os
 from pathlib import Path
 import sqlite3
 from threading import RLock
@@ -38,6 +41,36 @@ class SQLiteSessionRepository:
                 PRIMARY KEY (session_id, page_id), UNIQUE (session_id, page_number)
             );
         """)
+
+    def acquire_page_lock(self, session_id):
+        """Serialize graph writes across workers; OS releases the lock on process exit.
+
+        Keep lock files in place: unlinking them would allow two workers to lock
+        different inodes for the same session. This lock is independent of SQLite
+        so graph checkpoints can still commit while a provider request is active.
+        """
+        directory = Path(self.path).resolve().with_suffix('.page-locks')
+        directory.mkdir(parents=True, exist_ok=True)
+        handle = (directory / sha256(session_id.encode()).hexdigest()).open('a+b')
+        try:
+            if os.name == 'nt':
+                import msvcrt
+                while True:
+                    try:
+                        handle.seek(0)
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+                        break
+                    except OSError as exc:
+                        # LK_LOCK blocks before returning a contention error.
+                        if exc.errno not in (errno.EACCES, errno.EDEADLK):
+                            raise
+            else:
+                import fcntl
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+            return handle
+        except BaseException:
+            handle.close()
+            raise
 
     def create_session(self, context=None):
         session_id = uuid4().hex

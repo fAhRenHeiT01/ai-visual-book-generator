@@ -12,6 +12,8 @@ class CreateSessionRequest(StrictModel):
 
 
 class GeneratePageRequest(StrictModel):
+    page_id: str | None = Field(default=None, min_length=1)
+    revise: bool = False
     text: str = ""
     asset_ids: list[str] = Field(default_factory=list)
 
@@ -32,12 +34,20 @@ class AssetUploadResponse(StrictModel):
     assets: list[ImageAssetMeta]
 
 
+class ActivePage(StrictModel):
+    page_id: str
+    page_number: int = Field(ge=1)
+    text: str
+    asset_ids: list[str] = Field(default_factory=list)
+
+
 class SessionSnapshot(StrictModel):
     session_id: str
     debug_enabled: bool = False
     debug_active: bool = False
     context: BookContext
     current_page_index: int = Field(default=1, ge=1)
+    active_page: ActivePage | None = None
     pending_review: PageGenerationResult | None = None
     committed_pages: list[PageGenerationResult] = Field(default_factory=list)
     rolling_layout_history: list[LayoutArchetype] = Field(default_factory=list)

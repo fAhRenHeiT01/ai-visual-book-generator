@@ -162,3 +162,38 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     assert cache_requests[0]["config"].ttl == "3600s"
     await provider.close()
     assert closed == [True]
+
+
+async def test_actual_sdk_serializes_schema_through_fake_http_transport(tmp_path):
+    import httpx
+    import json
+    from google import genai
+    from google.genai import types
+    from bookgen.domain.profiler import profile_content
+    from bookgen.domain.fallback import safe_fallback_builder
+    from bookgen.schemas import BookContext
+    Provider, Storage, settings = implementation()
+    storage = Storage(tmp_path)
+    source = profile_content("Original source.", storage=storage)
+    layout = safe_fallback_builder(source.blocks, [])[0]
+    requests = []
+
+    def respond(request):
+        requests.append(json.loads(request.content))
+        return httpx.Response(200, json={"candidates": [{"content": {"role": "model", "parts": [{"text": layout.model_dump_json()}]}, "finishReason": "STOP"}]})
+
+    sdk = genai.Client(api_key="fake-test-key", http_options=types.HttpOptions(
+        async_client_args={"transport": httpx.MockTransport(respond)}))
+    config = settings()
+    config.llm.explicit_cache = False
+    provider = Provider(storage=storage, settings=config, client=sdk)
+    try:
+        result = await provider.generate_candidate(context=BookContext(), blocks=source.blocks, assets=[], strategy_tag="editorial_visual")
+        assert result == layout
+        schema = requests[0]["generationConfig"]["responseJsonSchema"]
+        assert "option_id" in schema["properties"]
+        assert schema["additionalProperties"] is False
+        assert "default" not in str(schema) and "maxLength" not in str(schema)
+    finally:
+        await provider.close()
+        sdk.close()

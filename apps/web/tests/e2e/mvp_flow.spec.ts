@@ -46,3 +46,42 @@ test('three pages persist, pending review reloads, and print contains only order
   expect(printed.stdout).not.toContain('Generate options');
   expect(errors).toEqual([]);
 });
+
+test('refresh recovers uploaded input and a lost generation response with one durable page', async ({ page, request }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create book' }).click();
+  await expect(page).toHaveURL(/\/sessions\//);
+  const sessionId = page.url().split('/').at(-1)!;
+  let uploads = 0;
+  const attempts: { page_id: string; asset_ids: string[] }[] = [];
+  page.on('request', req => { if (req.url().endsWith('/assets') && req.method() === 'POST') uploads++; });
+  let interrupted = false;
+  await page.route('**/api/v1/sessions/*/pages', async route => {
+    attempts.push(route.request().postDataJSON());
+    if (!interrupted) { interrupted = true; await route.abort('failed'); return; }
+    // The retry reaches review on the server, then its response is lost.
+    await route.fetch();
+    await route.abort('failed');
+  });
+  await page.getByLabel('Page text').fill('Durable original copy.');
+  await page.getByLabel('Page images').setInputFiles({ name: 'chart.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAAFUlEQVR4nGP8//8/AyHARFDFsFcEAHkjAw3jrppVAAAAAElFTkSuQmCC', 'base64') });
+  await page.getByRole('button', { name: 'Generate options' }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await page.reload();
+  await expect(page.getByLabel('Page text')).toHaveValue('Durable original copy.');
+  await page.getByRole('button', { name: 'Retry generation' }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  expect(attempts).toHaveLength(2);
+  expect(attempts[0].page_id).toBe(attempts[1].page_id);
+  expect(attempts[0].asset_ids).toEqual(attempts[1].asset_ids);
+  expect(uploads).toBe(1);
+  await page.reload();
+  await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
+  expect(attempts).toHaveLength(2);
+  await page.getByRole('button', { name: 'Confirm selection' }).click();
+  await expect(page.getByText('1 committed page', { exact: true })).toBeVisible();
+  const snapshot = await request.get(`http://127.0.0.1:8007/api/v1/sessions/${sessionId}`);
+  const saved = await snapshot.json();
+  expect(saved.committed_pages).toHaveLength(1);
+  expect(saved.current_page_index).toBe(2);
+});
