@@ -43,5 +43,12 @@ class ManualLLMProvider(GeminiProvider):
         payload = self.api_payload(request)
         chat = self.chat_input(payload)
         response = interrupt({"event": "llm_request", "option_id": option_id, "request": payload, **chat})
+        if isinstance(response, dict):
+            # The debugger binds a reply to the persisted request rather than
+            # the request rebuilt while LangGraph replays this node. String
+            # resumes from older checkpoints remain supported.
+            payload = response["request"]
+            chat = {"prompt": response["prompt"]}
+            response = response["response"]
         self.exchanges.append({"option_id": option_id, "request": payload, "prompt": chat["prompt"], "response": response})
         return response

@@ -154,7 +154,9 @@ Start the web app as usual. Create or reopen a book and generate a page:
 Checkpoints and submitted responses persist in SQLite. Reload the page, use
 **Reload checkpoint**, or restart the API with debug enabled to resume. Each
 action is tied to the current pause; stale submissions return a conflict instead
-of advancing another request. Finish an existing pending page before switching
+of advancing another request. Submitted replies retain the exact request and
+prompt shown at their pause, including after prompt configuration changes and
+API restarts. Finish an existing pending page before switching
 between normal generation and debugging. To return to normal mode, set
 `BOOKGEN__APP__DEBUG_MODE=false` and restart the API.
 

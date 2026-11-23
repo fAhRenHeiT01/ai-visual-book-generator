@@ -105,7 +105,12 @@ class PageDebugger:
                         raise ValueError("A response is required at this interrupt")
                     if event == "review" and response not in ("option_a", "option_b"):
                         raise ValueError("Select option_a or option_b")
-                    value = Command(resume=response)
+                    # Nodes replay after an interrupt. Preserve the effective
+                    # request the user saw even if prompts/settings changed
+                    # between the pause and this resume (or a process restart).
+                    resume = {"response": response, "request": snapshot.interrupts[0].request,
+                        "prompt": snapshot.interrupts[0].prompt} if event == "llm_request" else response
+                    value = Command(resume=resume)
                 else:
                     if response is not None:
                         raise ValueError("No response is accepted at a node boundary")
