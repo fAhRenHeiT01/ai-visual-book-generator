@@ -31,7 +31,7 @@ export const sessionApi = {
     try { window.localStorage.setItem(draftKey(id), JSON.stringify(draft)); } catch { /* Recovery also uses the durable server checkpoint. */ }
   },
   debug: (id: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug'),
-  debugStart: (id: string, text: string, asset_ids: string[]) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids })),
+  debugStart: (id: string, text: string, asset_ids: string[], page_id?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids, page_id })),
   debugStep: (id: string, checkpoint_id: string, response?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/step', json({ checkpoint_id, response })),
   appearance: (id: string) => request<S['AppearanceResponse']>(prefix(id) + '/appearance'),
   saveAppearance: (id: string, appearance: S['SessionAppearance']) => request<S['AppearanceResponse']>(prefix(id) + '/appearance', json(appearance, 'PUT')),

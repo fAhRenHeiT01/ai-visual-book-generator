@@ -26,6 +26,7 @@ def test_debug_api_start_inspect_step_and_conflicts(tmp_path):
         prefix = f'/api/v1/sessions/{sid}'
         assert api.get(prefix).json()['debug_enabled'] is True
         assert api.get(prefix + '/debug').json()['status'] == 'idle'
+        assert api.get(prefix + '/debug').json()['studio_active'] is False
         assert api.post(prefix + '/debug/pages', json={'text': 'Body', 'asset_ids': ['unknown']}).status_code == 422
         started = api.post(prefix + '/debug/pages', json={'text': 'Body'})
         assert started.status_code == 201
@@ -55,3 +56,29 @@ def test_debug_api_disabled_by_default(tmp_path):
         assert api.get(prefix).status_code == 403
         assert api.post(prefix + '/pages', json={'text': 'Body'}).status_code == 403
         assert api.post(prefix + '/step', json={'checkpoint_id': 'stale'}).status_code == 403
+
+
+def test_debug_capability_keeps_normal_authoring_available_and_manual_run_reopens(tmp_path):
+    with client(tmp_path) as api:
+        sid = api.post('/api/v1/sessions', json={}).json()['session_id']
+        prefix = f'/api/v1/sessions/{sid}'
+        normal = api.post(prefix + '/pages', json={'text': 'Ordinary source.', 'page_id': 'ordinary'})
+        assert normal.status_code == 201
+        assert api.get(prefix + '/debug').json()['status'] == 'idle'
+        assert api.get(prefix + '/debug').json()['studio_active'] is True
+        assert api.post(prefix + '/debug/pages', json={'text': 'Competing manual source.'}).status_code == 409
+        assert api.post(prefix + '/pages/ordinary/selection', json={'option_id': 'option_a'}).status_code == 200
+        assert api.get(prefix + '/debug').json()['studio_active'] is False
+        manual_sid = api.post('/api/v1/sessions', json={}).json()['session_id']
+        manual_prefix = f'/api/v1/sessions/{manual_sid}'
+        started = api.post(manual_prefix + '/debug/pages', json={'text': 'Manual source.', 'page_id': 'manual'}).json()
+        assert started['state']['page_id'] == 'manual'
+    with client(tmp_path) as api:
+        reopened = api.get(manual_prefix + '/debug').json()
+        assert reopened['checkpoint_id'] == started['checkpoint_id']
+        assert reopened['next_nodes'] == ['profile']
+        assert api.post(manual_prefix + '/pages', json={'text': 'Competing source.', 'page_id': 'other'}).status_code == 409
+        assert api.post(manual_prefix + '/pages/manual/selection', json={'option_id': 'option_a'}).status_code == 409
+        retry = api.post(manual_prefix + '/debug/pages', json={'text': 'Manual source.', 'page_id': 'manual'})
+        assert retry.status_code == 201
+        assert retry.json()['checkpoint_id'] == reopened['checkpoint_id']

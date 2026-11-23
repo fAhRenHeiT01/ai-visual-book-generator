@@ -477,6 +477,14 @@ export interface components {
              * @enum {string}
              */
             status: "idle" | "paused" | "completed";
+            /**
+             * Studio Active
+             * @description An unfinished ordinary page owns this session; resume it in Studio.
+             * @default false
+             */
+            studio_active: boolean;
+            /** Timeline */
+            timeline?: components["schemas"]["DebugTimelineEntry"][];
         };
         /** DebugStepRequest */
         DebugStepRequest: {
@@ -487,6 +495,27 @@ export interface components {
              * @description Unmodified LLM JSON text, or option_a/option_b at review. Omit at node boundaries.
              */
             response?: string | null;
+        };
+        /** DebugTimelineEntry */
+        DebugTimelineEntry: {
+            /** Node */
+            node: string;
+            /** Node Input */
+            node_input?: {
+                [key: string]: unknown;
+            };
+            /** Node Output */
+            node_output?: {
+                [key: string]: unknown;
+            };
+            review?: components["schemas"]["PageGenerationResult"] | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "completed" | "paused";
+            /** Validation Issues */
+            validation_issues?: components["schemas"]["ValidationIssue"][];
         };
         /** DesignTokens */
         DesignTokens: {

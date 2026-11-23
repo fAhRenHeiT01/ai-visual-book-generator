@@ -112,10 +112,8 @@ class PageWorkflow:
     async def generate(self, session_id, *, text, assets=(), page_id=None, revise=False):
         async with self._page_lock(session_id):
             snapshot = await self.snapshot(session_id)
-            if self.settings.app.debug_mode:
-                if snapshot.debug_active:
-                    raise PageConflict("A pending debug page must be resumed through the debug endpoint")
-                raise ValueError("Use the debug page endpoint while debug mode is enabled")
+            if snapshot.debug_active:
+                raise PageConflict("A pending debug page must be resumed through the debug endpoint")
             committed = next((page for page in snapshot.committed_pages if page.page_id == page_id), None)
             if committed is not None:
                 # Finish a commit checkpoint left behind by an interrupted response.

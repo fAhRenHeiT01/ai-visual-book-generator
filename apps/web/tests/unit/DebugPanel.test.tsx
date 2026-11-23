@@ -48,3 +48,16 @@ test('commit requires a separate advance and busy controls prevent duplicate ste
   render(<Panel snapshot={{ status: 'paused', next_nodes: ['commit_page'], last_node: 'human_review_interrupt', state: {}, node_input: {}, node_output: {}, interrupts: [], appearance: { tokens: {} } }} busy onStep={vi.fn()} />);
   expect(screen.getByRole('button', { name: 'Run commit_page' }).hasAttribute('disabled')).toBe(true);
 });
+
+test('ordered timeline exposes prior validation, repair, input and output with the current node', () => {
+  if (!Panel) throw new Error('Missing DebugPanel');
+  render(<Panel snapshot={{ status: 'paused', next_nodes: ['repair'], state: {}, node_input: {}, node_output: {}, interrupts: [], appearance: { tokens: {} },
+    timeline: [{ node: 'profile', status: 'completed', node_input: { text: 'Exact source' }, node_output: { blocks: [] }, validation_issues: [] },
+      { node: 'validate', status: 'completed', node_input: {}, node_output: {}, validation_issues: [{ code: 'MISSING_BLOCK_ID', message: 'Missing source', severity: 'error', target_option: 'option_a' }] },
+      { node: 'repair', status: 'paused', node_input: {}, node_output: {}, validation_issues: [] }] }} busy={false} onStep={vi.fn()} />);
+  const timeline = screen.getByRole('list', { name: 'Node timeline' });
+  expect([...timeline.querySelectorAll('li')].map(item => item.getAttribute('data-node'))).toEqual(['profile', 'validate', 'repair']);
+  expect(timeline.querySelector('[aria-current="step"]')?.textContent).toContain('repair');
+  expect(timeline.textContent).toContain('MISSING_BLOCK_ID');
+  expect(timeline.textContent).toContain('Exact source');
+});
