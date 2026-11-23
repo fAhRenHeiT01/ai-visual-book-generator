@@ -7,17 +7,10 @@ from bookgen.schemas import PageGenerationResult, StrictModel
 from bookgen.schemas.publishing import AppearanceResponse
 
 
-class DebugImageAttachment(StrictModel):
-    asset_id: str
-    mime_type: Literal["image/png"]
-    data: str = Field(description="Base64-encoded provider thumbnail to attach beside the chat prompt.")
-
-
 class DebugInterrupt(StrictModel):
     event: Literal["llm_request", "review"]
     option_id: str | None = None
     prompt: str | None = Field(default=None, description="Copyable chat prompt containing the actual instructions, context and response schema.")
-    images: list[DebugImageAttachment] = Field(default_factory=list)
     request: dict[str, Any] | None = None
     page: PageGenerationResult | None = None
 

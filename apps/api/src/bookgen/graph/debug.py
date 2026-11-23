@@ -43,13 +43,13 @@ class PageDebugger:
         # Multiple dynamic interrupts within one node share a checkpoint ID.
         # Bind the action to the current interrupt payload as well as that ID.
         revision = sha256(json.dumps([raw_id, interrupts], sort_keys=True).encode()).hexdigest() if raw_id else None
-        # Older checkpoints contain the effective request but no chat text. Adapt
-        # their presentation without changing persisted interrupts/resume tokens.
-        if any(item["event"] == "llm_request" and not item.get("prompt") for item in interrupts):
-            from bookgen.adapters.llm.manual import ManualLLMProvider
-            provider = ManualLLMProvider(storage=self.workflow.storage, settings=self.workflow.settings)
-            interrupts = [{**item, **provider.chat_input(item["request"])}
-                if item["event"] == "llm_request" and not item.get("prompt") else item for item in interrupts]
+        # Hash the original interrupt above, then project its presentation. Resume
+        # identity must still refer to the checkpoint stored before this upgrade.
+        from bookgen.adapters.llm.manual import ManualLLMProvider
+        provider = ManualLLMProvider(storage=self.workflow.storage, settings=self.workflow.settings)
+        assets = values.get("assets", [])
+        interrupts = [provider.present_exchange(item, assets) if item["event"] == "llm_request" else item for item in interrupts]
+        exchanges = [provider.present_exchange(item, assets) for item in values.get("debug_exchanges", [])]
         appearance = self.workflow.repository.load_appearance(sid)
         appearance = appearance.model_copy(update={"tokens": sanitize_tokens(appearance.tokens, self.workflow.settings.theme)})
         return DebugSnapshot(session_id=sid,
@@ -57,7 +57,7 @@ class PageDebugger:
             status="paused" if active and next_nodes else "completed" if active else "idle",
             next_nodes=next_nodes if active else [], last_node=values.get("debug_last_node"),
             state=public_state(values) if active else {}, node_input=values.get("debug_node_input", {}),
-            node_output={**values.get("debug_node_output", {}), **({"llm_exchanges": values["debug_exchanges"]} if values.get("debug_exchanges") else {})},
+            node_output={**values.get("debug_node_output", {}), **({"llm_exchanges": exchanges} if exchanges else {})},
             interrupts=interrupts,
             appearance=AppearanceResponse(status="available", **appearance.model_dump()))
 

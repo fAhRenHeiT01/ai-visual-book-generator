@@ -133,8 +133,7 @@ async def test_disabled_debug_is_rejected_and_environment_switch_is_supported(tm
     service.repository.close()
 
 
-async def test_private_request_is_masked_thumbnails_bounded_and_resume_bound_to_current_request(tmp_path):
-    import base64
+async def test_private_request_is_masked_metadata_only_and_resume_bound_to_current_request(tmp_path):
     import json
     from io import BytesIO
     from PIL import Image
@@ -144,7 +143,10 @@ async def test_private_request_is_masked_thumbnails_bounded_and_resume_bound_to_
     sid = service.create_session().session_id
     raw = BytesIO()
     Image.new('RGB', (2000, 1200)).save(raw, 'PNG')
-    profile = profile_content('', [ImageInput(raw.getvalue(), filename='chart.png')], storage=service.storage, settings=service.settings.profiling)
+    profile = profile_content('', [ImageInput(raw.getvalue(), filename='chart.png', alt_caption='Revenue is $4.2M ARR.')], storage=service.storage, settings=service.settings.profiling)
+    def no_reads(key):
+        pytest.fail(f'Layout debug must not read image storage: {key}')
+    service.storage.get = no_reads
     status = await service.debugger.start(sid, text='[INTERNAL] Revenue is $4.2M ARR.', assets=profile.assets)
     while not status.interrupts:
         status = await step(service, sid, status)
@@ -152,18 +154,15 @@ async def test_private_request_is_masked_thumbnails_bounded_and_resume_bound_to_
     assert status.interrupts[0].prompt
     assert '$4.2M' not in status.interrupts[0].prompt
     assert '[METRIC_' in status.interrupts[0].prompt
-    attachment = status.interrupts[0].images[0]
-    assert attachment.asset_id == profile.assets[0].asset_id
-    assert attachment.data not in status.interrupts[0].prompt
     assert 'inline_data' not in status.interrupts[0].prompt
-    with Image.open(BytesIO(base64.b64decode(attachment.data))) as preview:
-        assert max(preview.size) <= 768
+    assert 'IMAGE ATTACHMENTS' not in status.interrupts[0].prompt
     assert '$4.2M' not in json.dumps(request)
     assert '[METRIC_' in json.dumps(request)
     assert 'storage_key' not in json.dumps(request)
-    inline = request['contents'][0]['parts'][1]['inline_data']
-    with Image.open(BytesIO(base64.b64decode(inline['data']))) as image:
-        assert max(image.size) <= 768
+    assert len(request['contents'][0]['parts']) == 1
+    asset = json.loads(request['contents'][0]['parts'][0]['text'])['context']['current_page_payload']['assets'][0]
+    assert asset['asset_kind'] == 'chart'
+    assert (asset['width_px'], asset['height_px']) == (2000, 1200)
     old = status
     status = await step(service, sid, status, '{}')
     assert status.interrupts[0].option_id == 'option_b'
@@ -221,7 +220,7 @@ async def test_chat_prompt_contains_actual_instructions_context_and_schema_witho
     assert json.dumps(pending.request['generation_config']['response_json_schema'], indent=2, ensure_ascii=False) in pending.prompt
     assert 'system_instruction' not in pending.prompt
     assert 'transport_mode' not in pending.prompt
-    assert pending.images == []
+    assert 'images' not in pending.model_dump()
     assert mock.calls == []
     original = pending.prompt
     service.repository.close()
@@ -230,28 +229,78 @@ async def test_chat_prompt_contains_actual_instructions_context_and_schema_witho
     service.repository.close()
 
 
-async def test_existing_sdk_only_interrupt_is_presented_as_chat_prompt_after_upgrade(tmp_path, monkeypatch):
+@pytest.mark.parametrize('has_prompt', [False, True])
+async def test_existing_sdk_only_interrupt_is_presented_as_chat_prompt_after_upgrade(tmp_path, monkeypatch, has_prompt):
+    import json
+    from hashlib import sha256
+    from io import BytesIO
+    from PIL import Image
     from langgraph.types import interrupt
     from bookgen.adapters.llm.manual import ManualLLMProvider
+    from bookgen.domain.profiler import ImageInput, profile_content
     service, _ = workflow(tmp_path)
     sid = service.create_session().session_id
 
     async def old_transport(self, request):
-        return interrupt({'event': 'llm_request', 'option_id': 'option_a', 'request': self.api_payload(request)})
+        payload = self.api_payload(request)
+        content = json.loads(payload['contents'][0]['parts'][0]['text'])
+        asset = content['context']['current_page_payload']['assets'][0]
+        asset.update(storage_key='C:/private/LEGACY_BINARY_SENTINEL.png', thumbnail_key='https://private/LEGACY_BINARY_SENTINEL.png',
+            inline_data={'data': 'LEGACY_BINARY_SENTINEL'})
+        for field in ('width_px', 'height_px', 'estimated_dpi'):
+            asset.pop(field, None)
+        payload['contents'][0]['parts'][0]['text'] = json.dumps(content)
+        payload['contents'][0]['parts'].append({'inline_data': {'mime_type': 'image/png', 'data': 'LEGACY_BINARY_SENTINEL'}})
+        payload['contents'][0]['parts'].append({'file_data': {'file_uri': 'https://private/LEGACY_BINARY_SENTINEL.png'}})
+        pending = {'event': 'llm_request', 'option_id': 'option_a', 'request': payload,
+            'prompt': 'IMAGE ATTACHMENTS: attach LEGACY_BINARY_SENTINEL',
+            'images': [{'asset_id': 'img_01', 'mime_type': 'image/png', 'data': 'LEGACY_BINARY_SENTINEL'}]}
+        if not has_prompt:
+            pending.pop('prompt')
+        return interrupt(pending)
 
+    raw = BytesIO()
+    Image.new('RGB', (2000, 1200)).save(raw, 'PNG')
+    assets = profile_content('', [ImageInput(raw.getvalue(), filename='chart.png')], storage=service.storage).assets
     with monkeypatch.context() as patch:
         patch.setattr(ManualLLMProvider, '_manual_transport', old_transport)
-        status = await service.debugger.start(sid, text='Existing paused source.')
+        status = await service.debugger.start(sid, text='Existing paused source.', assets=assets)
         while not status.interrupts:
             status = await step(service, sid, status)
+    async with service._graph(manual_debug=True) as graph:
+        checkpoint = await graph.aget_state(service._config(sid))
+        original_interrupts = [item.value for task in checkpoint.tasks for item in task.interrupts]
+        identity = sha256(json.dumps([checkpoint.config['configurable']['checkpoint_id'], original_interrupts], sort_keys=True).encode()).hexdigest()
+        assert 'LEGACY_BINARY_SENTINEL' in json.dumps(original_interrupts)
     service.repository.close()
     service, _ = workflow(tmp_path)
     status = await service.debugger.snapshot(sid)
+    assert status.checkpoint_id == identity
+    assert 'LEGACY_BINARY_SENTINEL' not in status.model_dump_json()
+    assert 'IMAGE ATTACHMENTS' not in status.interrupts[0].prompt
+    assert '"width_px": 2000' in status.interrupts[0].prompt
     assert status.interrupts[0].prompt
     assert 'Existing paused source.' in status.interrupts[0].prompt
     resumed = await step(service, sid, status, '{}')
     assert resumed.interrupts[0].option_id == 'option_b'
     assert resumed.interrupts[0].prompt
+    with pytest.raises(ValueError, match='checkpoint'):
+        await step(service, sid, status, '{}')
+    resumed = await step(service, sid, resumed, '{}')
+    assert resumed.last_node == 'generate_candidates'
+    assert len(resumed.node_output['llm_exchanges']) == 2
+    assert 'LEGACY_BINARY_SENTINEL' not in resumed.model_dump_json()
+    # Completed older nodes can contain recorded exchanges as well as paused
+    # interrupts. Presentation must project those without rewriting persistence.
+    exchange = {**original_interrupts[0], 'response': '{}'}
+    exchange.pop('event')
+    async with service._graph(manual_debug=True) as graph:
+        await graph.aupdate_state(service._config(sid), {'debug_exchanges': [exchange]})
+    recorded = await service.debugger.snapshot(sid)
+    assert 'LEGACY_BINARY_SENTINEL' not in recorded.model_dump_json()
+    assert '"width_px": 2000' in recorded.node_output['llm_exchanges'][0]['prompt']
+    async with service._graph(manual_debug=True) as graph:
+        assert 'LEGACY_BINARY_SENTINEL' in json.dumps((await graph.aget_state(service._config(sid))).values['debug_exchanges'])
     service.repository.close()
 
 
