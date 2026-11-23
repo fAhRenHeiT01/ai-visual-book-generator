@@ -1,13 +1,9 @@
 """Gemini structured output through one bounded initial/repair request builder."""
 
 import asyncio
-import base64
 from hashlib import sha256
-from io import BytesIO
 import json
 import time
-
-from PIL import Image
 
 from bookgen.config.llm import load_prompts
 from bookgen.schemas import ComponentType, PageLayoutAST, SurfaceRole
@@ -20,6 +16,14 @@ _GEMINI_JSON_SCHEMA_KEYS = frozenset({
     "enum", "items", "prefixItems", "minItems", "maxItems", "minimum", "maximum",
     "anyOf", "oneOf", "properties", "additionalProperties", "required", "propertyOrdering",
 })
+
+
+def asset_metadata(asset):
+    """Allowlist layout facts; storage locations and image data stay local."""
+    value = asset.model_dump(mode="json") if hasattr(asset, "model_dump") else asset
+    return {key: value[key] for key in (
+        "asset_id", "asset_kind", "width_px", "height_px", "aspect_ratio", "alt_caption", "estimated_dpi",
+    ) if key in value}
 
 
 def _gemini_json_schema(model):
@@ -59,16 +63,6 @@ class GeminiProvider:
         self._caches = {}
         self._cache_lock = asyncio.Lock()
 
-    def _thumbnail(self, asset):
-        config = self.settings.profiling
-        if config is None:
-            raise ValueError("Profiling settings are required")
-        with Image.open(BytesIO(self.storage.get(asset.thumbnail_key))) as source:
-            source.thumbnail((config.thumbnail_max_px, config.thumbnail_max_px), Image.Resampling.LANCZOS)
-            data = BytesIO()
-            source.save(data, format="PNG")
-        return {"mime_type": "image/png", "data": base64.b64encode(data.getvalue()).decode("ascii")}
-
     def _request(self, *, context, blocks, assets, strategy_tag, rhythm_history=None, page_number=None):
         metadata = request_context.get()
         history = list(metadata.rhythm_history if rhythm_history is None else rhythm_history)[-self.settings.llm.rhythm_window:]
@@ -96,7 +90,7 @@ class GeminiProvider:
                 "current_page_payload": {
                     "page_number": page_number if page_number is not None else metadata.page_number,
                     "blocks": [block.model_dump(mode="json") for block in blocks],
-                    "assets": [{"asset_id": asset.asset_id, "aspect_ratio": asset.aspect_ratio, "asset_kind": asset.asset_kind.value, "alt_caption": asset.alt_caption, "inline_data": self._thumbnail(asset)} for asset in assets],
+                    "assets": [asset_metadata(asset) for asset in assets],
                 },
             },
         }
@@ -130,8 +124,6 @@ class GeminiProvider:
         payload = self.api_payload(request)
         parts = payload["contents"][0]["parts"]
         contents = [types.Part.from_text(text=parts[0]["text"])]
-        contents.extend(types.Part.from_bytes(data=base64.b64decode(part["inline_data"]["data"]),
-            mime_type=part["inline_data"]["mime_type"]) for part in parts[1:])
         config = payload["generation_config"]
         if self.settings.llm.explicit_cache and request["cache_ttl_seconds"]:
             async with self._cache_lock:
@@ -157,13 +149,13 @@ class GeminiProvider:
         """
         context = json.loads(json.dumps(request["context"]))
         context.pop("global_book_context")
-        images = [{"inline_data": asset.pop("inline_data")} for asset in context["current_page_payload"]["assets"]]
+        context["current_page_payload"]["assets"] = [asset_metadata(asset) for asset in context["current_page_payload"]["assets"]]
         content = {"strategy_directive": request["strategy_directive"], "context": context}
         if "repair" in request:
             content.update(repair_directive=request["repair_directive"], repair=request["repair"])
         return {"model": request["model"], "transport_mode": request["transport_mode"],
             "system_instruction": request["cache_prefix"],
-            "contents": [{"role": "user", "parts": [{"text": json.dumps(content)}, *images]}],
+            "contents": [{"role": "user", "parts": [{"text": json.dumps(content)}]}],
             "generation_config": {"temperature": request["temperature"], "response_mime_type": "application/json",
                 "response_json_schema": _gemini_json_schema(request["response_schema"])}}
 

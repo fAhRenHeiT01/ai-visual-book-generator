@@ -365,32 +365,6 @@
         "title": "CreateSessionRequest",
         "type": "object"
       },
-      "DebugImageAttachment": {
-        "additionalProperties": false,
-        "properties": {
-          "asset_id": {
-            "title": "Asset Id",
-            "type": "string"
-          },
-          "data": {
-            "description": "Base64-encoded provider thumbnail to attach beside the chat prompt.",
-            "title": "Data",
-            "type": "string"
-          },
-          "mime_type": {
-            "const": "image/png",
-            "title": "Mime Type",
-            "type": "string"
-          }
-        },
-        "required": [
-          "asset_id",
-          "mime_type",
-          "data"
-        ],
-        "title": "DebugImageAttachment",
-        "type": "object"
-      },
       "DebugInterrupt": {
         "additionalProperties": false,
         "properties": {
@@ -401,13 +375,6 @@
             ],
             "title": "Event",
             "type": "string"
-          },
-          "images": {
-            "items": {
-              "$ref": "#/components/schemas/DebugImageAttachment"
-            },
-            "title": "Images",
-            "type": "array"
           },
           "option_id": {
             "anyOf": [

@@ -45,7 +45,7 @@ def test_debug_api_start_inspect_step_and_conflicts(tmp_path):
         assert 'You are the book\'s art director' in pending['prompt']
         assert 'Body' in pending['prompt']
         assert 'semantic_token_roles' in pending['prompt']
-        assert pending['images'] == []
+        assert 'images' not in pending
 
 
 def test_debug_api_disabled_by_default(tmp_path):

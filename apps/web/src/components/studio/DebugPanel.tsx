@@ -32,17 +32,6 @@ export function DebugPanel({ snapshot, busy, onStep, onReload }: {
       <button type="button" onClick={() => { void copyPrompt(); }}>Copy prompt</button>
       {copyStatus && <p role="status">{copyStatus}</p>}
       <label>Chat prompt<textarea aria-label="Chat prompt" readOnly rows={20} value={prompt} style={{ width: '100%' }} /></label>
-      {!!pending?.images?.length && <div>
-        <h3>Images to attach in the chat</h3>
-        <p>Download these thumbnails and attach them alongside the prompt in the listed order.</p>
-        {pending.images.map(image => {
-          const url = `data:${image.mime_type};base64,${image.data}`;
-          return <figure key={image.asset_id}>
-            <img src={url} alt={`${image.asset_id} thumbnail for chat`} style={{ maxWidth: '16rem', maxHeight: '12rem', objectFit: 'contain' }} />
-            <figcaption><a href={url} download={`${image.asset_id}.png`}>Download {image.asset_id} thumbnail</a></figcaption>
-          </figure>;
-        })}
-      </div>}
       <label>Manual LLM response<textarea aria-label="Manual LLM response" rows={12} value={response} onChange={event => setResponse(event.target.value)} disabled={busy} style={{ width: '100%' }} /></label>
       <p>Paste the response as returned. Malformed or invalid layouts enter the normal validation, repair, and bounded fallback flow.</p>
       <button type="button" disabled={busy || !response.trim()} onClick={() => onStep(response)}>Submit response</button>

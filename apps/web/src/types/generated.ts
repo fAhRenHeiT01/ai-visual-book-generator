@@ -427,21 +427,6 @@ export interface components {
         CreateSessionRequest: {
             context?: components["schemas"]["BookContext"];
         };
-        /** DebugImageAttachment */
-        DebugImageAttachment: {
-            /** Asset Id */
-            asset_id: string;
-            /**
-             * Data
-             * @description Base64-encoded provider thumbnail to attach beside the chat prompt.
-             */
-            data: string;
-            /**
-             * Mime Type
-             * @constant
-             */
-            mime_type: "image/png";
-        };
         /** DebugInterrupt */
         DebugInterrupt: {
             /**
@@ -449,8 +434,6 @@ export interface components {
              * @enum {string}
              */
             event: "llm_request" | "review";
-            /** Images */
-            images?: components["schemas"]["DebugImageAttachment"][];
             /** Option Id */
             option_id?: string | null;
             page?: components["schemas"]["PageGenerationResult"] | null;

@@ -30,16 +30,16 @@ test('manual LLM response stays intact and request, node states and theme are in
   expect(advance).toHaveBeenCalledWith(raw);
 });
 
-test('chat images can be downloaded individually to attach beside the plain prompt', () => {
+test('metadata prompts expose no image attachments or downloads even for a stale browser snapshot', () => {
   expect(Panel).toBeDefined();
   if (!Panel) return;
   render(<Panel snapshot={{ status: 'paused', next_nodes: ['generate_candidates'], state: {}, node_input: {}, node_output: {}, appearance: { tokens: {} },
-    interrupts: [{ event: 'llm_request', option_id: 'option_a', prompt: 'Use attached img_01.',
+    interrupts: [{ event: 'llm_request', option_id: 'option_a', prompt: 'Asset img_01: chart, 2000 by 1200.',
       images: [{ asset_id: 'img_01', mime_type: 'image/png', data: 'bounded-thumbnail-data' }] }] }} busy={false} onStep={vi.fn()} />);
-  const link = screen.getByRole('link', { name: 'Download img_01 thumbnail' });
-  expect(link.getAttribute('download')).toBe('img_01.png');
-  expect(link.getAttribute('href')).toBe('data:image/png;base64,bounded-thumbnail-data');
-  expect(screen.getByRole('img', { name: 'img_01 thumbnail for chat' }).getAttribute('src')).toBe(link.getAttribute('href'));
+  expect(screen.queryByRole('link')).toBeNull();
+  expect(screen.queryByRole('img')).toBeNull();
+  expect(screen.queryByText(/Images to attach/)).toBeNull();
+  expect((screen.getByLabelText('Chat prompt') as HTMLTextAreaElement).value).toContain('2000 by 1200');
 });
 
 test('commit requires a separate advance and busy controls prevent duplicate steps', () => {

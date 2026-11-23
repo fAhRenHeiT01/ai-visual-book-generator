@@ -19,10 +19,11 @@ test('manual debug steps survive refresh and render semantic theme roles before 
   const originalPrompt = await page.getByLabel('Chat prompt').inputValue();
   await page.reload();
   await expect(page.getByLabel('Chat prompt')).toHaveValue(originalPrompt);
-  const thumbnail = page.getByRole('link', { name: /Download .* thumbnail/ });
-  await expect(thumbnail).toHaveAttribute('href', /^data:image\/png;base64,/);
-  const assetId = (await thumbnail.getAttribute('download'))!.slice(0, -4);
-  await expect(page.getByRole('img', { name: `${assetId} thumbnail for chat` })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Download .* thumbnail/ })).toHaveCount(0);
+  expect(originalPrompt).not.toMatch(/inline_data|base64|storage_key|thumbnail_key|IMAGE ATTACHMENTS/);
+  expect(originalPrompt).toContain('"asset_kind": "chart"');
+  expect(originalPrompt).toContain('"width_px": 12');
+  const assetId = originalPrompt.match(/"asset_id": "([^"]+)"/)![1];
   for (const option_id of ['option_a', 'option_b'] as const) {
     const layout: components['schemas']['PageLayoutAST'] = {
       option_id, strategy_tag: option_id === 'option_a' ? 'editorial_visual' : 'executive_structured',

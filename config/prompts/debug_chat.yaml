@@ -1,4 +1,4 @@
-version: "1.0"
+version: "1.1"
 text: |
   Complete this single book-layout task and return exactly one JSON object matching
   the response schema below. Return the JSON only, without Markdown code fences.
@@ -17,11 +17,10 @@ text: |
   IDs and exact excerpt rules from the system instructions.
   {page_context}
 
-  IMAGE ATTACHMENTS
-  If current_page_payload.assets is nonempty, the corresponding images are
-  attached separately in that same order. Match them to the listed asset IDs.
-  Use the images and metadata together when choosing placements. Do not invent
-  assets or emit image bytes in the layout response.
+  ASSET METADATA
+  Choose placements using the listed asset IDs, kinds, dimensions, aspect ratios,
+  available captions, and resolution information. Preserve protected chart and
+  diagram rules. Do not invent assets or visual details beyond the metadata.
 
   REPAIR CONTEXT
   An empty object means this is an initial generation. Otherwise follow the

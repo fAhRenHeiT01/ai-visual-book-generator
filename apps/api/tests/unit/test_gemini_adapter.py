@@ -1,6 +1,5 @@
-"""Provider requests expose only bounded context and validated thumbnails."""
+"""Provider requests expose bounded context and allowlisted asset metadata."""
 
-import base64
 import importlib.util
 from io import BytesIO
 from pathlib import Path
@@ -21,7 +20,7 @@ def implementation():
     return GeminiProvider, LocalFSStorage, load_settings
 
 
-async def test_structured_requests_distinct_strategies_cache_and_thumbnails(tmp_path):
+async def test_structured_requests_distinct_strategies_cache_and_metadata(tmp_path):
     Provider, Storage, settings = implementation()
     from bookgen.domain.profiler import ImageInput, profile_content
     from bookgen.domain.fallback import safe_fallback_builder
@@ -46,9 +45,9 @@ async def test_structured_requests_distinct_strategies_cache_and_thumbnails(tmp_
     assert requests[0]["cache_ttl_seconds"] == settings().llm.prompt_cache_ttl_seconds
     slices = requests[0]["context"]
     assert set(slices) == {"global_book_context", "sliding_rhythm_window", "current_page_payload"}
-    thumbnail = base64.b64decode(slices["current_page_payload"]["assets"][0]["inline_data"]["data"])
-    with Image.open(BytesIO(thumbnail)) as decoded:
-        assert max(decoded.size) <= 768
+    asset = slices["current_page_payload"]["assets"][0]
+    assert (asset['width_px'], asset['height_px']) == (1800, 1000)
+    assert 'inline_data' not in asset
     assert "storage_key" not in str(slices)
     assert slices["current_page_payload"]["blocks"][0]["text"] == "Exact current page text."
 
@@ -82,7 +81,7 @@ async def test_context_and_repairs_stay_bounded_for_long_books(tmp_path, page_nu
     assert requests[1]["repair_directive"]
 
 
-async def test_oversize_thumbnail_is_resized_and_invalid_output_rejected(tmp_path):
+async def test_oversize_thumbnail_is_unused_and_invalid_output_rejected(tmp_path):
     Provider, Storage, settings = implementation()
     from bookgen.domain.profiler import ImageInput, profile_content
     from bookgen.schemas import BookContext
@@ -100,12 +99,12 @@ async def test_oversize_thumbnail_is_resized_and_invalid_output_rejected(tmp_pat
     from pydantic import ValidationError
     with pytest.raises(ValidationError):
         await Provider(storage=storage, settings=settings(), transport=transport).generate_candidate(context=BookContext(), blocks=profile.blocks, assets=profile.assets, strategy_tag="editorial_visual")
-    data = requests[0]["context"]["current_page_payload"]["assets"][0]["inline_data"]["data"]
-    with Image.open(BytesIO(base64.b64decode(data))) as thumbnail:
-        assert max(thumbnail.size) <= 768
+    asset = requests[0]["context"]["current_page_payload"]["assets"][0]
+    assert asset['width_px'] == 1400
+    assert 'inline_data' not in asset
 
 
-async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_path):
+async def test_real_sdk_boundary_uses_structured_schema_and_text_only_parts(tmp_path):
     """Exercise the actual SDK config/parts with a fake async SDK client."""
     Provider, Storage, settings = implementation()
     from types import SimpleNamespace
@@ -142,7 +141,7 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     assert inspected["system_instruction"] == request["config"].system_instruction
     assert inspected["generation_config"]["response_json_schema"] == request["config"].response_json_schema
     assert inspected["contents"][0]["parts"][0]["text"] == request["contents"][0].text
-    assert base64.b64decode(inspected["contents"][0]["parts"][1]["inline_data"]["data"]) == request["contents"][1].inline_data.data
+    assert len(inspected["contents"][0]["parts"]) == len(request["contents"]) == 1
     assert request["config"].response_schema is None
     assert request["config"].response_json_schema["additionalProperties"] is False
     assert "option_id" in request["config"].response_json_schema["properties"]
@@ -151,9 +150,7 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     assert "default" not in str(request["config"].response_json_schema)
     assert request["config"].response_mime_type == "application/json"
     assert request["config"].system_instruction
-    assert request["contents"][1].inline_data.mime_type == "image/png"
-    with Image.open(BytesIO(request["contents"][1].inline_data.data)) as thumbnail:
-        assert max(thumbnail.size) <= 768
+    assert request["contents"][0].inline_data is None
     config.llm.explicit_cache = True
     await provider.generate_candidate(**kwargs)
     await provider.generate_candidate(**kwargs)
@@ -164,18 +161,24 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     assert closed == [True]
 
 
-async def test_actual_sdk_serializes_schema_through_fake_http_transport(tmp_path):
+async def test_actual_sdk_and_manual_requests_use_only_chart_metadata_without_storage_reads(tmp_path):
     import httpx
     import json
     from google import genai
     from google.genai import types
-    from bookgen.domain.profiler import profile_content
+    from bookgen.domain.profiler import ImageInput, profile_content
     from bookgen.domain.fallback import safe_fallback_builder
-    from bookgen.schemas import BookContext
+    from bookgen.schemas import BookContext, ValidationIssue
+    from bookgen.adapters.llm.manual import ManualLLMProvider
     Provider, Storage, settings = implementation()
     storage = Storage(tmp_path)
-    source = profile_content("Original source.", storage=storage)
-    layout = safe_fallback_builder(source.blocks, [])[0]
+    raw = BytesIO()
+    Image.new("RGB", (2000, 1200)).save(raw, "PNG", dpi=(150, 150))
+    source = profile_content("Original source.", [ImageInput(raw.getvalue(), filename="chart.png", alt_caption="Revenue chart")], storage=storage)
+    layout = safe_fallback_builder(source.blocks, source.assets)[0]
+    class NoReads:
+        def get(self, key):
+            pytest.fail(f"Layout requests must not read image storage: {key}")
     requests = []
 
     def respond(request):
@@ -186,10 +189,33 @@ async def test_actual_sdk_serializes_schema_through_fake_http_transport(tmp_path
         async_client_args={"transport": httpx.MockTransport(respond)}))
     config = settings()
     config.llm.explicit_cache = False
-    provider = Provider(storage=storage, settings=config, client=sdk)
+    provider = Provider(storage=NoReads(), settings=config, client=sdk)
+    manual = ManualLLMProvider(storage=NoReads(), settings=config)
+    kwargs = dict(context=BookContext(), blocks=source.blocks, assets=source.assets, strategy_tag="editorial_visual")
     try:
-        result = await provider.generate_candidate(context=BookContext(), blocks=source.blocks, assets=[], strategy_tag="editorial_visual")
+        result = await provider.generate_candidate(**kwargs)
         assert result == layout
+        issue = ValidationIssue(code="MISSING_BLOCK_ID", severity="error", message="Missing block", target_option="option_a")
+        assert await provider.repair_candidate(**kwargs, candidate=layout, issues=[issue]) == layout
+        for serialized in requests:
+            parts = serialized["contents"][0]["parts"]
+            assert len(parts) == 1 and set(parts[0]) == {"text"}
+            asset = json.loads(parts[0]["text"])["context"]["current_page_payload"]["assets"][0]
+            assert asset == {"asset_id": "img_01", "asset_kind": "chart", "width_px": 2000,
+                "height_px": 1200, "aspect_ratio": 2000 / 1200, "alt_caption": "Revenue chart",
+                "estimated_dpi": 150}
+            for forbidden in ("inline", "base64", "storage_key", "thumbnail_key", "originals/", "thumbnails/", "https://", "file://"):
+                assert forbidden not in json.dumps(parts)
+        for repair in (False, True):
+            request = manual._request(**kwargs)
+            if repair:
+                request.update(repair_directive=manual.prompts["critic_repair"].text,
+                    repair={"candidate": layout.model_dump(mode="json"), "issues": [issue.model_dump(mode="json")]})
+            chat = manual.chat_input(manual.api_payload(request))
+            assert "images" not in chat
+            assert "Revenue chart" in chat["prompt"] and '"width_px": 2000' in chat["prompt"]
+            for forbidden in ("IMAGE ATTACHMENTS", "attached separately", "inline_data", "base64", "storage_key", "thumbnail_key", "originals/", "thumbnails/", "https://", "file://"):
+                assert forbidden not in chat["prompt"]
         schema = requests[0]["generationConfig"]["responseJsonSchema"]
         assert "option_id" in schema["properties"]
         assert schema["additionalProperties"] is False
