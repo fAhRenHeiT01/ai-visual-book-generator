@@ -1,33 +1,202 @@
+# These eight slot IDs are shared with the renderer. Null capacities explicitly
+# require a renderer that reflows its content, rather than clipping a fixed grid.
+density_scales: [airy, normal, compact]
+object_fits: [contain, cover]
+protected_asset_kinds: [chart, diagram]
+protected_object_fit: contain
+forbid_protected_overlay: true
+body_component_types: [heading, body_prose, bullet_list, caption]
+excerpt_component_types: [pull_quote, stat_callout]
+slot_role_components:
+  text: [heading, body_prose, bullet_list, pull_quote, stat_callout, caption, divider_rule]
+  media: [image_frame]
+  mixed: [heading, body_prose, bullet_list, pull_quote, stat_callout, caption, image_frame, divider_rule]
+  decoration: [divider_rule]
+fallback_density: compact
+# Five unbounded families guarantee a dense pair after any three exclusions.
+fallback_order: [safe_flow_fallback, two_col_executive, editorial_asymmetric,
+                 top_media_narrative, guided_alternating, modular_cards,
+                 minimalist_swiss, chart_focus_band, dashboard_split]
+
 full_bleed_hero:
+  family: hero
+  renderer_shape: full_page
   max_words: 45
   max_images: 1
+  reflow: false
+  column_count: 1
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 160, allows_overlay: false}
+    body: {role: text, max_chars: 350, allows_overlay: false}
+    media_main: {role: mixed, max_chars: 350, allows_overlay: true}
+    callout: {role: text, max_chars: 180, allows_overlay: false}
+    footer: {role: text, max_chars: 100, allows_overlay: false}
 minimalist_swiss:
+  family: swiss
+  renderer_shape: minimalist_swiss
   max_words: 180
   max_images: 1
+  reflow: false
+  column_count: 1
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 200, allows_overlay: false}
+    body: {role: text, max_chars: 1400, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 300, allows_overlay: false}
+    footer: {role: text, max_chars: 120, allows_overlay: false}
 section_divider:
+  family: divider
+  renderer_shape: full_page
   max_words: 60
   max_images: 1
+  reflow: false
+  column_count: 1
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 200, allows_overlay: false}
+    body: {role: text, max_chars: 450, allows_overlay: false}
+    media_main: {role: mixed, max_chars: 450, allows_overlay: true}
+    footer: {role: text, max_chars: 100, allows_overlay: false}
 editorial_asymmetric:
-  max_words: 300
-  max_images: 2
+  family: editorial
+  renderer_shape: media_prose_split
+  max_words: null
+  max_images: null
+  reflow: true
+  column_count: 2
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    col_left: {role: text, max_chars: null, allows_overlay: false}
+    col_right: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
 two_col_executive:
-  max_words: 450
-  max_images: 1
+  family: executive
+  renderer_shape: column_flow
+  max_words: null
+  max_images: null
+  reflow: true
+  column_count: 2
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    col_left: {role: text, max_chars: null, allows_overlay: false}
+    col_right: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
 top_media_narrative:
-  max_words: 350
-  max_images: 1
+  family: narrative
+  renderer_shape: top_media_narrative
+  max_words: null
+  max_images: null
+  reflow: true
+  column_count: 1
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
 chart_focus_band:
+  family: chart_band
+  renderer_shape: chart_focus_band
   max_words: 180
   max_images: 1
+  reflow: false
+  column_count: 1
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 200, allows_overlay: false}
+    body: {role: text, max_chars: 1400, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 300, allows_overlay: false}
+    footer: {role: text, max_chars: 120, allows_overlay: false}
 guided_alternating:
-  max_words: 320
-  max_images: 3
+  family: alternating
+  renderer_shape: media_prose_split
+  max_words: null
+  max_images: null
+  reflow: true
+  column_count: 2
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    col_left: {role: text, max_chars: null, allows_overlay: false}
+    col_right: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
 dashboard_split:
+  family: executive
+  renderer_shape: dashboard_split
   max_words: 160
   max_images: 2
+  reflow: false
+  column_count: 2
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 200, allows_overlay: false}
+    body: {role: text, max_chars: 1200, allows_overlay: false}
+    col_left: {role: text, max_chars: 700, allows_overlay: false}
+    col_right: {role: text, max_chars: 700, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 300, allows_overlay: false}
+    footer: {role: text, max_chars: 120, allows_overlay: false}
 modular_cards:
-  max_words: 400
-  max_images: 4
+  family: cards
+  renderer_shape: modular_cards
+  max_words: null
+  max_images: null
+  reflow: true
+  column_count: 3
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    col_left: {role: text, max_chars: null, allows_overlay: false}
+    col_right: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
 safe_flow_fallback:
+  family: safe_flow
+  renderer_shape: column_flow
   max_words: 500
-  max_images: 4
+  max_images: null
+  reflow: true
+  column_count: 2
+  fallback_body_slot: body
+  fallback_media_slot: media_main
+  slots:
+    header: {role: text, max_chars: 240, allows_overlay: false}
+    body: {role: text, max_chars: null, allows_overlay: false}
+    col_left: {role: text, max_chars: null, allows_overlay: false}
+    col_right: {role: text, max_chars: null, allows_overlay: false}
+    media_main: {role: media, max_chars: 0, allows_overlay: false}
+    media_secondary: {role: media, max_chars: 0, allows_overlay: false}
+    callout: {role: text, max_chars: 400, allows_overlay: false}
+    footer: {role: text, max_chars: 160, allows_overlay: false}
