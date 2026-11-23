@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import type { components } from '../../types/generated';
 import { sessionApi } from '../../lib/sessionApi';
 import { PageCanvas } from '../../engine/PageCanvas';
+import { apiOrigin } from '../../config/env';
 type S = components['schemas'];
 export type ExportActionProps = {
   disabled: boolean;
@@ -50,7 +51,25 @@ export function ExportAction({ disabled, sessionId, pages, context, appearance }
       setPublishable(report.publishable_pages);
     } catch (reason) { setError(String(reason)); setEligible(false); setBusy(false); }
   }
+  async function download() {
+    setBusy(true); setError('');
+    try {
+      const response = await fetch(`${apiOrigin}/api/v1/sessions/${encodeURIComponent(sessionId)}/export`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail ?? 'The PDF could not be verified. Please retry.');
+      }
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement('a');
+      link.href = url; link.download = 'book.pdf'; link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 0);
+    } catch (reason) { setError(String(reason)); }
+    finally { setBusy(false); }
+  }
   return <>
+    <button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={download}>Download PDF</button>
     <button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={print}>Print draft</button>
     {error && <p className="studio-controls" role="alert">{error}</p>}
     {mounted && createPortal(<>

@@ -124,6 +124,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Export Pdf */
+        post: operations["export_pdf_api_v1_sessions__session_id__export_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/pages": {
         parameters: {
             query?: never;
@@ -175,6 +192,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/print-data": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Print Data */
+        get: operations["print_data_api_v1_sessions__session_id__print_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/themes/extract": {
         parameters: {
             query?: never;
@@ -206,6 +240,24 @@ export interface components {
              */
             status: "available" | "unavailable";
             tokens: components["schemas"]["DesignTokens"];
+        };
+        /** AssemblyOptions */
+        AssemblyOptions: {
+            /** Appendix */
+            appendix?: string | null;
+            /**
+             * Closing Cover
+             * @default false
+             */
+            closing_cover: boolean;
+            /** Imprint */
+            imprint?: string | null;
+            /** Preface */
+            preface?: string | null;
+            /** Section Titles */
+            section_titles?: {
+                [key: string]: string;
+            };
         };
         /**
          * AssetKind
@@ -577,6 +629,41 @@ export interface components {
             /** @default paper */
             surface_role: components["schemas"]["SurfaceRole"];
         };
+        /** PrintManifest */
+        PrintManifest: {
+            chrome: components["schemas"]["MasterChromeConfig"];
+            context: components["schemas"]["BookContext"];
+            /** Pages */
+            pages: components["schemas"]["PrintPage"][];
+            /** Safety Buffer Percent */
+            safety_buffer_percent: number;
+            /** Session Id */
+            session_id: string;
+            /** Toc */
+            toc: components["schemas"]["TocEntry"][];
+            tokens: components["schemas"]["DesignTokens"];
+        };
+        /** PrintPage */
+        PrintPage: {
+            /** Anchor */
+            anchor: string;
+            /** Chapter Title */
+            chapter_title: string;
+            /** Expected Text */
+            expected_text: string[];
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "cover" | "imprint" | "preface" | "toc" | "section" | "body" | "appendix" | "closing_cover";
+            /** Page Number */
+            page_number: number;
+            result: components["schemas"]["PageGenerationResult"];
+            /** Title */
+            title: string;
+            /** Total Pages */
+            total_pages: number;
+        };
         /** SelectOptionRequest */
         SelectOptionRequest: {
             /**
@@ -632,6 +719,15 @@ export interface components {
              */
             status: "available" | "unavailable";
             tokens?: components["schemas"]["DesignTokens"] | null;
+        };
+        /** TocEntry */
+        TocEntry: {
+            /** Anchor */
+            anchor: string;
+            /** Page Number */
+            page_number: number;
+            /** Title */
+            title: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -925,6 +1021,46 @@ export interface operations {
             };
         };
     };
+    export_pdf_api_v1_sessions__session_id__export_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssemblyOptions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                };
+            };
+            /** @description Compliance review required */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Print drift or invalid assembly */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     generate_page_api_v1_sessions__session_id__pages_post: {
         parameters: {
             query?: never;
@@ -1015,6 +1151,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageGenerationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    print_data_api_v1_sessions__session_id__print_data_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PrintManifest"];
                 };
             };
             /** @description Validation Error */

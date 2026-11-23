@@ -1,0 +1,7 @@
+chunk_pages: 15
+max_contexts: 2
+safety_buffer_percent: 6
+max_drift_retries: 1
+min_ssim: 0.95
+print_origin: http://127.0.0.1:3000
+ready_timeout_ms: 60000

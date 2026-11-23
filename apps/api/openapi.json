@@ -27,6 +27,58 @@
         "title": "AppearanceResponse",
         "type": "object"
       },
+      "AssemblyOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "appendix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Appendix"
+          },
+          "closing_cover": {
+            "default": false,
+            "title": "Closing Cover",
+            "type": "boolean"
+          },
+          "imprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imprint"
+          },
+          "preface": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preface"
+          },
+          "section_titles": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Section Titles",
+            "type": "object"
+          }
+        },
+        "title": "AssemblyOptions",
+        "type": "object"
+      },
       "AssetKind": {
         "enum": [
           "photo",
@@ -777,6 +829,118 @@
         "title": "PlacedComponent",
         "type": "object"
       },
+      "PrintManifest": {
+        "additionalProperties": false,
+        "properties": {
+          "chrome": {
+            "$ref": "#/components/schemas/MasterChromeConfig"
+          },
+          "context": {
+            "$ref": "#/components/schemas/BookContext"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/PrintPage"
+            },
+            "title": "Pages",
+            "type": "array"
+          },
+          "safety_buffer_percent": {
+            "maximum": 8.0,
+            "minimum": 5.0,
+            "title": "Safety Buffer Percent",
+            "type": "number"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "toc": {
+            "items": {
+              "$ref": "#/components/schemas/TocEntry"
+            },
+            "title": "Toc",
+            "type": "array"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/DesignTokens"
+          }
+        },
+        "required": [
+          "session_id",
+          "context",
+          "tokens",
+          "chrome",
+          "pages",
+          "toc",
+          "safety_buffer_percent"
+        ],
+        "title": "PrintManifest",
+        "type": "object"
+      },
+      "PrintPage": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "chapter_title": {
+            "title": "Chapter Title",
+            "type": "string"
+          },
+          "expected_text": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Expected Text",
+            "type": "array"
+          },
+          "kind": {
+            "enum": [
+              "cover",
+              "imprint",
+              "preface",
+              "toc",
+              "section",
+              "body",
+              "appendix",
+              "closing_cover"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "page_number": {
+            "minimum": 1.0,
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "result": {
+            "$ref": "#/components/schemas/PageGenerationResult"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "total_pages": {
+            "minimum": 1.0,
+            "title": "Total Pages",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind",
+          "anchor",
+          "title",
+          "chapter_title",
+          "page_number",
+          "total_pages",
+          "result",
+          "expected_text"
+        ],
+        "title": "PrintPage",
+        "type": "object"
+      },
       "SelectOptionRequest": {
         "additionalProperties": false,
         "properties": {
@@ -924,6 +1088,31 @@
           }
         },
         "title": "ThemeExtractResponse",
+        "type": "object"
+      },
+      "TocEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {
+            "title": "Anchor",
+            "type": "string"
+          },
+          "page_number": {
+            "minimum": 1.0,
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "anchor",
+          "page_number"
+        ],
+        "title": "TocEntry",
         "type": "object"
       },
       "ValidationError": {
@@ -1371,6 +1560,50 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/export": {
+      "post": {
+        "operationId": "export_pdf_api_v1_sessions__session_id__export_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssemblyOptions"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/pdf": {}
+            },
+            "description": "Successful Response"
+          },
+          "409": {
+            "description": "Compliance review required"
+          },
+          "422": {
+            "description": "Print drift or invalid assembly"
+          }
+        },
+        "summary": "Export Pdf",
+        "tags": [
+          "export"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/pages": {
       "post": {
         "operationId": "generate_page_api_v1_sessions__session_id__pages_post",
@@ -1532,6 +1765,48 @@
         "summary": "Select Page",
         "tags": [
           "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/print-data": {
+      "get": {
+        "operationId": "print_data_api_v1_sessions__session_id__print_data_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PrintManifest"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Print Data",
+        "tags": [
+          "export"
         ]
       }
     },
