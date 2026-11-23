@@ -15,6 +15,7 @@ from bookgen.schemas import CONTRACT_MODELS
 from bookgen.routes.sessions import router as sessions_router
 from bookgen.routes.compliance import router as compliance_router
 from bookgen.routes.theme import router as theme_router
+from bookgen.routes.export import router as export_router
 
 
 def create_app(*, settings=None, provider=None, repository=None, storage=None) -> FastAPI:
@@ -54,6 +55,7 @@ def create_app(*, settings=None, provider=None, repository=None, storage=None) -
     application.include_router(sessions_router)
     application.include_router(compliance_router)
     application.include_router(theme_router)
+    application.include_router(export_router)
 
     def openapi():
         if application.openapi_schema is None:

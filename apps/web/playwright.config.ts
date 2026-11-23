@@ -25,6 +25,7 @@ export default defineConfig({
       BOOKGEN__APP__SQLITE_URI: `sqlite:///${join(storage, 'sessions.db')}`,
       BOOKGEN__APP__STORAGE_ROOT: join(storage, 'assets'),
       BOOKGEN__APP__CORS_ORIGINS: '["http://127.0.0.1:3007"]',
+      BOOKGEN__EXPORT__PRINT_ORIGIN: 'http://127.0.0.1:3007',
     },
   }, {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3007",

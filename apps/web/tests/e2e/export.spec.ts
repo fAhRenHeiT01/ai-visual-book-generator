@@ -1,0 +1,32 @@
+import { expect, test } from '@playwright/test';
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+test('approved draft downloads assembled PDF with redacted metrics and numbered chrome', async ({ page, request }) => {
+  test.setTimeout(120_000);
+  const api = 'http://127.0.0.1:8007/api/v1/sessions';
+  const created = await request.post(api, { data: { context: { title: 'Public report', audience_mode: 'client_facing' } } });
+  const sid = (await created.json()).session_id;
+  const generated = await request.post(`${api}/${sid}/pages`, { data: { text: '[INTERNAL] $4.2M ARR\n\nPublishable conclusion.' } });
+  const result = await generated.json();
+  await request.post(`${api}/${sid}/pages/${result.page_id}/selection`, { data: { option_id: 'option_a' } });
+  const report = await (await request.get(`${api}/${sid}/compliance`)).json();
+  await request.post(`${api}/${sid}/compliance/decisions`, { data: { page_id: result.page_id, metric_id: report.ledger[0].metric.metric_id, action: 'redact' } });
+  await page.goto(`/sessions/${sid}`);
+  const action = page.getByRole('button', { name: 'Download PDF' });
+  await expect(action).toBeEnabled();
+  const downloaded = page.waitForEvent('download');
+  await action.click();
+  const download = await downloaded;
+  expect(download.suggestedFilename()).toBe('book.pdf');
+  const python = process.env.PYTHON ?? resolve('../..', '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
+  const extracted = spawnSync(python, ['-c', 'import sys,io; from pypdf import PdfReader; r=PdfReader(io.BytesIO(sys.stdin.buffer.read())); print(len(r.pages)); print("\\n".join(p.extract_text() for p in r.pages))'], { input: readFileSync((await download.path())!), encoding: 'utf8' });
+  expect(extracted.status).toBe(0);
+  expect(extracted.stdout.split('\n')[0].trim()).toBe('3');
+  expect(extracted.stdout).toContain('Contents');
+  expect(extracted.stdout).toContain('Page 3 of 3');
+  expect(extracted.stdout).toContain('Publishable conclusion.');
+  expect(extracted.stdout).toContain('[REDACTED]');
+  expect(extracted.stdout).not.toContain('$4.2M ARR');
+});
