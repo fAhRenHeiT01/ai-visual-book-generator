@@ -6,6 +6,7 @@ from uuid import uuid4
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response, StreamingResponse
 
+from bookgen.graph.workflow import PageConflict
 from bookgen.domain.profiler import ImageInput, profile_content
 from bookgen.schemas import PageGenerationResult
 from bookgen.schemas.sessions import AssetUploadResponse, CreateSessionRequest, GeneratePageRequest, SelectOptionRequest, SessionSnapshot
@@ -69,9 +70,15 @@ async def generate_page(session_id: str, body: GeneratePageRequest, request: Req
     if any(asset_id not in assets for asset_id in body.asset_ids):
         raise HTTPException(422, "Unknown uploaded asset ID")
     try:
-        return await workflow(request).generate(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids])
-    except ValueError as exc:
+        return await workflow(request).generate(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids], page_id=body.page_id, revise=body.revise)
+    except PageConflict as exc:
         raise HTTPException(409, str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except Exception as exc:
+        if getattr(exc, "code", None) == 400:
+            raise HTTPException(502, "Provider rejected the generation schema") from exc
+        raise HTTPException(503, "Generation temporarily unavailable. Retry this page.") from exc
 
 
 @router.get("/{session_id}/pages/{page_id}/events", response_class=StreamingResponse,

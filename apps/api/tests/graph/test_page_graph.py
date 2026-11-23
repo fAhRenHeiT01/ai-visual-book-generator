@@ -159,3 +159,78 @@ async def test_invalid_structured_provider_responses_follow_bounded_fallback(tmp
     assert page.repair_attempts == 2
     assert page.input_blocks[0].text == "Original body."
     repository.close()
+
+async def test_failed_checkpoint_can_be_reopened_and_retried(tmp_path):
+    _, _, Mock, _, _ = implementation()
+
+    class Unavailable(Mock):
+        async def generate_candidate(self, **kwargs):
+            raise RuntimeError("upstream unavailable")
+
+    graph, repository = workflow(tmp_path, Unavailable())
+    session = graph.create_session()
+    with pytest.raises(RuntimeError, match="upstream unavailable"):
+        await graph.generate(session.session_id, text="Recover this exact input.")
+    repository.close()
+    fresh, fresh_repository = workflow(tmp_path)
+    page = await fresh.generate(session.session_id, text="Recover this exact input.")
+    assert page.page_number == 1
+    assert (await fresh.snapshot(session.session_id)).pending_review == page
+    fresh_repository.close()
+
+async def test_retry_identity_revision_duplicates_and_lost_response(tmp_path):
+    _, _, Mock, _, _ = implementation()
+
+    class Unavailable(Mock):
+        async def generate_candidate(self, **kwargs):
+            raise RuntimeError("upstream unavailable")
+
+    graph, repository = workflow(tmp_path, Unavailable())
+    session = graph.create_session().session_id
+    with pytest.raises(RuntimeError):
+        await graph.generate(session, page_id="durable-page", text="Original.")
+    active = (await graph.snapshot(session)).active_page
+    assert (active.page_id, active.text, active.asset_ids, active.page_number) == ("durable-page", "Original.", [], 1)
+    graph.provider = Mock()
+    with pytest.raises(ValueError, match="pending"):
+        await graph.generate(session, page_id="competing-page", text="New.")
+    with pytest.raises(ValueError, match="revision"):
+        await graph.generate(session, page_id="durable-page", text="Edited.")
+    page = await graph.generate(session, page_id="durable-page", text="Edited.", revise=True)
+    assert page.page_id == "durable-page" and page.page_number == 1
+    assert page.input_blocks[0].text == "Edited."
+    assert await graph.generate(session, page_id="durable-page", text="Edited.") == page
+    committed = await graph.select(session, page.page_id, "option_a")
+    assert await graph.generate(session, page_id="durable-page", text="Edited.") == committed
+    other, other_repository = workflow(tmp_path)
+    duplicates = await asyncio.gather(
+        graph.generate(session, page_id="second-page", text="Next."),
+        other.generate(session, page_id="second-page", text="Next."),
+    )
+    assert duplicates[0] == duplicates[1]
+    assert duplicates[0].page_number == 2
+    assert len(repository.load_snapshots(session)) == 1
+    other_repository.close()
+    repository.close()
+
+async def test_new_page_after_lost_commit_response_recovers_checkpoint(tmp_path):
+    graph, repository = workflow(tmp_path)
+    session = graph.create_session().session_id
+    page = await graph.generate(session, page_id='first', text='First page.')
+    save = repository.save_snapshot
+
+    def interrupted(session_id, selected):
+        save(session_id, selected)
+        raise RuntimeError('lost commit response')
+
+    repository.save_snapshot = interrupted
+    with pytest.raises(RuntimeError):
+        await graph.select(session, page.page_id, 'option_a')
+    repository.close()
+    fresh, fresh_repository = workflow(tmp_path)
+    snapshot = await fresh.snapshot(session)
+    assert snapshot.pending_review is None and snapshot.active_page is None
+    next_page = await fresh.generate(session, page_id='second', text='Second page.')
+    assert next_page.page_number == 2
+    assert len(fresh_repository.load_snapshots(session)) == 1
+    fresh_repository.close()

@@ -79,3 +79,71 @@ def test_unknown_and_invalid_requests(tmp_path):
         assert api.get(prefix + "/pages/missing/events").status_code == 404
         assert api.post(prefix + "/pages/missing/selection", json={"option_id": "option_a"}).status_code == 404
         assert page["page_number"] == 1
+
+
+def test_generation_recovery_identity_errors_and_saved_review(tmp_path):
+    from bookgen.adapters.llm.mock import MockLLMProvider
+    from google.genai.errors import ClientError, ServerError
+
+    class Failing(MockLLMProvider):
+        failure = RuntimeError("connection lost")
+
+        async def generate_candidate(self, **kwargs):
+            raise self.failure
+
+    with client(tmp_path) as api:
+        provider = Failing()
+        api.app.state.get_workflow().provider = provider
+        session = api.post("/api/v1/sessions", json={}).json()["session_id"]
+        prefix = f"/api/v1/sessions/{session}"
+        body = {"page_id": "stable", "text": "Saved original."}
+        assert api.post(prefix + "/pages", json=body).status_code == 503
+        assert api.get(prefix).json()["active_page"]["page_id"] == "stable"
+        assert api.post(prefix + "/pages", json={**body, "text": "Edited."}).status_code == 422
+        assert api.post(prefix + "/pages", json={**body, "page_id": "other"}).status_code == 409
+        provider.failure = ClientError(400, {"error": {"message": "Invalid response_json_schema"}})
+        assert api.post(prefix + "/pages", json=body).status_code == 502
+        provider.failure = ServerError(503, {"error": {"message": "Unavailable"}})
+        assert api.post(prefix + "/pages", json=body).status_code == 503
+        api.app.state.get_workflow().provider = MockLLMProvider()
+        review = api.post(prefix + "/pages", json=body)
+        assert review.status_code == 201
+        api.app.state.get_workflow().provider = provider
+        assert api.post(prefix + "/pages", json=body).json() == review.json()
+        assert api.post(prefix + "/pages/stable/selection", json={"option_id": "option_a"}).status_code == 200
+        assert api.post(prefix + "/pages", json=body).json()["selected_option_id"] == "option_a"
+        assert api.get(prefix).json()["current_page_index"] == 2
+
+def test_concurrent_workers_return_one_page_for_duplicate_requests(tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+    with client(tmp_path) as api:
+        session = api.post('/api/v1/sessions', json={}).json()['session_id']
+    rendezvous = Barrier(2)
+    from bookgen.adapters.llm.mock import MockLLMProvider
+    import asyncio
+    calls = []
+
+    class Counting(MockLLMProvider):
+        async def generate_candidate(self, **kwargs):
+            calls.append(kwargs['strategy_tag'])
+            await asyncio.sleep(0.1)
+            return await super().generate_candidate(**kwargs)
+
+    def worker():
+        with client(tmp_path) as api:
+            api.app.state.get_workflow().provider = Counting()
+            rendezvous.wait()
+            return api.post(f'/api/v1/sessions/{session}/pages', json={'page_id': 'duplicate', 'text': 'One durable page.'})
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        responses = list(pool.map(lambda _: worker(), range(2)))
+    assert [response.status_code for response in responses] == [201, 201]
+    assert responses[0].json() == responses[1].json()
+    assert len(calls) == 2
+    with client(tmp_path) as api:
+        prefix = f'/api/v1/sessions/{session}'
+        assert api.post(prefix + '/pages/duplicate/selection', json={'option_id': 'option_a'}).status_code == 200
+        assert len(api.get(prefix).json()['committed_pages']) == 1
+        next_page = api.post(prefix + '/pages', json={'page_id': 'next', 'text': 'Next page.'}).json()
+        assert next_page['page_number'] == 2

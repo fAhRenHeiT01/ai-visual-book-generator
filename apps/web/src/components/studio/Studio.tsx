@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { Component, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { components } from '../../types/generated';
 import { sessionApi } from '../../lib/sessionApi';
 import { BookSetup } from '../setup/BookSetup';
@@ -10,6 +10,14 @@ import { PageComposer } from './PageComposer';
 import { OptionComparison } from './OptionComparison';
 import { DebugPanel } from './DebugPanel';
 type S = components['schemas'];
+class ReviewBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() {
+    if (this.state.failed) return <div className="studio-controls" role="alert">The saved review could not be displayed. <button onClick={() => this.setState({ failed: false })}>Reopen saved review</button></div>;
+    return this.props.children;
+  }
+}
 export function Studio({ sessionId }: { sessionId?: string }) {
   const [session, setSession] = useState<S['SessionSnapshot']>();
   const [appearance, setAppearance] = useState<S['AppearanceResponse']>();
@@ -68,18 +76,21 @@ export function Studio({ sessionId }: { sessionId?: string }) {
     <ComplianceBanner sessionId={session?.session_id} snapshot={session} onDecision={refresh} />
     {session && appearance && <>
       {session.debug_enabled && debug && <DebugPanel key={debug.checkpoint_id} snapshot={{ ...debug, appearance }} busy={!!status} onStep={debugStep} onReload={() => { void run('Reloading checkpoint…', refresh); }} />}
-      {debugging && !debugReview ? null : session.pending_review ? <OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
+      {debugging && !debugReview ? null : session.pending_review ? <ReviewBoundary key={session.pending_review.page_id}><OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
         await sessionApi.select(session.session_id, session.pending_review!.page_id, choice);
         await refresh();
-      }); }} /> : <PageComposer key={session.current_page_index} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files) => { await run('Generating options…', async () => {
-        const assets = files.length ? (await sessionApi.upload(session.session_id, files)).assets : [];
+      }); }} /></ReviewBoundary> : <PageComposer key={session.active_page?.page_id ?? session.current_page_index} activePage={session.active_page} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files, revise) => { await run('Generating options…', async () => {
+        const assetIds = files.length ? (await sessionApi.upload(session.session_id, files)).assets.map(asset => asset.asset_id) : session.active_page?.asset_ids ?? [];
         if (session.debug_enabled) {
-          setDebug(await sessionApi.debugStart(session.session_id, text, assets.map(asset => asset.asset_id)));
+          setDebug(await sessionApi.debugStart(session.session_id, text, assetIds));
           setSession(await sessionApi.load(session.session_id));
           return;
         }
-        const page = await sessionApi.generate(session.session_id, text, assets.map(asset => asset.asset_id));
-        setSession({ ...session, pending_review: page });
+        const activePage = { page_id: session.active_page?.page_id ?? crypto.randomUUID(), page_number: session.current_page_index, text, asset_ids: assetIds };
+        sessionApi.remember(session.session_id, activePage);
+        setSession({ ...session, active_page: activePage });
+        const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise);
+        setSession({ ...session, active_page: activePage, pending_review: page });
       }); }} />}
       <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} />
     </>}

@@ -12,9 +12,24 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 const json = (body: unknown, method = 'POST'): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+const draftKey = (id: string) => `bookgen:active-page:${id}`;
+function savedDraft(id: string): S['ActivePage'] | undefined {
+  try {
+    const draft = JSON.parse(window.localStorage.getItem(draftKey(id)) ?? 'null');
+    if (draft && typeof draft.page_id === 'string' && typeof draft.text === 'string' && Number.isInteger(draft.page_number) && Array.isArray(draft.asset_ids) && draft.asset_ids.every((value: unknown) => typeof value === 'string')) return draft;
+  } catch { /* Server snapshots remain available when browser storage is blocked. */ }
+}
 export const sessionApi = {
   create: (context: S['BookContext']) => request<S['SessionSnapshot']>('/api/v1/sessions', json({ context })),
-  load: (id: string) => request<S['SessionSnapshot']>(prefix(id)),
+  load: async (id: string) => {
+    const snapshot = await request<S['SessionSnapshot']>(prefix(id));
+    const draft = savedDraft(id);
+    if (!snapshot.active_page && !snapshot.pending_review && draft && draft.page_number === snapshot.current_page_index && !snapshot.committed_pages?.some(page => page.page_id === draft.page_id)) snapshot.active_page = draft;
+    return snapshot;
+  },
+  remember: (id: string, draft: S['ActivePage']) => {
+    try { window.localStorage.setItem(draftKey(id), JSON.stringify(draft)); } catch { /* Recovery also uses the durable server checkpoint. */ }
+  },
   debug: (id: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug'),
   debugStart: (id: string, text: string, asset_ids: string[]) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids })),
   debugStep: (id: string, checkpoint_id: string, response?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/step', json({ checkpoint_id, response })),
@@ -28,7 +43,7 @@ export const sessionApi = {
     files.forEach(file => body.append('files', file));
     return request<S['AssetUploadResponse']>(prefix(id) + '/assets', { method: 'POST', body });
   },
-  generate: (id: string, text: string, asset_ids: string[]) => request<S['PageGenerationResult']>(prefix(id) + '/pages', json({ text, asset_ids })),
+  generate: (id: string, text: string, asset_ids: string[], page_id?: string, revise = false) => request<S['PageGenerationResult']>(prefix(id) + '/pages', json({ text, asset_ids, page_id, revise })),
   select: (id: string, page: string, option_id: 'option_a' | 'option_b') => request<S['PageGenerationResult']>(prefix(id) + `/pages/${encodeURIComponent(page)}/selection`, json({ option_id })),
   browserPage: (id: string, page: S['PageGenerationResult']): S['PageGenerationResult'] => ({ ...page, input_assets: page.input_assets.map(asset => ({ ...asset, storage_key: apiOrigin + prefix(id) + `/assets/${encodeURIComponent(asset.asset_id)}` })) }),
   review: (id: string, page: string, committed: () => void) => {

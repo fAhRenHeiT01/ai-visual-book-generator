@@ -1,9 +1,10 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
 const Studio = (modules['../../src/components/studio/Studio.tsx'] as { Studio: ComponentType<{ sessionId?: string }> } | undefined)?.Studio;
-vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: () => <div>Canvas</div> }));
+const canvas = vi.hoisted(() => ({ broken: false }));
+vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: () => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div>Canvas</div>; } }));
 const context = { title: '', objective: '', tone_keywords: [], audience_mode: 'internal', page_size: 'A4', source_website_url: null };
 const layout = { option_id: 'option_a', strategy_tag: 'clear', archetype: 'minimalist_swiss', rationale: 'Clear reading order', components: [] };
 const pending = { page_id: 'p1', page_number: 1, input_blocks: [], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b', rationale: 'Visual rhythm' } };
@@ -22,7 +23,11 @@ function mockApi(review = false) {
     return Response.json(state);
   }));
 }
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+beforeEach(() => {
+  const saved = new Map<string, string>();
+  vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => saved.set(key, value) });
+});
+afterEach(() => { cleanup(); canvas.broken = false; vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 test('optional setup allows an empty book context and mounts phase two controls', async () => {
   mockApi(); mount();
   expect(screen.getByLabelText('Book title (optional)')).toBeTruthy();
@@ -57,7 +62,7 @@ test('generation pending and error states preserve input and allow retry', async
   fail(Response.json({ detail: 'Please retry' }, { status: 503 }));
   await screen.findByRole('alert');
   expect((screen.getByLabelText('Page text') as HTMLTextAreaElement).value).toBe('Exact original copy.');
-  expect(screen.getByRole('button', { name: 'Generate options' }).hasAttribute('disabled')).toBe(false);
+  expect(screen.getByRole('button', { name: 'Retry generation' }).hasAttribute('disabled')).toBe(false);
 });
 test('1 selects A while a layout control has focus, and editing text ignores shortcuts', async () => {
   mockApi(true); mount('s1');
@@ -92,4 +97,77 @@ test('debug generation uses the manual API and refresh restores its checkpoint',
   mounted.unmount();
   mount('s1');
   await screen.findByRole('button', { name: 'Run profile' });
+});
+
+test('refresh after failed upload generation reuses saved assets and revision replaces them', async () => {
+  mockApi();
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  const saved = { page_id: 'durable', page_number: 1, text: 'Saved input.', asset_ids: ['uploaded'] };
+  state.active_page = saved;
+  let fail = true;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/assets')) return Response.json({ assets: [{ asset_id: 'replacement' }] });
+    if (String(url).endsWith('/pages')) {
+      const body = JSON.parse(String(init?.body));
+      state.active_page = { ...saved, text: body.text, asset_ids: body.asset_ids };
+      if (fail) return Response.json({ detail: 'Retry this page' }, { status: 503 });
+    }
+    return ordinaryFetch(url, init);
+  });
+  const mounted = mount('s1');
+  await screen.findByDisplayValue('Saved input.');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry generation' }));
+  await screen.findByRole('alert');
+  const attempted = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/pages'));
+  expect(JSON.parse(String(attempted?.[1]?.body))).toEqual({ page_id: 'durable', text: 'Saved input.', asset_ids: ['uploaded'], revise: false });
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/assets'))).toHaveLength(0);
+  mounted.unmount(); mount('s1');
+  await screen.findByDisplayValue('Saved input.');
+  fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Revised input.' } });
+  fireEvent.change(screen.getByLabelText('Page images'), { target: { files: [new File(['image'], 'new.png', { type: 'image/png' })] } });
+  fail = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Generate revised page' }));
+  await screen.findByRole('radio', { name: /Option A/ });
+  const calls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/pages'));
+  expect(JSON.parse(String(calls.at(-1)?.[1]?.body))).toEqual({ page_id: 'durable', text: 'Revised input.', asset_ids: ['replacement'], revise: true });
+});
+
+
+test('saved review can render again after a browser failure without generation', async () => {
+  mockApi(true);
+  canvas.broken = true;
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+  mount('s1');
+  await screen.findByRole('button', { name: 'Reopen saved review' });
+  canvas.broken = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Reopen saved review' }));
+  await screen.findByRole('radio', { name: /Option A/ });
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/pages'))).toBe(false);
+  expect(logged).toHaveBeenCalled();
+});
+
+test('client saves identity and uploaded assets before a lost generation request', async () => {
+  mockApi();
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/assets')) return Response.json({ assets: [{ asset_id: 'saved-upload' }] });
+    if (String(url).endsWith('/pages')) throw new Error('Lost request');
+    return ordinaryFetch(url, init);
+  });
+  const mounted = mount('s1');
+  await screen.findByLabelText('Page text');
+  fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Original before network loss.' } });
+  fireEvent.change(screen.getByLabelText('Page images'), { target: { files: [new File(['image'], 'photo.png', { type: 'image/png' })] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
+  await screen.findByRole('alert');
+  const first = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/pages'));
+  const identity = JSON.parse(String(first?.[1]?.body)).page_id;
+  expect(identity).toBeTruthy();
+  mounted.unmount(); mount('s1');
+  await screen.findByDisplayValue('Original before network loss.');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry generation' }));
+  await screen.findByRole('alert');
+  const calls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/pages'));
+  expect(JSON.parse(String(calls.at(-1)?.[1]?.body))).toEqual({ page_id: identity, text: 'Original before network loss.', asset_ids: ['saved-upload'], revise: false });
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/assets'))).toHaveLength(1);
 });

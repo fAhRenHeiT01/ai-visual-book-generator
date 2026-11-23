@@ -1,6 +1,38 @@
 {
   "components": {
     "schemas": {
+      "ActivePage": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Asset Ids",
+            "type": "array"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_number": {
+            "minimum": 1.0,
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id",
+          "page_number",
+          "text"
+        ],
+        "title": "ActivePage",
+        "type": "object"
+      },
       "AppearanceResponse": {
         "additionalProperties": false,
         "properties": {
@@ -626,6 +658,23 @@
             "title": "Asset Ids",
             "type": "array"
           },
+          "page_id": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Id"
+          },
+          "revise": {
+            "default": false,
+            "title": "Revise",
+            "type": "boolean"
+          },
           "text": {
             "default": "",
             "title": "Text",
@@ -1181,6 +1230,16 @@
       "SessionSnapshot": {
         "additionalProperties": false,
         "properties": {
+          "active_page": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActivePage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "assets": {
             "items": {
               "$ref": "#/components/schemas/ImageAssetMeta"
