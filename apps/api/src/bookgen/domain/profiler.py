@@ -83,13 +83,15 @@ def _profile_image(
             width, height = image.size
             dpi = image.info.get("dpi")
             estimated_dpi = round(min(dpi)) if dpi else None
-            image.thumbnail((config.thumbnail_max_px, config.thumbnail_max_px), Image.Resampling.LANCZOS)
-            thumbnail = BytesIO()
-            if image.mode == "CMYK":
-                with image.convert("RGB") as preview:
-                    preview.save(thumbnail, format="PNG")
-            else:
-                image.save(thumbnail, format="PNG")
+            thumbnail = None
+            if max(width, height) > config.thumbnail_max_px:
+                image.thumbnail((config.thumbnail_max_px, config.thumbnail_max_px), Image.Resampling.LANCZOS)
+                thumbnail = BytesIO()
+                if image.mode == "CMYK":
+                    with image.convert("RGB") as preview:
+                        preview.save(thumbnail, format="PNG")
+                else:
+                    image.save(thumbnail, format="PNG")
     except (UnidentifiedImageError, OSError, SyntaxError) as exc:
         raise ValueError(f"Corrupt or invalid image: {asset_id}") from exc
 
@@ -110,7 +112,7 @@ def _profile_image(
     return ImageAssetMeta(
         asset_id=asset_id,
         storage_key=storage.put(f"originals/{identity}", source.data),
-        thumbnail_key=storage.put(f"thumbnails/{identity}.png", thumbnail.getvalue()),
+        thumbnail_key=storage.put(f"thumbnails/{identity}.png", thumbnail.getvalue()) if thumbnail is not None else None,
         mime_type=mime_type, width_px=width, height_px=height, aspect_ratio=ratio,
         estimated_dpi=estimated_dpi, asset_kind=_classify(source, config), alt_caption=source.alt_caption,
     ), issues

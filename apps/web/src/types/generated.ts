@@ -599,8 +599,11 @@ export interface components {
             mime_type: string;
             /** Storage Key */
             storage_key: string;
-            /** Thumbnail Key */
-            thumbnail_key: string;
+            /**
+             * Thumbnail Key
+             * @default null
+             */
+            thumbnail_key: string | null;
             /** Width Px */
             width_px: number;
         };

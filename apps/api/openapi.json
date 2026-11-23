@@ -709,8 +709,16 @@
             "type": "string"
           },
           "thumbnail_key": {
-            "title": "Thumbnail Key",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Thumbnail Key"
           },
           "width_px": {
             "title": "Width Px",
@@ -720,7 +728,6 @@
         "required": [
           "asset_id",
           "storage_key",
-          "thumbnail_key",
           "mime_type",
           "width_px",
           "height_px",

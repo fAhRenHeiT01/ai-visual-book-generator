@@ -113,7 +113,7 @@ class AtomicTextBlock(StrictModel):
 class ImageAssetMeta(StrictModel):
     asset_id: str
     storage_key: str
-    thumbnail_key: str
+    thumbnail_key: str | None = None
     mime_type: str
     width_px: int
     height_px: int

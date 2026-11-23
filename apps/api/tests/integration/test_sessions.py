@@ -1,11 +1,13 @@
 """FastAPI session lifecycle using the explicit mock provider only."""
 
 from io import BytesIO
+import json
 from pathlib import Path
 import sys
 
 from fastapi.testclient import TestClient
 from PIL import Image
+import pytest
 
 ROOT = Path(__file__).resolve().parents[4]
 sys.path.insert(0, str(ROOT / "apps/api/src"))
@@ -24,6 +26,56 @@ def client(tmp_path):
 def test_sessions_route_is_registered():
     from bookgen.main import create_app
     assert "/api/v1/sessions" in create_app().openapi()["paths"], "sessions route must be registered"
+
+
+def test_original_jpeg_preview_and_optional_thumbnail_survive_reload(tmp_path):
+    from bookgen.schemas import ImageAssetMeta
+
+    raw = BytesIO()
+    Image.new("RGB", (320, 480)).save(raw, "JPEG")
+    with client(tmp_path) as api:
+        session = api.post("/api/v1/sessions", json={}).json()["session_id"]
+        prefix = f"/api/v1/sessions/{session}"
+        asset = api.post(prefix + "/assets", files={"files": ("portrait.jpg", raw.getvalue(), "image/jpeg")}).json()["assets"][0]
+        assert asset.get("thumbnail_key") is None
+        # Persist a canonical record with the optional key entirely absent.
+        del asset["thumbnail_key"]
+        assert ImageAssetMeta.model_validate(asset).thumbnail_key is None
+        connection = api.app.state.get_workflow().repository._connection
+        with connection:
+            connection.execute("UPDATE session_assets SET payload=? WHERE session_id=? AND asset_id=?",
+                               (json.dumps(asset), session, asset["asset_id"]))
+    with client(tmp_path) as api:
+        for suffix in ("", "?thumbnail=true"):
+            response = api.get(prefix + f"/assets/{asset['asset_id']}" + suffix)
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "image/jpeg"
+            assert response.content == raw.getvalue()
+        generated = api.post(prefix + "/pages", json={"text": "Exact source copy.", "asset_ids": [asset["asset_id"]]})
+        assert generated.status_code == 201
+        assert generated.json()["input_assets"][0]["thumbnail_key"] is None
+
+
+@pytest.mark.parametrize("preview_format,preview_mime", [("PNG", "image/png"), ("JPEG", "image/jpeg")])
+def test_legacy_stored_thumbnail_is_served_with_actual_mime(tmp_path, preview_format, preview_mime):
+    from bookgen.schemas import ImageAssetMeta
+
+    original, preview = BytesIO(), BytesIO()
+    Image.new("RGB", (320, 200)).save(original, "JPEG")
+    Image.new("RGB", (160, 100)).save(preview, preview_format)
+    with client(tmp_path) as api:
+        session = api.post("/api/v1/sessions", json={}).json()["session_id"]
+        service = api.app.state.get_workflow()
+        asset = ImageAssetMeta(asset_id="old", storage_key=service.storage.put("legacy/original", original.getvalue()),
+                               thumbnail_key=service.storage.put("legacy/preview", preview.getvalue()),
+                               mime_type="image/jpeg", width_px=320, height_px=200, aspect_ratio=1.6)
+        service.repository.save_assets(session, [asset])
+    with client(tmp_path) as api:
+        response = api.get(f"/api/v1/sessions/{session}/assets/old?thumbnail=true")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == preview_mime
+        assert response.content == preview.getvalue()
+        assert api.get(f"/api/v1/sessions/{session}/assets/old").content == original.getvalue()
 
 
 def test_create_upload_generate_events_select_and_reload(tmp_path):

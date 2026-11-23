@@ -1,10 +1,12 @@
 """Versioned session endpoints backed by durable page graph checkpoints."""
 
 import json
+from io import BytesIO
 from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response, StreamingResponse
+from PIL import Image
 
 from bookgen.graph.workflow import PageConflict
 from bookgen.domain.profiler import ImageInput, profile_content
@@ -59,8 +61,11 @@ async def get_asset(session_id: str, asset_id: str, request: Request, thumbnail:
     asset = next((asset for asset in snapshot.assets if asset.asset_id == asset_id), None)
     if asset is None:
         raise HTTPException(404, "Asset not found")
-    return Response(workflow(request).storage.get(asset.thumbnail_key if thumbnail else asset.storage_key),
-                    media_type="image/png" if thumbnail else asset.mime_type)
+    key = asset.thumbnail_key if thumbnail and asset.thumbnail_key else asset.storage_key
+    data = workflow(request).storage.get(key)
+    with Image.open(BytesIO(data)) as image:
+        mime_type = Image.MIME[image.format]
+    return Response(data, media_type=mime_type)
 
 
 @router.post("/{session_id}/pages", response_model=PageGenerationResult, status_code=201)

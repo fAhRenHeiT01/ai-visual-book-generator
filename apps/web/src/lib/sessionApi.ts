@@ -45,7 +45,13 @@ export const sessionApi = {
   },
   generate: (id: string, text: string, asset_ids: string[], page_id?: string, revise = false) => request<S['PageGenerationResult']>(prefix(id) + '/pages', json({ text, asset_ids, page_id, revise })),
   select: (id: string, page: string, option_id: 'option_a' | 'option_b') => request<S['PageGenerationResult']>(prefix(id) + `/pages/${encodeURIComponent(page)}/selection`, json({ option_id })),
-  browserPage: (id: string, page: S['PageGenerationResult']): S['PageGenerationResult'] => ({ ...page, input_assets: page.input_assets.map(asset => ({ ...asset, storage_key: apiOrigin + prefix(id) + `/assets/${encodeURIComponent(asset.asset_id)}` })) }),
+  browserPage: (id: string, page: S['PageGenerationResult'], purpose: 'preview' | 'print' = 'preview'): S['PageGenerationResult'] => ({
+    ...page,
+    input_assets: page.input_assets.map(asset => {
+      const original = apiOrigin + prefix(id) + `/assets/${encodeURIComponent(asset.asset_id)}`;
+      return { ...asset, storage_key: original, thumbnail_key: purpose === 'preview' && asset.thumbnail_key ? original + '?thumbnail=true' : null };
+    }),
+  }),
   review: (id: string, page: string, committed: () => void) => {
     if (typeof EventSource === 'undefined') return () => {};
     const stream = new EventSource(apiOrigin + prefix(id) + `/pages/${encodeURIComponent(page)}/events`);

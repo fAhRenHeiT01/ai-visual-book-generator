@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { ComponentType } from "react";
 import type { components } from "../../src/types/generated";
+import { sessionApi } from "../../src/lib/sessionApi";
 
 type S = components["schemas"];
 type CanvasProps = { result: S["PageGenerationResult"]; tokens: S["DesignTokens"]; layout?: S["PageLayoutAST"]; pageSize?: S["PageSize"]; chrome?: { config?: S["MasterChromeConfig"]; pageNumber?: number; totalPages?: number; chapterTitle?: string; isCover?: boolean } };
@@ -42,6 +43,26 @@ function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("PageCanvas", () => {
+  test("review and draft use screen derivatives while print keeps original URLs", () => {
+    const result = fixture("chart_focus_band", ["chart", "diagram", "photo"]);
+    // Old assets retain their derivative even when their dimensions are small.
+    result.input_assets[0].width_px = 320;
+    result.input_assets[1].thumbnail_key = null;
+    Reflect.deleteProperty(result.input_assets[2], "thumbnail_key");
+    const before = JSON.stringify(result);
+    const preview = sessionApi.browserPage("session 1", result);
+    const base = "/api/v1/sessions/session%201/assets/";
+    const { container } = mount(preview);
+    const images = screen.getAllByRole("img");
+    expect(images.map(image => image.getAttribute("src"))).toEqual([base + "a0", base + "a1", base + "a2"]);
+    expect(container.querySelector("source")?.getAttribute("srcset")).toBe(base + "a0?thumbnail=true");
+    expect(container.querySelector("source")?.getAttribute("media")).toBe("screen");
+    expect(container.querySelectorAll("source")).toHaveLength(1);
+    const printed = sessionApi.browserPage("session 1", result, "print");
+    expect(printed.input_assets.every(asset => !asset.thumbnail_key)).toBe(true);
+    expect(printed.input_assets.map(asset => asset.storage_key)).toEqual([base + "a0", base + "a1", base + "a2"]);
+    expect(JSON.stringify(result)).toBe(before);
+  });
   test.each(Object.keys(shapes) as S["LayoutArchetype"][])("renders %s pointers, exact excerpts and assets in reading order", async (archetype) => {
     const result = fixture(archetype);
     const before = JSON.stringify(result);

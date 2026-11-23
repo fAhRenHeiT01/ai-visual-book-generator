@@ -10,9 +10,12 @@ export function ImageFrame({ asset, objectFit, fullBleed = false }: {
   const fit = !protectedMedia && objectFit === "cover" ? "object-cover" : "object-contain";
   return (
     <figure className={`image-frame ${background ? "photo-background" : ""}`} data-protected-media={protectedMedia}>
-      {/* The original asset is used for preview and print; thumbnails are only for provider context. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={asset.storage_key} alt={asset.alt_caption} className={fit} loading="eager" decoding="sync" />
+      <picture>
+        {/* Browser printing selects the original when the screen source no longer matches. */}
+        {asset.thumbnail_key && <source media="screen" srcSet={asset.thumbnail_key} />}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={asset.storage_key} alt={asset.alt_caption} className={fit} loading="eager" decoding="sync" />
+      </picture>
       {background && <span className="photo-scrim" data-scrim aria-hidden="true" />}
     </figure>
   );
