@@ -16,11 +16,15 @@ from .nodes import PageNodes
 from .state import PageState
 
 
-def build_page_graph(*, provider, repository, storage, settings, checkpointer):
+def build_page_graph(*, provider, repository, storage, settings, checkpointer, manual_debug=False):
     nodes = PageNodes(provider=provider, repository=repository, storage=storage, settings=settings)
     builder = StateGraph(PageState)
     for name in ("profile", "compliance_metrics_scan", "generate_candidates", "validate", "repair", "fallback", "build_review", "human_review_interrupt", "commit_page"):
-        builder.add_node(name, getattr(nodes, name))
+        action = getattr(nodes, name)
+        if manual_debug:
+            from .debug import inspect_node
+            action = inspect_node(name, action, provider)
+        builder.add_node(name, action)
     builder.add_edge(START, "profile")
     builder.add_edge("profile", "compliance_metrics_scan")
     builder.add_edge("compliance_metrics_scan", "generate_candidates")
@@ -31,7 +35,9 @@ def build_page_graph(*, provider, repository, storage, settings, checkpointer):
     builder.add_edge("build_review", "human_review_interrupt")
     builder.add_edge("human_review_interrupt", "commit_page")
     builder.add_edge("commit_page", END)
-    return builder.compile(checkpointer=checkpointer)
+    return builder.compile(checkpointer=checkpointer,
+        interrupt_before=["profile"] if manual_debug else None,
+        interrupt_after="*" if manual_debug else None)
 
 
 class PageWorkflow:
@@ -41,11 +47,18 @@ class PageWorkflow:
         self.storage = storage
         self.settings = settings
         self._locks = defaultdict(asyncio.Lock)
+        from .debug import PageDebugger
+        self.debugger = PageDebugger(self)
 
     @asynccontextmanager
-    async def _graph(self):
+    async def _graph(self, *, manual_debug=False):
+        provider = self.provider
+        if manual_debug:
+            from bookgen.adapters.llm.manual import ManualLLMProvider
+            provider = ManualLLMProvider(storage=self.storage, settings=self.settings)
         async with AsyncSqliteSaver.from_conn_string(self.repository.path) as saver:
-            yield build_page_graph(provider=self.provider, repository=self.repository, storage=self.storage, settings=self.settings, checkpointer=saver)
+            yield build_page_graph(provider=provider, repository=self.repository, storage=self.storage, settings=self.settings,
+                checkpointer=saver, manual_debug=manual_debug)
 
     @staticmethod
     def _config(session_id):
@@ -53,7 +66,8 @@ class PageWorkflow:
 
     def create_session(self, context=None):
         context = context or BookContext()
-        return SessionSnapshot(session_id=self.repository.create_session(context), context=context)
+        return SessionSnapshot(session_id=self.repository.create_session(context), context=context,
+            debug_enabled=self.settings.app.debug_mode)
 
     async def snapshot(self, session_id):
         context = self.repository.load_context(session_id)
@@ -62,12 +76,16 @@ class PageWorkflow:
             checkpoint = await graph.aget_state(self._config(session_id))
         values = checkpoint.values
         result = values.get("result")
-        pending = PageGenerationResult.model_validate(result) if result and checkpoint.next else None
+        paused = bool(checkpoint.next or any(task.interrupts for task in checkpoint.tasks))
+        pending = PageGenerationResult.model_validate(result) if result and paused and not result.get("selected_option_id") else None
         return SessionSnapshot(session_id=session_id, context=context, pending_review=pending,
+            debug_enabled=self.settings.app.debug_mode, debug_active=bool(values.get("debug_mode") and paused),
             committed_pages=committed, current_page_index=len(committed) + 1,
             rolling_layout_history=values.get("rolling_layout_history", []), assets=self.repository.load_assets(session_id))
 
     async def generate(self, session_id, *, text, assets=()):
+        if self.settings.app.debug_mode:
+            raise ValueError("Use the debug page endpoint while debug mode is enabled")
         async with self._locks[session_id]:
             snapshot = await self.snapshot(session_id)
             if snapshot.pending_review is not None:
@@ -75,9 +93,9 @@ class PageWorkflow:
             async with self._graph() as graph:
                 checkpoint = await graph.aget_state(self._config(session_id))
                 # Refuse to overwrite a checkpoint if an earlier generation failed mid-node.
-                if checkpoint.next:
+                if checkpoint.next or any(task.interrupts for task in checkpoint.tasks):
                     raise ValueError("A pending generation must be resumed before creating another page")
-                state = {"session_id": session_id, "context": snapshot.context.model_dump(mode="json"), "text": text,
+                state = {"debug_mode": False, "session_id": session_id, "context": snapshot.context.model_dump(mode="json"), "text": text,
                     "assets": [asset.model_dump(mode="json") for asset in assets], "page_id": uuid4().hex,
                     "page_number": snapshot.current_page_index, "current_page_index": snapshot.current_page_index,
                     "rolling_layout_history": [archetype.value for archetype in snapshot.rolling_layout_history],
@@ -90,6 +108,8 @@ class PageWorkflow:
             raise ValueError("Invalid selection")
         async with self._locks[session_id]:
             snapshot = await self.snapshot(session_id)
+            if snapshot.debug_active:
+                raise ValueError("Resume this page through the debug step endpoint")
             committed = next((page for page in snapshot.committed_pages if page.page_id == page_id), None)
             if committed is not None:
                 if committed.selected_option_id != option_id:

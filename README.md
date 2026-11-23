@@ -111,6 +111,68 @@ Open [http://localhost:3000](http://localhost:3000) in your browser. Use `localh
 
 To run without a Google key, set `BOOKGEN__LLM__PROVIDER=mock` in terminal 1 instead; generated content will use the mock provider. For Vertex AI, set `BOOKGEN__LLM__TRANSPORT_MODE=vertex` and configure Google Cloud Application Default Credentials with `gcloud auth application-default login`.
 
+## Manual DEBUG mode
+
+Enable the node-by-node debugger in the API terminal before starting or restarting
+the API. It defaults to off and does not require a Gemini key:
+
+```powershell
+$env:BOOKGEN__APP__DEBUG_MODE = "true"
+$env:PYTHONPATH = (Resolve-Path apps/api/src).Path
+.\.venv\Scripts\python.exe -m uvicorn bookgen.main:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+On macOS/Linux, set `BOOKGEN__APP__DEBUG_MODE=true` before the normal API command.
+Start the web app as usual. Create or reopen a book and generate a page:
+
+1. The studio's **DEBUG · manual graph** panel pauses before `profile` and after
+   every completed graph node. Inspect **Node input**, **Node output**, and
+   **Current graph state**, then click **Run <node>** to advance.
+2. At `generate_candidates`, click **Copy prompt** and paste into a separate chat.
+   **Chat prompt** contains the actual system and strategy instruction text,
+   global book context and semantic design grammar, bounded page/history data,
+   and response JSON schema. These come from the same request used by the live
+   provider. The chat version combines the system/user instructions and schema
+   into one message; it does not include the SDK envelope or generation settings.
+   If images are present, download the listed thumbnails and attach them to that
+   chat in order. They are the same PNG thumbnails supplied to the provider,
+   at most 768px; base64 image bytes are kept out of the copied prompt.
+3. Paste the chat's returned `PageLayoutAST` JSON into **Manual LLM response**.
+   The prompt asks for one JSON object without Markdown fences. Submit A, then B.
+   The debug service makes no provider calls, including when `LLM.PROVIDER` is `mock`.
+4. Advance `validate` to inspect schema/content errors. Repair requests use the
+   same manual copy/paste flow and include the candidate and validation issues.
+   Malformed JSON is retained for inspection and follows the configured repair
+   cap and validated fallback. The debugger does not bypass validators.
+5. Inspect **Theme tokens and semantic placeholders** for token values, CSS
+   variables, renderer surface classes, and header/footer templates such as
+   `{page_number}` and `{total_pages}`. Layouts still use semantic roles such as
+   `brand_dark`; actual colors remain in the renderer's theme. At human review,
+   compare the real rendered A/B previews and confirm a selection. Click
+   **Run commit_page** separately to save the page.
+
+Checkpoints and submitted responses persist in SQLite. Reload the page, use
+**Reload checkpoint**, or restart the API with debug enabled to resume. Each
+action is tied to the current pause; stale submissions return a conflict instead
+of advancing another request. Finish an existing pending page before switching
+between normal generation and debugging. To return to normal mode, set
+`BOOKGEN__APP__DEBUG_MODE=false` and restart the API.
+
+The same flow is available through JSON endpoints under
+`/api/v1/sessions/{session_id}` (also listed in `/docs`):
+
+| Method | Path | Input / result |
+| --- | --- | --- |
+| `POST` | `/debug/pages` | Normal page input `{ "text": "Original copy", "asset_ids": [] }`; returns the first paused checkpoint |
+| `GET` | `/debug` | Current state, last node input/output, pending `interrupts[].prompt` and separate `images` attachments or review, theme tokens, and opaque `checkpoint_id` |
+| `POST` | `/debug/step` | `{ "checkpoint_id": "<latest>" }` at a node boundary; add `"response": "<raw JSON text>"` at an LLM pause or `"response": "option_a"` / `"option_b"` at review |
+
+Always use the latest returned `checkpoint_id`, including between A and B.
+Debug endpoints return `403` when the mode is disabled. While enabled, normal
+`POST /pages` returns `409` and the studio uses `/debug/pages` automatically.
+Inspection includes source text and manual responses, so use this mode in your
+local development environment.
+
 ## Configuration
 
 Configuration is loaded from `config/*.yaml` and validated with strict Pydantic settings. Environment variables use the `BOOKGEN__` prefix and `__` for nested fields; environment values override YAML. For example:

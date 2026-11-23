@@ -8,10 +8,12 @@ import { ComplianceBanner } from '../compliance/ComplianceBanner';
 import { DraftViewer } from '../draft/DraftViewer';
 import { PageComposer } from './PageComposer';
 import { OptionComparison } from './OptionComparison';
+import { DebugPanel } from './DebugPanel';
 type S = components['schemas'];
 export function Studio({ sessionId }: { sessionId?: string }) {
   const [session, setSession] = useState<S['SessionSnapshot']>();
   const [appearance, setAppearance] = useState<S['AppearanceResponse']>();
+  const [debug, setDebug] = useState<S['DebugSnapshot']>();
   const [status, setStatus] = useState(sessionId ? 'Loading book…' : '');
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -19,13 +21,18 @@ export function Studio({ sessionId }: { sessionId?: string }) {
   useEffect(() => {
     if (!sessionId) return;
     let active = true;
-    Promise.all([sessionApi.load(sessionId), sessionApi.appearance(sessionId)]).then(([snapshot, theme]) => {
-      if (active) { setSession(snapshot); setAppearance(theme); setStatus(''); setError(''); }
+    Promise.all([sessionApi.load(sessionId), sessionApi.appearance(sessionId)]).then(async ([snapshot, theme]) => {
+      const checkpoint = snapshot.debug_enabled ? await sessionApi.debug(sessionId) : undefined;
+      if (active) { setSession(snapshot); setAppearance(theme); setDebug(checkpoint); setStatus(''); setError(''); }
     }).catch((cause: Error) => { if (active) { setError(cause.message); setStatus(''); } });
     return () => { active = false; };
   }, [sessionId, retry]);
   const refresh = useCallback(async () => {
-    if (session) setSession(await sessionApi.load(session.session_id));
+    if (session) {
+      const snapshot = await sessionApi.load(session.session_id);
+      const checkpoint = snapshot.debug_enabled ? await sessionApi.debug(session.session_id) : undefined;
+      setSession(snapshot); setDebug(checkpoint);
+    }
   }, [session]);
   const pendingId = session?.pending_review?.page_id;
   useEffect(() => {
@@ -37,6 +44,16 @@ export function Studio({ sessionId }: { sessionId?: string }) {
     try { await action(); } catch (cause) { setError(cause instanceof Error ? cause.message : 'Please retry.'); }
     finally { locked.current = false; setStatus(''); }
   }
+  function debugStep(response?: string) {
+    if (!session || !debug?.checkpoint_id) return;
+    void run('Advancing graph…', async () => {
+      const checkpoint = await sessionApi.debugStep(session.session_id, debug.checkpoint_id!, response);
+      setDebug(checkpoint);
+      setSession(await sessionApi.load(session.session_id));
+    });
+  }
+  const debugging = debug?.status === 'paused';
+  const debugReview = debugging && debug.interrupts?.[0]?.event === 'review';
   return <main className="studio">
     <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && <p>Saved automatically · <a href={`/sessions/${session.session_id}`}>Reopen this book</a></p>}</header>
     {status && <p className="studio-controls" role="status">{status}</p>}
@@ -44,16 +61,23 @@ export function Studio({ sessionId }: { sessionId?: string }) {
     {!session && !sessionId && <div className="studio-controls"><BookSetup busy={!!status} onCreate={context => { void run('Creating book…', async () => {
       const created = await sessionApi.create(context);
       const theme = await sessionApi.appearance(created.session_id);
-      setSession(created); setAppearance(theme); window.history.pushState(null, '', `/sessions/${created.session_id}`);
+      const checkpoint = created.debug_enabled ? await sessionApi.debug(created.session_id) : undefined;
+      setSession(created); setAppearance(theme); setDebug(checkpoint); window.history.pushState(null, '', `/sessions/${created.session_id}`);
     }); }} /></div>}
-    <ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} />
+    <ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.debug_active || !!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} />
     <ComplianceBanner sessionId={session?.session_id} snapshot={session} onDecision={refresh} />
     {session && appearance && <>
-      {session.pending_review ? <OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { void run('Saving selection…', async () => {
+      {session.debug_enabled && debug && <DebugPanel key={debug.checkpoint_id} snapshot={{ ...debug, appearance }} busy={!!status} onStep={debugStep} onReload={() => { void run('Reloading checkpoint…', refresh); }} />}
+      {debugging && !debugReview ? null : session.pending_review ? <OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
         await sessionApi.select(session.session_id, session.pending_review!.page_id, choice);
         await refresh();
       }); }} /> : <PageComposer key={session.current_page_index} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files) => { await run('Generating options…', async () => {
         const assets = files.length ? (await sessionApi.upload(session.session_id, files)).assets : [];
+        if (session.debug_enabled) {
+          setDebug(await sessionApi.debugStart(session.session_id, text, assets.map(asset => asset.asset_id)));
+          setSession(await sessionApi.load(session.session_id));
+          return;
+        }
         const page = await sessionApi.generate(session.session_id, text, assets.map(asset => asset.asset_id));
         setSession({ ...session, pending_review: page });
       }); }} />}

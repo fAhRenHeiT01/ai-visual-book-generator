@@ -138,6 +138,11 @@ async def test_real_sdk_boundary_uses_structured_schema_and_inline_images(tmp_pa
     kwargs = dict(context=BookContext(title="Fixed global"), blocks=source.blocks, assets=source.assets, strategy_tag="editorial_visual")
     assert isinstance(await provider.generate_candidate(**kwargs), PageLayoutAST)
     request = requests[0]
+    inspected = provider.api_payload(provider._request(**kwargs))
+    assert inspected["system_instruction"] == request["config"].system_instruction
+    assert inspected["generation_config"]["response_json_schema"] == request["config"].response_json_schema
+    assert inspected["contents"][0]["parts"][0]["text"] == request["contents"][0].text
+    assert base64.b64decode(inspected["contents"][0]["parts"][1]["inline_data"]["data"]) == request["contents"][1].inline_data.data
     assert request["config"].response_schema is None
     assert request["config"].response_json_schema["additionalProperties"] is False
     assert "option_id" in request["config"].response_json_schema["properties"]

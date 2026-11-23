@@ -34,6 +34,8 @@ class AssetUploadResponse(StrictModel):
 
 class SessionSnapshot(StrictModel):
     session_id: str
+    debug_enabled: bool = False
+    debug_active: bool = False
     context: BookContext
     current_page_index: int = Field(default=1, ge=1)
     pending_review: PageGenerationResult | None = None

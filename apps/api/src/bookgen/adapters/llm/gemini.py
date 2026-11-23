@@ -127,17 +127,12 @@ class GeminiProvider:
         # Credentials stay in the SDK's environment/ADC chain, outside checkpoints.
         if self.client is None:
             self.client = genai.Client(vertexai=self.settings.llm.transport_mode == "vertex")
-        payload = json.loads(json.dumps(request["context"]))
-        payload.pop("global_book_context")
-        images = []
-        for asset in payload["current_page_payload"]["assets"]:
-            inline = asset.pop("inline_data")
-            images.append(types.Part.from_bytes(data=base64.b64decode(inline["data"]), mime_type=inline["mime_type"]))
-        content = {"strategy_directive": request["strategy_directive"], "context": payload}
-        if "repair" in request:
-            content.update(repair_directive=request["repair_directive"], repair=request["repair"])
-        config = dict(temperature=request["temperature"], response_mime_type="application/json",
-                      response_json_schema=_gemini_json_schema(request["response_schema"]))
+        payload = self.api_payload(request)
+        parts = payload["contents"][0]["parts"]
+        contents = [types.Part.from_text(text=parts[0]["text"])]
+        contents.extend(types.Part.from_bytes(data=base64.b64decode(part["inline_data"]["data"]),
+            mime_type=part["inline_data"]["mime_type"]) for part in parts[1:])
+        config = payload["generation_config"]
         if self.settings.llm.explicit_cache and request["cache_ttl_seconds"]:
             async with self._cache_lock:
                 entry = self._caches.get(request["cache_key"])
@@ -148,10 +143,29 @@ class GeminiProvider:
                     self._caches[request["cache_key"]] = entry
                 config["cached_content"] = entry[0]
         else:
-            config["system_instruction"] = request["cache_prefix"]
+            config["system_instruction"] = payload["system_instruction"]
         response = await self.client.aio.models.generate_content(model=request["model"],
-            contents=[types.Part.from_text(text=json.dumps(content)), *images], config=types.GenerateContentConfig(**config))
+            contents=contents, config=types.GenerateContentConfig(**config))
         return response.parsed if response.parsed is not None else response.text
+
+    @staticmethod
+    def api_payload(request):
+        """The effective uncached SDK input; also usable without SDK credentials.
+
+        Cache identifiers are deliberately excluded: the full system instruction
+        replaces a cache reference so the inspected request is self-contained.
+        """
+        context = json.loads(json.dumps(request["context"]))
+        context.pop("global_book_context")
+        images = [{"inline_data": asset.pop("inline_data")} for asset in context["current_page_payload"]["assets"]]
+        content = {"strategy_directive": request["strategy_directive"], "context": context}
+        if "repair" in request:
+            content.update(repair_directive=request["repair_directive"], repair=request["repair"])
+        return {"model": request["model"], "transport_mode": request["transport_mode"],
+            "system_instruction": request["cache_prefix"],
+            "contents": [{"role": "user", "parts": [{"text": json.dumps(content)}, *images]}],
+            "generation_config": {"temperature": request["temperature"], "response_mime_type": "application/json",
+                "response_json_schema": _gemini_json_schema(request["response_schema"])}}
 
     async def close(self):
         if self.client is not None:

@@ -70,3 +70,26 @@ test('1 selects A while a layout control has focus, and editing text ignores sho
   fireEvent.keyDown(text, { key: '2' });
   expect(screen.queryByRole('radio')).toBeNull();
 });
+
+test('debug generation uses the manual API and refresh restores its checkpoint', async () => {
+  mockApi();
+  state.debug_enabled = true;
+  const debug = { session_id: 's1', checkpoint_id: 'cp', status: 'paused', next_nodes: ['profile'], last_node: null,
+    state: { text: 'Manual source' }, node_input: {}, node_output: {}, interrupts: [], appearance: { tokens: {} } };
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/debug/pages')) { state.debug_active = true; return Response.json(debug); }
+    if (String(url).endsWith('/debug')) return Response.json(state.debug_active ? debug : { ...debug, status: 'idle', next_nodes: [] });
+    return ordinaryFetch(url, init);
+  });
+  const mounted = mount('s1');
+  await screen.findByLabelText('Page text');
+  fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Manual source' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
+  await screen.findByRole('button', { name: 'Run profile' });
+  expect(screen.queryByLabelText('Page text')).toBeNull();
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/debug/pages'))).toBe(true);
+  mounted.unmount();
+  mount('s1');
+  await screen.findByRole('button', { name: 'Run profile' });
+});

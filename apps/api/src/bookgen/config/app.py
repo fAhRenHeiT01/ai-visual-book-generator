@@ -6,6 +6,7 @@ from .base import StrictConfig
 
 
 class AppConfig(StrictConfig):
+    debug_mode: bool = False
     storage_root: Path
     sqlite_uri: str = Field(min_length=1)
     cors_origins: list[str] = Field(min_length=1)

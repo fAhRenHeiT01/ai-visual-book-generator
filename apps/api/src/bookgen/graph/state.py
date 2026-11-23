@@ -4,6 +4,11 @@ from typing import Any, TypedDict
 
 
 class PageState(TypedDict, total=False):
+    debug_mode: bool
+    debug_last_node: str | None
+    debug_node_input: dict[str, Any]
+    debug_node_output: dict[str, Any]
+    debug_exchanges: list[dict[str, Any]]
     session_id: str
     context: dict[str, Any]
     text: str
@@ -17,7 +22,7 @@ class PageState(TypedDict, total=False):
     validation_issues: list[dict[str, Any]]
     repair_attempts: int
     used_fallback: bool
-    result: dict[str, Any]
+    result: dict[str, Any] | None
     selection: str
     current_page_index: int
     rolling_layout_history: list[str]

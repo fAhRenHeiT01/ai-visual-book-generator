@@ -124,6 +124,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/debug": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Inspect Debug */
+        get: operations["inspect_debug_api_v1_sessions__session_id__debug_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/debug/pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Debug */
+        post: operations["start_debug_api_v1_sessions__session_id__debug_pages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/debug/step": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Step Debug */
+        post: operations["step_debug_api_v1_sessions__session_id__debug_step_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/export": {
         parameters: {
             query?: never;
@@ -364,6 +415,84 @@ export interface components {
         /** CreateSessionRequest */
         CreateSessionRequest: {
             context?: components["schemas"]["BookContext"];
+        };
+        /** DebugImageAttachment */
+        DebugImageAttachment: {
+            /** Asset Id */
+            asset_id: string;
+            /**
+             * Data
+             * @description Base64-encoded provider thumbnail to attach beside the chat prompt.
+             */
+            data: string;
+            /**
+             * Mime Type
+             * @constant
+             */
+            mime_type: "image/png";
+        };
+        /** DebugInterrupt */
+        DebugInterrupt: {
+            /**
+             * Event
+             * @enum {string}
+             */
+            event: "llm_request" | "review";
+            /** Images */
+            images?: components["schemas"]["DebugImageAttachment"][];
+            /** Option Id */
+            option_id?: string | null;
+            page?: components["schemas"]["PageGenerationResult"] | null;
+            /**
+             * Prompt
+             * @description Copyable chat prompt containing the actual instructions, context and response schema.
+             */
+            prompt?: string | null;
+            /** Request */
+            request?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** DebugSnapshot */
+        DebugSnapshot: {
+            appearance: components["schemas"]["AppearanceResponse"];
+            /** Checkpoint Id */
+            checkpoint_id?: string | null;
+            /** Interrupts */
+            interrupts?: components["schemas"]["DebugInterrupt"][];
+            /** Last Node */
+            last_node?: string | null;
+            /** Next Nodes */
+            next_nodes?: string[];
+            /** Node Input */
+            node_input?: {
+                [key: string]: unknown;
+            };
+            /** Node Output */
+            node_output?: {
+                [key: string]: unknown;
+            };
+            /** Session Id */
+            session_id: string;
+            /** State */
+            state?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "idle" | "paused" | "completed";
+        };
+        /** DebugStepRequest */
+        DebugStepRequest: {
+            /** Checkpoint Id */
+            checkpoint_id: string;
+            /**
+             * Response
+             * @description Unmodified LLM JSON text, or option_a/option_b at review. Omit at node boundaries.
+             */
+            response?: string | null;
         };
         /** DesignTokens */
         DesignTokens: {
@@ -689,6 +818,16 @@ export interface components {
              * @default 1
              */
             current_page_index: number;
+            /**
+             * Debug Active
+             * @default false
+             */
+            debug_active: boolean;
+            /**
+             * Debug Enabled
+             * @default false
+             */
+            debug_enabled: boolean;
             pending_review?: components["schemas"]["PageGenerationResult"] | null;
             /** Rolling Layout History */
             rolling_layout_history?: components["schemas"]["LayoutArchetype"][];
@@ -1008,6 +1147,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComplianceReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inspect_debug_api_v1_sessions__session_id__debug_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebugSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_debug_api_v1_sessions__session_id__debug_pages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GeneratePageRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebugSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    step_debug_api_v1_sessions__session_id__debug_step_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DebugStepRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DebugSnapshot"];
                 };
             };
             /** @description Validation Error */

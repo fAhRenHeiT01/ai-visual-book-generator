@@ -333,6 +333,208 @@
         "title": "CreateSessionRequest",
         "type": "object"
       },
+      "DebugImageAttachment": {
+        "additionalProperties": false,
+        "properties": {
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "data": {
+            "description": "Base64-encoded provider thumbnail to attach beside the chat prompt.",
+            "title": "Data",
+            "type": "string"
+          },
+          "mime_type": {
+            "const": "image/png",
+            "title": "Mime Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "asset_id",
+          "mime_type",
+          "data"
+        ],
+        "title": "DebugImageAttachment",
+        "type": "object"
+      },
+      "DebugInterrupt": {
+        "additionalProperties": false,
+        "properties": {
+          "event": {
+            "enum": [
+              "llm_request",
+              "review"
+            ],
+            "title": "Event",
+            "type": "string"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/DebugImageAttachment"
+            },
+            "title": "Images",
+            "type": "array"
+          },
+          "option_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Id"
+          },
+          "page": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageGenerationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Copyable chat prompt containing the actual instructions, context and response schema.",
+            "title": "Prompt"
+          },
+          "request": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request"
+          }
+        },
+        "required": [
+          "event"
+        ],
+        "title": "DebugInterrupt",
+        "type": "object"
+      },
+      "DebugSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "appearance": {
+            "$ref": "#/components/schemas/AppearanceResponse"
+          },
+          "checkpoint_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkpoint Id"
+          },
+          "interrupts": {
+            "items": {
+              "$ref": "#/components/schemas/DebugInterrupt"
+            },
+            "title": "Interrupts",
+            "type": "array"
+          },
+          "last_node": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Node"
+          },
+          "next_nodes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Next Nodes",
+            "type": "array"
+          },
+          "node_input": {
+            "additionalProperties": true,
+            "title": "Node Input",
+            "type": "object"
+          },
+          "node_output": {
+            "additionalProperties": true,
+            "title": "Node Output",
+            "type": "object"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "state": {
+            "additionalProperties": true,
+            "title": "State",
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "idle",
+              "paused",
+              "completed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "status",
+          "appearance"
+        ],
+        "title": "DebugSnapshot",
+        "type": "object"
+      },
+      "DebugStepRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "checkpoint_id": {
+            "minLength": 1,
+            "title": "Checkpoint Id",
+            "type": "string"
+          },
+          "response": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Unmodified LLM JSON text, or option_a/option_b at review. Omit at node boundaries.",
+            "title": "Response"
+          }
+        },
+        "required": [
+          "checkpoint_id"
+        ],
+        "title": "DebugStepRequest",
+        "type": "object"
+      },
       "DesignTokens": {
         "additionalProperties": false,
         "properties": {
@@ -1002,6 +1204,16 @@
             "title": "Current Page Index",
             "type": "integer"
           },
+          "debug_active": {
+            "default": false,
+            "title": "Debug Active",
+            "type": "boolean"
+          },
+          "debug_enabled": {
+            "default": false,
+            "title": "Debug Enabled",
+            "type": "boolean"
+          },
           "pending_review": {
             "anyOf": [
               {
@@ -1557,6 +1769,152 @@
         "summary": "Decide Compliance",
         "tags": [
           "compliance"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/debug": {
+      "get": {
+        "operationId": "inspect_debug_api_v1_sessions__session_id__debug_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inspect Debug",
+        "tags": [
+          "debug"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/debug/pages": {
+      "post": {
+        "operationId": "start_debug_api_v1_sessions__session_id__debug_pages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Debug",
+        "tags": [
+          "debug"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/debug/step": {
+      "post": {
+        "operationId": "step_debug_api_v1_sessions__session_id__debug_step_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DebugStepRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DebugSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Step Debug",
+        "tags": [
+          "debug"
         ]
       }
     },

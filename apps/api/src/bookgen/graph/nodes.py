@@ -75,6 +75,9 @@ class PageNodes:
                 return {"option_id": option_id, "invalid_response": str(exc)}
 
     async def generate_candidates(self, state):
+        if state.get("debug_mode"):
+            # Ordered interrupts have stable resume positions across node replay.
+            return {"options": [await self._candidate(state, 0), await self._candidate(state, 1)]}
         return {"options": list(await asyncio.gather(self._candidate(state, 0), self._candidate(state, 1)))}
 
     def validate(self, state):
@@ -82,6 +85,9 @@ class PageNodes:
         return {"validation_issues": [issue.model_dump(mode="json") for issue in issues]}
 
     async def repair(self, state):
+        if state.get("debug_mode"):
+            return {"options": [await self._candidate(state, 0, repair=True), await self._candidate(state, 1, repair=True)],
+                    "repair_attempts": state["repair_attempts"] + 1}
         return {"options": list(await asyncio.gather(self._candidate(state, 0, repair=True), self._candidate(state, 1, repair=True))),
                 "repair_attempts": state["repair_attempts"] + 1}
 

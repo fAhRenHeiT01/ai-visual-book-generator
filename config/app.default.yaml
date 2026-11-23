@@ -1,4 +1,5 @@
 storage_root: uploads
+debug_mode: false
 sqlite_uri: sqlite:///./bookgen.db
 cors_origins:
   - http://localhost:3000

@@ -15,6 +15,9 @@ const json = (body: unknown, method = 'POST'): RequestInit => ({ method, headers
 export const sessionApi = {
   create: (context: S['BookContext']) => request<S['SessionSnapshot']>('/api/v1/sessions', json({ context })),
   load: (id: string) => request<S['SessionSnapshot']>(prefix(id)),
+  debug: (id: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug'),
+  debugStart: (id: string, text: string, asset_ids: string[]) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids })),
+  debugStep: (id: string, checkpoint_id: string, response?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/step', json({ checkpoint_id, response })),
   appearance: (id: string) => request<S['AppearanceResponse']>(prefix(id) + '/appearance'),
   saveAppearance: (id: string, appearance: S['SessionAppearance']) => request<S['AppearanceResponse']>(prefix(id) + '/appearance', json(appearance, 'PUT')),
   compliance: (id: string) => request<S['ComplianceReport']>(prefix(id) + '/compliance'),
