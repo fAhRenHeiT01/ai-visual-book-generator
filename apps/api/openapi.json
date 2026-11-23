@@ -1,6 +1,32 @@
 {
   "components": {
     "schemas": {
+      "AppearanceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "chrome": {
+            "$ref": "#/components/schemas/MasterChromeConfig"
+          },
+          "status": {
+            "default": "unavailable",
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/DesignTokens"
+          }
+        },
+        "required": [
+          "tokens",
+          "chrome"
+        ],
+        "title": "AppearanceResponse",
+        "type": "object"
+      },
       "AssetKind": {
         "enum": [
           "photo",
@@ -129,6 +155,106 @@
           }
         },
         "title": "BookContext",
+        "type": "object"
+      },
+      "ComplianceDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "enum": [
+              "approve",
+              "redact"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id",
+          "metric_id",
+          "action"
+        ],
+        "title": "ComplianceDecision",
+        "type": "object"
+      },
+      "ComplianceMetric": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "anyOf": [
+              {
+                "enum": [
+                  "approve",
+                  "redact"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "metric": {
+            "$ref": "#/components/schemas/MetricEntry"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "page_id",
+          "metric"
+        ],
+        "title": "ComplianceMetric",
+        "type": "object"
+      },
+      "ComplianceReport": {
+        "additionalProperties": false,
+        "properties": {
+          "audience_mode": {
+            "$ref": "#/components/schemas/AudienceMode",
+            "default": "internal"
+          },
+          "eligible": {
+            "default": false,
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "ledger": {
+            "items": {
+              "$ref": "#/components/schemas/ComplianceMetric"
+            },
+            "title": "Ledger",
+            "type": "array"
+          },
+          "publishable_pages": {
+            "items": {
+              "$ref": "#/components/schemas/PageGenerationResult"
+            },
+            "title": "Publishable Pages",
+            "type": "array"
+          },
+          "status": {
+            "default": "unavailable",
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "title": "ComplianceReport",
         "type": "object"
       },
       "ComponentType": {
@@ -669,6 +795,23 @@
         "title": "SelectOptionRequest",
         "type": "object"
       },
+      "SessionAppearance": {
+        "additionalProperties": false,
+        "properties": {
+          "chrome": {
+            "$ref": "#/components/schemas/MasterChromeConfig"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/DesignTokens"
+          }
+        },
+        "required": [
+          "tokens",
+          "chrome"
+        ],
+        "title": "SessionAppearance",
+        "type": "object"
+      },
       "SessionSnapshot": {
         "additionalProperties": false,
         "properties": {
@@ -739,6 +882,49 @@
         ],
         "title": "SurfaceRole",
         "type": "string"
+      },
+      "ThemeExtractRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "format": "uri",
+            "maxLength": 2083,
+            "minLength": 1,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "ThemeExtractRequest",
+        "type": "object"
+      },
+      "ThemeExtractResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "default": "unavailable",
+            "enum": [
+              "available",
+              "unavailable"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "tokens": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DesignTokens"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ThemeExtractResponse",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -893,6 +1079,98 @@
         ]
       }
     },
+    "/api/v1/sessions/{session_id}/appearance": {
+      "get": {
+        "operationId": "get_appearance_api_v1_sessions__session_id__appearance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppearanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Appearance",
+        "tags": [
+          "appearance"
+        ]
+      },
+      "put": {
+        "operationId": "update_appearance_api_v1_sessions__session_id__appearance_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionAppearance"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppearanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Appearance",
+        "tags": [
+          "appearance"
+        ]
+      }
+    },
     "/api/v1/sessions/{session_id}/assets": {
       "post": {
         "operationId": "upload_assets_api_v1_sessions__session_id__assets_post",
@@ -996,6 +1274,100 @@
         "summary": "Get Asset",
         "tags": [
           "sessions"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/compliance": {
+      "get": {
+        "operationId": "get_compliance_api_v1_sessions__session_id__compliance_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplianceReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Compliance",
+        "tags": [
+          "compliance"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/compliance/decisions": {
+      "post": {
+        "operationId": "decide_compliance_api_v1_sessions__session_id__compliance_decisions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComplianceDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComplianceReport"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Compliance",
+        "tags": [
+          "compliance"
         ]
       }
     },
@@ -1160,6 +1532,47 @@
         "summary": "Select Page",
         "tags": [
           "sessions"
+        ]
+      }
+    },
+    "/api/v1/themes/extract": {
+      "post": {
+        "operationId": "extract_theme_api_v1_themes_extract_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThemeExtractRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeExtractResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Extract Theme",
+        "tags": [
+          "appearance"
         ]
       }
     }

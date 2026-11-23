@@ -5,7 +5,8 @@ import sqlite3
 from threading import RLock
 from uuid import uuid4
 
-from bookgen.schemas import BookContext, ImageAssetMeta, PageGenerationResult
+from bookgen.schemas import BookContext, DesignTokens, ImageAssetMeta, MasterChromeConfig, PageGenerationResult
+from bookgen.schemas.publishing import SessionAppearance
 
 
 class SQLiteSessionRepository:
@@ -26,6 +27,10 @@ class SQLiteSessionRepository:
                 session_id TEXT NOT NULL REFERENCES sessions(session_id),
                 asset_id TEXT NOT NULL, payload TEXT NOT NULL,
                 PRIMARY KEY (session_id, asset_id)
+            );
+            CREATE TABLE IF NOT EXISTS session_appearance (
+                session_id TEXT PRIMARY KEY REFERENCES sessions(session_id),
+                payload TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS page_snapshots (
                 session_id TEXT NOT NULL REFERENCES sessions(session_id),
@@ -78,3 +83,16 @@ class SQLiteSessionRepository:
 
     def close(self):
         self._connection.close()
+
+    def load_appearance(self, session_id):
+        self.load_context(session_id)
+        with self._lock:
+            row = self._connection.execute("SELECT payload FROM session_appearance WHERE session_id=?", (session_id,)).fetchone()
+        return SessionAppearance.model_validate_json(row[0]) if row else SessionAppearance(
+            tokens=DesignTokens(theme_id="default", palette_source="preset"), chrome=MasterChromeConfig())
+
+    def save_appearance(self, session_id, appearance):
+        self.load_context(session_id)
+        with self._lock, self._connection:
+            self._connection.execute("INSERT INTO session_appearance VALUES (?, ?) ON CONFLICT(session_id) DO UPDATE SET payload=excluded.payload",
+                                     (session_id, appearance.model_dump_json()))

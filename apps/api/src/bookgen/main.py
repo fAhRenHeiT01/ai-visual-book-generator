@@ -13,6 +13,8 @@ from pydantic.json_schema import models_json_schema
 from bookgen.config import load_settings
 from bookgen.schemas import CONTRACT_MODELS
 from bookgen.routes.sessions import router as sessions_router
+from bookgen.routes.compliance import router as compliance_router
+from bookgen.routes.theme import router as theme_router
 
 
 def create_app(*, settings=None, provider=None, repository=None, storage=None) -> FastAPI:
@@ -48,8 +50,10 @@ def create_app(*, settings=None, provider=None, repository=None, storage=None) -
 
     application.state.get_workflow = get_workflow
     application.add_middleware(CORSMiddleware, allow_origins=application.state.settings.app.cors_origins,
-                               allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+                               allow_methods=["GET", "POST", "PUT"], allow_headers=["Content-Type"])
     application.include_router(sessions_router)
+    application.include_router(compliance_router)
+    application.include_router(theme_router)
 
     def openapi():
         if application.openapi_schema is None:
