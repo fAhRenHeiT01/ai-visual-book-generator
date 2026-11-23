@@ -1,0 +1,631 @@
+{
+  "components": {
+    "schemas": {
+      "AssetKind": {
+        "enum": [
+          "photo",
+          "chart",
+          "diagram",
+          "logo"
+        ],
+        "title": "AssetKind",
+        "type": "string"
+      },
+      "AtomicTextBlock": {
+        "additionalProperties": false,
+        "properties": {
+          "block_id": {
+            "title": "Block Id",
+            "type": "string"
+          },
+          "char_count": {
+            "title": "Char Count",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "word_count": {
+            "title": "Word Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "block_id",
+          "kind",
+          "text",
+          "word_count",
+          "char_count"
+        ],
+        "title": "AtomicTextBlock",
+        "type": "object"
+      },
+      "AudienceMode": {
+        "enum": [
+          "internal",
+          "client_facing"
+        ],
+        "title": "AudienceMode",
+        "type": "string"
+      },
+      "BookContext": {
+        "additionalProperties": false,
+        "properties": {
+          "audience_mode": {
+            "$ref": "#/components/schemas/AudienceMode",
+            "default": "internal"
+          },
+          "objective": {
+            "default": "",
+            "title": "Objective",
+            "type": "string"
+          },
+          "page_size": {
+            "$ref": "#/components/schemas/PageSize",
+            "default": "A4"
+          },
+          "source_website_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Website Url"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
+          },
+          "tone_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tone Keywords",
+            "type": "array"
+          }
+        },
+        "title": "BookContext",
+        "type": "object"
+      },
+      "ComponentType": {
+        "enum": [
+          "heading",
+          "body_prose",
+          "bullet_list",
+          "image_frame",
+          "pull_quote",
+          "stat_callout",
+          "caption",
+          "divider_rule"
+        ],
+        "title": "ComponentType",
+        "type": "string"
+      },
+      "DesignTokens": {
+        "additionalProperties": false,
+        "properties": {
+          "chrome_band_mm": {
+            "default": 12.0,
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Chrome Band Mm",
+            "type": "number"
+          },
+          "color_brand_accent": {
+            "default": "#0EA5E9",
+            "title": "Color Brand Accent",
+            "type": "string"
+          },
+          "color_brand_primary": {
+            "default": "#1D4ED8",
+            "title": "Color Brand Primary",
+            "type": "string"
+          },
+          "color_ink_muted": {
+            "default": "#4B5563",
+            "title": "Color Ink Muted",
+            "type": "string"
+          },
+          "color_ink_primary": {
+            "default": "#111827",
+            "title": "Color Ink Primary",
+            "type": "string"
+          },
+          "color_paper": {
+            "default": "#FFFFFF",
+            "title": "Color Paper",
+            "type": "string"
+          },
+          "color_surface_tint": {
+            "default": "#F3F4F6",
+            "title": "Color Surface Tint",
+            "type": "string"
+          },
+          "font_body": {
+            "default": "Source Serif 4",
+            "title": "Font Body",
+            "type": "string"
+          },
+          "font_heading": {
+            "default": "Inter",
+            "title": "Font Heading",
+            "type": "string"
+          },
+          "page_margin_mm": {
+            "default": 16.0,
+            "maximum": 30.0,
+            "minimum": 10.0,
+            "title": "Page Margin Mm",
+            "type": "number"
+          },
+          "palette_source": {
+            "description": "preset | manual | website_extracted",
+            "title": "Palette Source",
+            "type": "string"
+          },
+          "radius_px": {
+            "default": 6,
+            "maximum": 24,
+            "minimum": 0,
+            "title": "Radius Px",
+            "type": "integer"
+          },
+          "theme_id": {
+            "title": "Theme Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme_id",
+          "palette_source"
+        ],
+        "title": "DesignTokens",
+        "type": "object"
+      },
+      "ImageAssetMeta": {
+        "additionalProperties": false,
+        "properties": {
+          "alt_caption": {
+            "default": "",
+            "title": "Alt Caption",
+            "type": "string"
+          },
+          "aspect_ratio": {
+            "title": "Aspect Ratio",
+            "type": "number"
+          },
+          "asset_id": {
+            "title": "Asset Id",
+            "type": "string"
+          },
+          "asset_kind": {
+            "$ref": "#/components/schemas/AssetKind",
+            "default": "photo"
+          },
+          "estimated_dpi": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Estimated Dpi"
+          },
+          "height_px": {
+            "title": "Height Px",
+            "type": "integer"
+          },
+          "mime_type": {
+            "title": "Mime Type",
+            "type": "string"
+          },
+          "storage_key": {
+            "title": "Storage Key",
+            "type": "string"
+          },
+          "thumbnail_key": {
+            "title": "Thumbnail Key",
+            "type": "string"
+          },
+          "width_px": {
+            "title": "Width Px",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "asset_id",
+          "storage_key",
+          "thumbnail_key",
+          "mime_type",
+          "width_px",
+          "height_px",
+          "aspect_ratio"
+        ],
+        "title": "ImageAssetMeta",
+        "type": "object"
+      },
+      "LayoutArchetype": {
+        "enum": [
+          "full_bleed_hero",
+          "minimalist_swiss",
+          "section_divider",
+          "editorial_asymmetric",
+          "two_col_executive",
+          "top_media_narrative",
+          "chart_focus_band",
+          "guided_alternating",
+          "dashboard_split",
+          "modular_cards",
+          "safe_flow_fallback"
+        ],
+        "title": "LayoutArchetype",
+        "type": "string"
+      },
+      "MasterChromeConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "footer_center": {
+            "default": "",
+            "title": "Footer Center",
+            "type": "string"
+          },
+          "footer_left": {
+            "default": "",
+            "title": "Footer Left",
+            "type": "string"
+          },
+          "footer_right": {
+            "default": "Page {page_number} of {total_pages}",
+            "title": "Footer Right",
+            "type": "string"
+          },
+          "header_left": {
+            "default": "",
+            "title": "Header Left",
+            "type": "string"
+          },
+          "header_right": {
+            "default": "{chapter_title}",
+            "title": "Header Right",
+            "type": "string"
+          },
+          "suppress_on_archetypes": {
+            "items": {
+              "$ref": "#/components/schemas/LayoutArchetype"
+            },
+            "title": "Suppress On Archetypes",
+            "type": "array"
+          }
+        },
+        "title": "MasterChromeConfig",
+        "type": "object"
+      },
+      "MetricClassification": {
+        "enum": [
+          "public",
+          "internal",
+          "undisclosed",
+          "unverified"
+        ],
+        "title": "MetricClassification",
+        "type": "string"
+      },
+      "MetricEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "approved_for_export": {
+            "default": false,
+            "title": "Approved For Export",
+            "type": "boolean"
+          },
+          "classification": {
+            "$ref": "#/components/schemas/MetricClassification"
+          },
+          "context_snippet": {
+            "title": "Context Snippet",
+            "type": "string"
+          },
+          "metric_id": {
+            "title": "Metric Id",
+            "type": "string"
+          },
+          "raw_value": {
+            "title": "Raw Value",
+            "type": "string"
+          },
+          "source_block_id": {
+            "title": "Source Block Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "metric_id",
+          "source_block_id",
+          "raw_value",
+          "context_snippet",
+          "classification"
+        ],
+        "title": "MetricEntry",
+        "type": "object"
+      },
+      "PageGenerationResult": {
+        "additionalProperties": false,
+        "properties": {
+          "input_assets": {
+            "items": {
+              "$ref": "#/components/schemas/ImageAssetMeta"
+            },
+            "title": "Input Assets",
+            "type": "array"
+          },
+          "input_blocks": {
+            "items": {
+              "$ref": "#/components/schemas/AtomicTextBlock"
+            },
+            "title": "Input Blocks",
+            "type": "array"
+          },
+          "metrics_ledger": {
+            "items": {
+              "$ref": "#/components/schemas/MetricEntry"
+            },
+            "title": "Metrics Ledger",
+            "type": "array"
+          },
+          "option_a": {
+            "$ref": "#/components/schemas/PageLayoutAST"
+          },
+          "option_b": {
+            "$ref": "#/components/schemas/PageLayoutAST"
+          },
+          "page_id": {
+            "title": "Page Id",
+            "type": "string"
+          },
+          "page_number": {
+            "title": "Page Number",
+            "type": "integer"
+          },
+          "repair_attempts": {
+            "default": 0,
+            "title": "Repair Attempts",
+            "type": "integer"
+          },
+          "selected_option_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Selected Option Id"
+          },
+          "used_fallback": {
+            "default": false,
+            "title": "Used Fallback",
+            "type": "boolean"
+          },
+          "validation_issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "title": "Validation Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "page_id",
+          "page_number",
+          "input_blocks",
+          "input_assets",
+          "metrics_ledger",
+          "option_a",
+          "option_b"
+        ],
+        "title": "PageGenerationResult",
+        "type": "object"
+      },
+      "PageLayoutAST": {
+        "additionalProperties": false,
+        "properties": {
+          "archetype": {
+            "$ref": "#/components/schemas/LayoutArchetype"
+          },
+          "column_count": {
+            "default": 1,
+            "maximum": 3,
+            "minimum": 1,
+            "title": "Column Count",
+            "type": "integer"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/PlacedComponent"
+            },
+            "title": "Components",
+            "type": "array"
+          },
+          "density_scale": {
+            "default": "normal",
+            "title": "Density Scale",
+            "type": "string"
+          },
+          "option_id": {
+            "title": "Option Id",
+            "type": "string"
+          },
+          "rationale": {
+            "maxLength": 280,
+            "title": "Rationale",
+            "type": "string"
+          },
+          "strategy_tag": {
+            "title": "Strategy Tag",
+            "type": "string"
+          },
+          "surface_role": {
+            "$ref": "#/components/schemas/SurfaceRole",
+            "default": "paper"
+          }
+        },
+        "required": [
+          "option_id",
+          "strategy_tag",
+          "archetype",
+          "rationale",
+          "components"
+        ],
+        "title": "PageLayoutAST",
+        "type": "object"
+      },
+      "PageSize": {
+        "enum": [
+          "A4",
+          "LETTER"
+        ],
+        "title": "PageSize",
+        "type": "string"
+      },
+      "PlacedComponent": {
+        "additionalProperties": false,
+        "properties": {
+          "component_id": {
+            "title": "Component Id",
+            "type": "string"
+          },
+          "component_type": {
+            "$ref": "#/components/schemas/ComponentType"
+          },
+          "emphasis": {
+            "default": false,
+            "title": "Emphasis",
+            "type": "boolean"
+          },
+          "extracted_excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Extracted Excerpt"
+          },
+          "object_fit": {
+            "default": "contain",
+            "title": "Object Fit",
+            "type": "string"
+          },
+          "slot_id": {
+            "title": "Slot Id",
+            "type": "string"
+          },
+          "source_asset_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source Asset Id"
+          },
+          "source_block_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Block Ids",
+            "type": "array"
+          },
+          "surface_role": {
+            "$ref": "#/components/schemas/SurfaceRole",
+            "default": "paper"
+          }
+        },
+        "required": [
+          "component_id",
+          "component_type",
+          "slot_id"
+        ],
+        "title": "PlacedComponent",
+        "type": "object"
+      },
+      "StrictModel": {
+        "additionalProperties": false,
+        "properties": {},
+        "title": "StrictModel",
+        "type": "object"
+      },
+      "SurfaceRole": {
+        "enum": [
+          "paper",
+          "surface_tint",
+          "brand_dark",
+          "accent_soft"
+        ],
+        "title": "SurfaceRole",
+        "type": "string"
+      },
+      "ValidationIssue": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          },
+          "target_option": {
+            "title": "Target Option",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "severity",
+          "message",
+          "target_option"
+        ],
+        "title": "ValidationIssue",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Visual Book Generator",
+    "version": "1.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {}
+}
