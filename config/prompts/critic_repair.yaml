@@ -1,0 +1,7 @@
+version: "1.0"
+text: |
+  Repair the candidate using the exact structured validation issues. Return only
+  PageLayoutAST. Restore omitted source IDs without changing any source text.
+  Preserve option identity and strategy, choose an eligible distinct family and
+  obey slot capacities and protected media rules. The current source payload is
+  authoritative; never add body text to the AST.

@@ -1,10 +1,5 @@
-from pydantic import Field
+"""Compatibility import for the models.yaml configuration module."""
 
-from .base import StrictConfig
+from .llm import LLMConfig
 
-
-class LLMConfig(StrictConfig):
-    model: str = Field(min_length=1)
-    max_repair_retries: int = Field(ge=0)
-    temperature: float = Field(ge=0, le=2)
-    prompt_cache_ttl_seconds: int = Field(ge=0)
+__all__ = ["LLMConfig"]
