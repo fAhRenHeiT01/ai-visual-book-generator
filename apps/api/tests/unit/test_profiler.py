@@ -98,6 +98,32 @@ def test_single_image_metadata_and_dpi():
         assert thumbnail.size == (768, 512)
 
 
+@pytest.mark.parametrize("portrait", [False, True])
+@pytest.mark.parametrize("offset,object_count", [(-1, 1), (0, 1), (1, 2)])
+@pytest.mark.parametrize("custom_edge", [None, 128])
+def test_preview_derivative_is_stored_only_above_configured_edge(portrait, offset, object_count, custom_edge):
+    module = profiler()
+    config = settings()
+    if custom_edge is not None:
+        config = config.model_copy(update={"thumbnail_max_px": custom_edge})
+    edge = config.thumbnail_max_px + offset
+    size = (edge // 2, edge) if portrait else (edge, edge // 2)
+    original = image_bytes(size)
+    storage = MemoryStorage()
+    result = module.profile_content("", [module.ImageInput(original)], storage=storage, settings=config)
+    asset, = result.assets
+    assert len(storage.objects) == object_count
+    assert storage.get(asset.storage_key) == original
+    if object_count == 1:
+        assert asset.thumbnail_key is None
+    else:
+        with Image.open(BytesIO(storage.get(asset.thumbnail_key))) as preview:
+            assert max(preview.size) == config.thumbnail_max_px
+            scale = config.thumbnail_max_px / max(size)
+            assert preview.width == pytest.approx(size[0] * scale, abs=1)
+            assert preview.height == pytest.approx(size[1] * scale, abs=1)
+
+
 def test_multiple_images_have_stable_ids_kinds_and_warnings():
     module = profiler()
     from bookgen.schemas import AssetKind
@@ -126,7 +152,7 @@ def test_valid_extreme_ratios_warn_without_rejecting(size):
     assert [issue.code for issue in result.issues] == ["ASPECT_RATIO_OUT_OF_RANGE"]
 
 
-@pytest.mark.parametrize("size,expected", [((1600, 800), (768, 384)), ((800, 1600), (384, 768)), ((80, 40), (80, 40))])
+@pytest.mark.parametrize("size,expected", [((1600, 800), (768, 384)), ((800, 1600), (384, 768))])
 def test_thumbnails_preserve_ratio_and_never_upscale(size, expected):
     module = profiler()
     storage = MemoryStorage()
@@ -172,7 +198,7 @@ def test_cmyk_jpeg_has_decodable_png_thumbnail_without_changing_original():
 def test_transparent_webp_preserves_alpha_in_thumbnail():
     module = profiler()
     output = BytesIO()
-    Image.new("RGBA", (100, 100), (0, 0, 0, 0)).save(output, format="WEBP")
+    Image.new("RGBA", (1000, 1000), (0, 0, 0, 0)).save(output, format="WEBP")
     storage = MemoryStorage()
     result = module.profile_content("", [module.ImageInput(output.getvalue(), alt_caption="a workflow diagram")], storage=storage)
     asset, = result.assets

@@ -55,7 +55,7 @@ export default function PrintBook() {
   return <main className={`print-book${range.compact ? ' print-compact' : ''}`} style={styles}>
     <style>{`@page { size: ${manifest.context.page_size === 'A4' ? 'A4' : 'letter'}; margin: 0; }`}</style>
     {manifest.pages.slice(range.start, range.end).map(item => {
-      const result = sessionApi.browserPage(sessionId, item.result);
+      const result = sessionApi.browserPage(sessionId, item.result, 'print');
       const selected = result.selected_option_id === result.option_b.option_id ? result.option_b : result.option_a;
       return <section className="print-page" id={item.anchor} data-page-number={item.page_number} data-kind={item.kind} key={item.anchor}>
         <PageCanvas result={result} tokens={manifest.tokens} pageSize={manifest.context.page_size}
