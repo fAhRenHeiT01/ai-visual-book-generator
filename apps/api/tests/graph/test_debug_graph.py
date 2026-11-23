@@ -253,3 +253,64 @@ async def test_existing_sdk_only_interrupt_is_presented_as_chat_prompt_after_upg
     assert resumed.interrupts[0].option_id == 'option_b'
     assert resumed.interrupts[0].prompt
     service.repository.close()
+
+
+async def test_checkpoint_with_an_older_string_resume_can_finish_the_node(tmp_path):
+    from langgraph.types import Command
+
+    service, mock = workflow(tmp_path)
+    sid = service.create_session().session_id
+    status = await service.debugger.start(sid, text='Previously submitted source.')
+    while not status.interrupts:
+        status = await step(service, sid, status)
+    # Earlier releases persisted just the raw reply as the resume value for A.
+    async with service._graph(manual_debug=True) as graph:
+        await graph.ainvoke(Command(resume='{}'), service._config(sid))
+    service.repository.close()
+    service, mock = workflow(tmp_path)
+    status = await service.debugger.snapshot(sid)
+    assert status.interrupts[0].option_id == 'option_b'
+    status = await step(service, sid, status, '{}')
+    assert status.last_node == 'generate_candidates'
+    assert [item['response'] for item in status.node_output['llm_exchanges']] == ['{}', '{}']
+    assert mock.calls == []
+    service.repository.close()
+
+
+async def test_resumed_response_keeps_the_prompt_and_payload_the_user_copied(tmp_path, monkeypatch):
+    """Node replay must not relabel an earlier reply with changed instructions."""
+    from bookgen.adapters.llm import gemini
+
+    service, mock = workflow(tmp_path)
+    sid = service.create_session().session_id
+    status = await service.debugger.start(sid, text='Exact source with {braces} and caf\u00e9.')
+    while not status.interrupts:
+        status = await step(service, sid, status)
+    original = status.interrupts[0]
+    service.repository.close()
+
+    load_prompts = gemini.load_prompts
+
+    def revised_prompts():
+        prompts = load_prompts()
+        prompts['system_art_director'] = prompts['system_art_director'].model_copy(
+            update={'text': prompts['system_art_director'].text + '\nUpdated after restart.'})
+        return prompts
+
+    monkeypatch.setattr(gemini, 'load_prompts', revised_prompts)
+    service, mock = workflow(tmp_path)
+    status = await service.debugger.snapshot(sid)
+    assert status.interrupts[0].prompt == original.prompt
+    assert status.interrupts[0].request == original.request
+    status = await step(service, sid, status, '{}')
+    second = status.interrupts[0]
+    assert 'Updated after restart.' in second.prompt
+    status = await step(service, sid, status, '{}')
+    exchanges = status.node_output['llm_exchanges']
+    assert exchanges[0]['request'] == original.request
+    assert exchanges[0]['prompt'] == original.prompt
+    assert exchanges[0]['response'] == '{}'
+    assert exchanges[1]['request'] == second.request
+    assert exchanges[1]['prompt'] == second.prompt
+    assert mock.calls == []
+    service.repository.close()
