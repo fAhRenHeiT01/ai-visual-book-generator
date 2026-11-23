@@ -106,9 +106,15 @@ def test_scenario_is_consumable_and_preserves_sources(corpus, index):
         assert block.text in case["copy"], case["id"]
     config = load_settings(config_dir=ROOT / "config")
     for asset in result.assets:
-        with Image.open(BytesIO(storage.get(asset.thumbnail_key))) as image:
-            assert max(image.size) <= config.profiling.thumbnail_max_px
+        if asset.thumbnail_key is None:
+            assert max(asset.width_px, asset.height_px) <= config.profiling.thumbnail_max_px
+            preview_bytes = storage.get(asset.storage_key)
+        else:
+            preview_bytes = storage.get(asset.thumbnail_key)
+        with Image.open(BytesIO(preview_bytes)) as image:
             assert image.width <= asset.width_px and image.height <= asset.height_px
+            if asset.thumbnail_key is not None:
+                assert max(image.size) <= config.profiling.thumbnail_max_px
     assert sorted(issue.code for issue in result.issues) == sorted(case["expected"]["preflight_issue_codes"])
     layouts = [PageLayoutAST.model_validate(raw) for raw in case["reference_options"]]
     assert [layout.option_id for layout in layouts] == ["option_a", "option_b"]
