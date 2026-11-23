@@ -33,7 +33,8 @@ async def start_debug(session_id: str, body: GeneratePageRequest, request: Reque
         assets = {asset.asset_id: asset for asset in service.repository.load_assets(session_id)}
         if any(key not in assets for key in body.asset_ids):
             raise HTTPException(422, "Unknown uploaded asset ID")
-        return await service.debugger.start(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids])
+        return await service.debugger.start(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids],
+            page_id=body.page_id, revise=body.revise)
 
     return await execute(start)
 

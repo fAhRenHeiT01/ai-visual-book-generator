@@ -497,6 +497,19 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "studio_active": {
+            "default": false,
+            "description": "An unfinished ordinary page owns this session; resume it in Studio.",
+            "title": "Studio Active",
+            "type": "boolean"
+          },
+          "timeline": {
+            "items": {
+              "$ref": "#/components/schemas/DebugTimelineEntry"
+            },
+            "title": "Timeline",
+            "type": "array"
           }
         },
         "required": [
@@ -532,6 +545,56 @@
           "checkpoint_id"
         ],
         "title": "DebugStepRequest",
+        "type": "object"
+      },
+      "DebugTimelineEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "node": {
+            "title": "Node",
+            "type": "string"
+          },
+          "node_input": {
+            "additionalProperties": true,
+            "title": "Node Input",
+            "type": "object"
+          },
+          "node_output": {
+            "additionalProperties": true,
+            "title": "Node Output",
+            "type": "object"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PageGenerationResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "paused"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "validation_issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "title": "Validation Issues",
+            "type": "array"
+          }
+        },
+        "required": [
+          "node",
+          "status"
+        ],
+        "title": "DebugTimelineEntry",
         "type": "object"
       },
       "DesignTokens": {

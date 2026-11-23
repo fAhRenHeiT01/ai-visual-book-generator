@@ -3,7 +3,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
-from bookgen.schemas import PageGenerationResult, StrictModel
+from bookgen.schemas import PageGenerationResult, StrictModel, ValidationIssue
 from bookgen.schemas.publishing import AppearanceResponse
 
 
@@ -15,8 +15,18 @@ class DebugInterrupt(StrictModel):
     page: PageGenerationResult | None = None
 
 
+class DebugTimelineEntry(StrictModel):
+    node: str
+    status: Literal["completed", "paused"]
+    node_input: dict[str, Any] = Field(default_factory=dict)
+    node_output: dict[str, Any] = Field(default_factory=dict)
+    validation_issues: list[ValidationIssue] = Field(default_factory=list)
+    review: PageGenerationResult | None = None
+
+
 class DebugSnapshot(StrictModel):
     session_id: str
+    studio_active: bool = Field(default=False, description="An unfinished ordinary page owns this session; resume it in Studio.")
     checkpoint_id: str | None = None
     status: Literal["idle", "paused", "completed"]
     next_nodes: list[str] = Field(default_factory=list)
@@ -25,6 +35,7 @@ class DebugSnapshot(StrictModel):
     node_input: dict[str, Any] = Field(default_factory=dict)
     node_output: dict[str, Any] = Field(default_factory=dict)
     interrupts: list[DebugInterrupt] = Field(default_factory=list)
+    timeline: list[DebugTimelineEntry] = Field(default_factory=list)
     appearance: AppearanceResponse
 
 

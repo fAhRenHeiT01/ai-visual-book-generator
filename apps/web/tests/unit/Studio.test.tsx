@@ -2,17 +2,17 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
-const Studio = (modules['../../src/components/studio/Studio.tsx'] as { Studio: ComponentType<{ sessionId?: string }> } | undefined)?.Studio;
+const Studio = (modules['../../src/components/studio/Studio.tsx'] as { Studio: ComponentType<{ sessionId?: string; debugWorkspace?: boolean }> } | undefined)?.Studio;
 const canvas = vi.hoisted(() => ({ broken: false }));
 vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: () => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div>Canvas</div>; } }));
 const context = { title: '', objective: '', tone_keywords: [], audience_mode: 'internal', page_size: 'A4', source_website_url: null };
 const layout = { option_id: 'option_a', strategy_tag: 'clear', archetype: 'minimalist_swiss', rationale: 'Clear reading order', components: [] };
 const pending = { page_id: 'p1', page_number: 1, input_blocks: [], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b', rationale: 'Visual rhythm' } };
 let state: Record<string, unknown>;
-function mount(sessionId?: string) {
+function mount(sessionId?: string, debugWorkspace = false) {
   expect(Studio, 'Studio must provide optional setup and persistent review').toBeDefined();
   if (!Studio) throw new Error('Missing Studio');
-  return render(<Studio sessionId={sessionId} />);
+  return render(<Studio sessionId={sessionId} debugWorkspace={debugWorkspace} />);
 }
 function mockApi(review = false) {
   state = { session_id: 's1', context, current_page_index: 1, assets: [], committed_pages: [], pending_review: review ? pending : null };
@@ -76,7 +76,19 @@ test('1 selects A while a layout control has focus, and editing text ignores sho
   expect(screen.queryByRole('radio')).toBeNull();
 });
 
-test('debug generation uses the manual API and refresh restores its checkpoint', async () => {
+test('debug capability keeps normal authoring on the ordinary endpoint', async () => {
+  mockApi(); state.debug_enabled = true; mount('s1');
+  await screen.findByLabelText('Page text');
+  expect(screen.getByRole('link', { name: 'Open debugger' }).getAttribute('href')).toBe('/sessions/s1/debug');
+  fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Ordinary source' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
+  await screen.findByRole('radio', { name: /Option A/ });
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/pages'))).toBe(true);
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes('/debug'))).toBe(false);
+  expect(screen.queryByLabelText('Graph debugger')).toBeNull();
+});
+
+test('dedicated debug generation uses manual API and refresh restores its checkpoint', async () => {
   mockApi();
   state.debug_enabled = true;
   const debug = { session_id: 's1', checkpoint_id: 'cp', status: 'paused', next_nodes: ['profile'], last_node: null,
@@ -87,7 +99,7 @@ test('debug generation uses the manual API and refresh restores its checkpoint',
     if (String(url).endsWith('/debug')) return Response.json(state.debug_active ? debug : { ...debug, status: 'idle', next_nodes: [] });
     return ordinaryFetch(url, init);
   });
-  const mounted = mount('s1');
+  const mounted = mount('s1', true);
   await screen.findByLabelText('Page text');
   fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Manual source' } });
   fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
@@ -95,8 +107,75 @@ test('debug generation uses the manual API and refresh restores its checkpoint',
   expect(screen.queryByLabelText('Page text')).toBeNull();
   expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/debug/pages'))).toBe(true);
   mounted.unmount();
-  mount('s1');
+  mount('s1', true);
   await screen.findByRole('button', { name: 'Run profile' });
+});
+
+test('normal Studio sends a paused manual page to its debugger without offering selection', async () => {
+  mockApi(true); state.debug_enabled = true; state.debug_active = true; mount('s1');
+  await screen.findByRole('link', { name: 'Open debugger' });
+  expect(screen.queryByRole('radio')).toBeNull();
+  expect(screen.queryByLabelText('Page text')).toBeNull();
+  expect(screen.queryByLabelText('Graph debugger')).toBeNull();
+});
+
+test('debugger leaves an ordinary active page in Studio', async () => {
+  mockApi(true); state.debug_enabled = true;
+  state.active_page = { page_id: 'p1', page_number: 1, text: 'Ordinary', asset_ids: [] };
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/debug')) return Response.json({ session_id: 's1', status: 'idle', studio_active: true, appearance: { tokens: {} } });
+    return ordinaryFetch(url, init);
+  });
+  mount('s1', true);
+  await screen.findByText('This page is using Studio. Resume it in Studio before starting a manual run.');
+  expect(screen.getByRole('link', { name: 'Open Studio' }).getAttribute('href')).toBe('/sessions/s1');
+  expect(screen.queryByRole('radio')).toBeNull();
+  expect(screen.queryByLabelText('Page text')).toBeNull();
+});
+
+test('a lost manual start restores its source and retries the same page identity', async () => {
+  mockApi(); state.debug_enabled = true;
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/debug')) return Response.json({ session_id: 's1', status: 'idle', studio_active: false, appearance: { tokens: {} } });
+    if (String(url).endsWith('/debug/pages')) throw new Error('Lost manual request');
+    return ordinaryFetch(url, init);
+  });
+  const mounted = mount('s1', true);
+  await screen.findByLabelText('Page text');
+  fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Saved manual source.' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
+  await screen.findByRole('alert');
+  const first = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/debug/pages'));
+  const identity = JSON.parse(String(first?.[1]?.body)).page_id;
+  mounted.unmount(); mount('s1', true);
+  await screen.findByDisplayValue('Saved manual source.');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry generation' }));
+  await screen.findByRole('alert');
+  const calls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/debug/pages'));
+  expect(calls).toHaveLength(2);
+  expect(JSON.parse(String(calls[1][1]?.body)).page_id).toBe(identity);
+  expect(identity).toBeTruthy();
+});
+
+test('stale debug submissions reload the current checkpoint and preserve the error', async () => {
+  mockApi(); state.debug_enabled = true; state.debug_active = true;
+  let checkpoint = 'first';
+  const ordinaryFetch = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/debug/step')) {
+      checkpoint = 'current';
+      return Response.json({ detail: 'Stale checkpoint; reload before stepping' }, { status: 409 });
+    }
+    if (String(url).endsWith('/debug')) return Response.json({ session_id: 's1', checkpoint_id: checkpoint, status: 'paused',
+      next_nodes: [checkpoint === 'first' ? 'profile' : 'compliance_metrics_scan'], state: {}, interrupts: [], node_input: {}, node_output: {}, appearance: { tokens: {} } });
+    return ordinaryFetch(url, init);
+  });
+  mount('s1', true);
+  fireEvent.click(await screen.findByRole('button', { name: 'Run profile' }));
+  await screen.findByRole('button', { name: 'Run compliance_metrics_scan' });
+  expect(screen.getByRole('alert').textContent).toContain('Stale checkpoint');
 });
 
 test('refresh after failed upload generation reuses saved assets and revision replaces them', async () => {

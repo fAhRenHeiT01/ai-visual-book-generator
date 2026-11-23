@@ -79,6 +79,8 @@ async def test_debug_pauses_at_every_node_reopens_and_commits_only_after_approva
     assert visited == ["profile", "compliance_metrics_scan", "generate_candidates", "validate", "build_review", "human_review_interrupt"]
     assert status.node_input["selection"] == "option_a"
     assert status.node_output["result"]["selected_option_id"] == "option_a"
+    assert [entry.node for entry in status.timeline] == [*visited, "commit_page"]
+    assert status.timeline[-1].review.selected_option_id == "option_a"
     assert len(service.repository.load_snapshots(sid)) == 1
     assert mock.calls == []
     assert (await service.snapshot(sid)).pending_review is None
@@ -105,6 +107,8 @@ async def test_manual_bad_json_runs_repairs_with_error_trace_then_bounded_fallba
     assert status.state["repair_attempts"] == service.settings.llm.max_repair_retries
     assert status.state["used_fallback"]
     assert status.state["result"]["input_blocks"][1]["text"] == "Second."
+    assert len([entry for entry in status.timeline if entry.node == "repair" and entry.status == "completed"]) == service.settings.llm.max_repair_retries
+    assert any(entry.node == "validate" and entry.validation_issues for entry in status.timeline)
     assert mock.calls == []
     service.repository.close()
 
@@ -120,6 +124,41 @@ async def test_stale_and_wrong_resume_cannot_advance_or_overwrite(tmp_path):
         await step(service, sid, first)
     with pytest.raises(ValueError, match="pending"):
         await service.debugger.start(sid, text="Replacement")
+    service.repository.close()
+
+
+async def test_manual_identity_uses_durable_page_lock_and_timeline_survives_restart(tmp_path):
+    from contextlib import asynccontextmanager
+    service, mock = workflow(tmp_path)
+    sid = service.create_session().session_id
+    acquisitions = []
+    original_lock = service._page_lock
+
+    @asynccontextmanager
+    async def tracked_lock(session_id):
+        acquisitions.append(session_id)
+        async with original_lock(session_id):
+            yield
+
+    service._page_lock = tracked_lock
+    status = await service.debugger.start(sid, text='Original', page_id='manual-page')
+    status = await step(service, sid, status)
+    status = await step(service, sid, status)
+    assert acquisitions == [sid, sid, sid]
+    assert [entry.node for entry in status.timeline] == ['profile', 'compliance_metrics_scan', 'generate_candidates']
+    assert status.timeline[-1].status == 'paused'
+    assert status.timeline[0].node_input['text'] == 'Original'
+    assert status.timeline[0].node_output['blocks'][0]['text'] == 'Original'
+    assert status.state['page_id'] == 'manual-page'
+    with pytest.raises(ValueError, match='pending'):
+        await service.debugger.start(sid, text='Competing', page_id='different')
+    assert (await service.debugger.start(sid, text='Original', page_id='manual-page')).checkpoint_id == status.checkpoint_id
+    service.repository.close()
+    service, _ = workflow(tmp_path)
+    reopened = await service.debugger.snapshot(sid)
+    assert reopened.timeline == status.timeline
+    assert reopened.checkpoint_id == status.checkpoint_id
+    assert mock.calls == []
     service.repository.close()
 
 

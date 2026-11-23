@@ -38,6 +38,15 @@ export function DebugPanel({ snapshot, busy, onStep, onReload }: {
     </>}
     {pending?.event === 'review' && <p>Review the rendered options below and confirm a selection. The commit node requires a separate step afterward.</p>}
     {snapshot.status === 'completed' && <p>Page committed. The final node output is available below.</p>}
+    <ol aria-label="Node timeline">
+      {(snapshot.timeline ?? []).map((entry, index) => <li key={index} data-node={entry.node} aria-current={entry.status === 'paused' ? 'step' : undefined}>
+        <h3>{entry.node} · {entry.status === 'paused' ? 'Current node' : 'Completed'}</h3>
+        <Inspection title={`${entry.node} input`} value={entry.node_input} />
+        <Inspection title={`${entry.node} output`} value={entry.node_output} />
+        {!!entry.validation_issues?.length && <Inspection title={`${entry.node} validation issues`} value={entry.validation_issues} />}
+        {entry.review && <Inspection title={`${entry.node} review`} value={entry.review} />}
+      </li>)}
+    </ol>
     <Inspection title="Node input" value={snapshot.node_input} />
     <Inspection title="Node output" value={snapshot.node_output} />
     <Inspection title="Current graph state" value={snapshot.state} />
