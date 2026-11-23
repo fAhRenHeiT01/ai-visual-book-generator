@@ -1,0 +1,33 @@
+full_bleed_hero:
+  max_words: 45
+  max_images: 1
+minimalist_swiss:
+  max_words: 180
+  max_images: 1
+section_divider:
+  max_words: 60
+  max_images: 1
+editorial_asymmetric:
+  max_words: 300
+  max_images: 2
+two_col_executive:
+  max_words: 450
+  max_images: 1
+top_media_narrative:
+  max_words: 350
+  max_images: 1
+chart_focus_band:
+  max_words: 180
+  max_images: 1
+guided_alternating:
+  max_words: 320
+  max_images: 3
+dashboard_split:
+  max_words: 160
+  max_images: 2
+modular_cards:
+  max_words: 400
+  max_images: 4
+safe_flow_fallback:
+  max_words: 500
+  max_images: 4
