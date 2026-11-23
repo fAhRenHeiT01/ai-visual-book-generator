@@ -19,10 +19,11 @@ from .state import PageState
 def build_page_graph(*, provider, repository, storage, settings, checkpointer):
     nodes = PageNodes(provider=provider, repository=repository, storage=storage, settings=settings)
     builder = StateGraph(PageState)
-    for name in ("profile", "generate_candidates", "validate", "repair", "fallback", "build_review", "human_review_interrupt", "commit_page"):
+    for name in ("profile", "compliance_metrics_scan", "generate_candidates", "validate", "repair", "fallback", "build_review", "human_review_interrupt", "commit_page"):
         builder.add_node(name, getattr(nodes, name))
     builder.add_edge(START, "profile")
-    builder.add_edge("profile", "generate_candidates")
+    builder.add_edge("profile", "compliance_metrics_scan")
+    builder.add_edge("compliance_metrics_scan", "generate_candidates")
     builder.add_edge("generate_candidates", "validate")
     builder.add_conditional_edges("validate", nodes.after_validation, {name: name for name in ("repair", "fallback", "build_review")})
     builder.add_edge("repair", "validate")

@@ -26,9 +26,9 @@ def test_publishing_interfaces_are_registered_and_strict(tmp_path):
         assert '/api/v1/themes/extract' in paths
         sid = api.post('/api/v1/sessions', json={}).json()['session_id']
         prefix = f'/api/v1/sessions/{sid}'
-        assert api.get(prefix + '/compliance').json() == {'status': 'unavailable', 'ledger': [], 'eligible': False, 'audience_mode': 'internal', 'publishable_pages': []}
+        assert api.get(prefix + '/compliance').json() == {'status': 'available', 'ledger': [], 'eligible': False, 'audience_mode': 'internal', 'publishable_pages': []}
         decision = {'page_id': 'p1', 'metric_id': 'm1', 'action': 'approve'}
-        assert api.post(prefix + '/compliance/decisions', json=decision).json()['status'] == 'unavailable'
+        assert api.post(prefix + '/compliance/decisions', json=decision).status_code == 409
         assert api.post(prefix + '/compliance/decisions', json={**decision, 'action': 'invent'}).status_code == 422
         assert api.post('/api/v1/themes/extract', json={'url': 'https://example.com'}).json() == {'status': 'unavailable', 'tokens': None}
         assert api.post('/api/v1/themes/extract', json={'url': 'https://example.com', 'extra': True}).status_code == 422

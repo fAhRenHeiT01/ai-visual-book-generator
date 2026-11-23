@@ -11,7 +11,7 @@ from bookgen.config import load_settings
 from bookgen.config.grammar import GrammarConfig
 from bookgen.schemas import (
     AtomicTextBlock, ComponentType, ImageAssetMeta, LayoutArchetype,
-    PageLayoutAST, ValidationIssue,
+    AudienceMode, MetricEntry, PageLayoutAST, ValidationIssue,
 )
 
 
@@ -20,7 +20,8 @@ def deterministic_validator(
     source_blocks: Sequence[AtomicTextBlock],
     source_assets: Sequence[ImageAssetMeta],
     recent_archetypes: Sequence[LayoutArchetype | str] = (),
-    *, grammar: GrammarConfig | None = None,
+    *, grammar: GrammarConfig | None = None, metrics: Sequence[MetricEntry] | None = None,
+    audience_mode: AudienceMode = AudienceMode.INTERNAL, compliance=None,
 ) -> list[ValidationIssue]:
     """Parse both options and report all domain violations without repairing input.
 
@@ -28,6 +29,8 @@ def deterministic_validator(
     Excerpts supplement full source placement and never satisfy completeness.
     """
     grammar = grammar if grammar is not None else load_settings().grammar
+    from bookgen.domain.compliance import callout_eligible, compliance_metrics_scan
+    metrics = metrics if metrics is not None else compliance_metrics_scan(source_blocks, config=compliance)
     blocks = {b.block_id: b for b in source_blocks}
     assets = {a.asset_id: a for a in source_assets}
     rules = grammar.archetypes()
@@ -61,6 +64,9 @@ def deterministic_validator(
         protected_slots: set[str] = set()
         for component in page.components:
             ids = component.source_block_ids
+            if component.component_type == ComponentType.STAT_CALLOUT:
+                if any(metric.source_block_id in ids and not callout_eligible(metric, audience_mode, config=compliance) for metric in metrics):
+                    issue('RESTRICTED_STAT_CALLOUT', target, f'{component.component_id}: source classification forbids statistical promotion.')
             unknown = set(ids) - blocks.keys()
             if unknown:
                 issue("UNKNOWN_BLOCK_ID", target, f"Unknown block IDs: {sorted(unknown)}")

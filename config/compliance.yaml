@@ -1,5 +1,20 @@
+patterns:
+  - '(?<!\w)(?:[$€£]\s*)?\d[\d,]*(?:\.\d+)?(?:\s*(?:[KMB](?!\w)|%))?(?:\s+(?:ARR|MRR|YoY|employees|headcount))?(?!\w)'
 tags:
-  - public
-  - internal
-  - undisclosed
-  - unverified
+  public: public
+  internal: internal
+  confidential: internal
+  undisclosed: undisclosed
+  draft: unverified
+  unverified: unverified
+tag_template: '[{tag}]'
+classification_priority: [undisclosed, internal, unverified, public]
+default_classification: unverified
+strict_privacy: true
+audience_policies:
+  internal:
+    callout_classifications: [public, internal, undisclosed, unverified]
+    approval_required: []
+  client_facing:
+    callout_classifications: [public]
+    approval_required: [internal, undisclosed, unverified]
