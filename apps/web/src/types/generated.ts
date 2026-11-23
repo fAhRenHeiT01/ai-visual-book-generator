@@ -38,6 +38,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/appearance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Appearance */
+        get: operations["get_appearance_api_v1_sessions__session_id__appearance_get"];
+        /** Update Appearance */
+        put: operations["update_appearance_api_v1_sessions__session_id__appearance_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/assets": {
         parameters: {
             query?: never;
@@ -66,6 +84,40 @@ export interface paths {
         get: operations["get_asset_api_v1_sessions__session_id__assets__asset_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/compliance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Compliance */
+        get: operations["get_compliance_api_v1_sessions__session_id__compliance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sessions/{session_id}/compliance/decisions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Compliance */
+        post: operations["decide_compliance_api_v1_sessions__session_id__compliance_decisions_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -123,10 +175,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/themes/extract": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Extract Theme */
+        post: operations["extract_theme_api_v1_themes_extract_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AppearanceResponse */
+        AppearanceResponse: {
+            chrome: components["schemas"]["MasterChromeConfig"];
+            /**
+             * Status
+             * @default unavailable
+             * @enum {string}
+             */
+            status: "available" | "unavailable";
+            tokens: components["schemas"]["DesignTokens"];
+        };
         /**
          * AssetKind
          * @enum {string}
@@ -183,6 +263,46 @@ export interface components {
             title: string;
             /** Tone Keywords */
             tone_keywords?: string[];
+        };
+        /** ComplianceDecision */
+        ComplianceDecision: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "approve" | "redact";
+            /** Metric Id */
+            metric_id: string;
+            /** Page Id */
+            page_id: string;
+        };
+        /** ComplianceMetric */
+        ComplianceMetric: {
+            /** Decision */
+            decision?: ("approve" | "redact") | null;
+            metric: components["schemas"]["MetricEntry"];
+            /** Page Id */
+            page_id: string;
+        };
+        /** ComplianceReport */
+        ComplianceReport: {
+            /** @default internal */
+            audience_mode: components["schemas"]["AudienceMode"];
+            /**
+             * Eligible
+             * @default false
+             */
+            eligible: boolean;
+            /** Ledger */
+            ledger?: components["schemas"]["ComplianceMetric"][];
+            /** Publishable Pages */
+            publishable_pages?: components["schemas"]["PageGenerationResult"][];
+            /**
+             * Status
+             * @default unavailable
+             * @enum {string}
+             */
+            status: "available" | "unavailable";
         };
         /**
          * ComponentType
@@ -465,6 +585,11 @@ export interface components {
              */
             option_id: "option_a" | "option_b";
         };
+        /** SessionAppearance */
+        SessionAppearance: {
+            chrome: components["schemas"]["MasterChromeConfig"];
+            tokens: components["schemas"]["DesignTokens"];
+        };
         /** SessionSnapshot */
         SessionSnapshot: {
             /** Assets */
@@ -490,6 +615,24 @@ export interface components {
          * @enum {string}
          */
         SurfaceRole: "paper" | "surface_tint" | "brand_dark" | "accent_soft";
+        /** ThemeExtractRequest */
+        ThemeExtractRequest: {
+            /**
+             * Url
+             * Format: uri
+             */
+            url: string;
+        };
+        /** ThemeExtractResponse */
+        ThemeExtractResponse: {
+            /**
+             * Status
+             * @default unavailable
+             * @enum {string}
+             */
+            status: "available" | "unavailable";
+            tokens?: components["schemas"]["DesignTokens"] | null;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -583,6 +726,72 @@ export interface operations {
             };
         };
     };
+    get_appearance_api_v1_sessions__session_id__appearance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppearanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_appearance_api_v1_sessions__session_id__appearance_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionAppearance"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppearanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_assets_api_v1_sessions__session_id__assets_post: {
         parameters: {
             query?: never;
@@ -638,6 +847,72 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_compliance_api_v1_sessions__session_id__compliance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComplianceReport"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_compliance_api_v1_sessions__session_id__compliance_decisions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ComplianceDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ComplianceReport"];
+                };
             };
             /** @description Validation Error */
             422: {
@@ -740,6 +1015,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PageGenerationResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extract_theme_api_v1_themes_extract_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThemeExtractRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThemeExtractResponse"];
                 };
             };
             /** @description Validation Error */
