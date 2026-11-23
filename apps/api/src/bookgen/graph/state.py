@@ -11,6 +11,7 @@ class PageState(TypedDict, total=False):
     page_id: str
     page_number: int
     blocks: list[dict[str, Any]]
+    metrics_ledger: list[dict[str, Any]]
     profile_issues: list[dict[str, Any]]
     options: list[dict[str, Any]]
     validation_issues: list[dict[str, Any]]

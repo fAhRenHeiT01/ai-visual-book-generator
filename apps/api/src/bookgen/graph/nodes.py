@@ -9,7 +9,8 @@ from bookgen.adapters.llm.context import provider_context
 from bookgen.domain.fallback import safe_fallback_builder
 from bookgen.domain.profiler import profile_content
 from bookgen.domain.validator import deterministic_validator
-from bookgen.schemas import AtomicTextBlock, BookContext, ImageAssetMeta, PageGenerationResult, ValidationIssue
+from bookgen.domain.compliance import compliance_metrics_scan, mask_blocks, mask_payload, rehydrate_layout
+from bookgen.schemas import AtomicTextBlock, BookContext, ImageAssetMeta, MetricEntry, PageGenerationResult, ValidationIssue
 
 
 class PageNodes:
@@ -30,20 +31,45 @@ class PageNodes:
         return ([AtomicTextBlock.model_validate(block) for block in state["blocks"]],
                 [ImageAssetMeta.model_validate(asset) for asset in state["assets"]])
 
+    def compliance_metrics_scan(self, state):
+        blocks, _ = self._sources(state)
+        ledger = compliance_metrics_scan(blocks, config=self.settings.compliance)
+        return {'metrics_ledger': [metric.model_dump(mode='json') for metric in ledger]}
+
+    def _metrics(self, state):
+        return [MetricEntry.model_validate(metric) for metric in state['metrics_ledger']]
+
+    def _validate(self, state, options):
+        blocks, assets = self._sources(state)
+        return deterministic_validator(options, blocks, assets, state['rolling_layout_history'],
+            grammar=self.settings.grammar, metrics=self._metrics(state),
+            audience_mode=BookContext.model_validate(state['context']).audience_mode,
+            compliance=self.settings.compliance)
+
     async def _candidate(self, state, index, repair=False):
         blocks, assets = self._sources(state)
+        metrics = self._metrics(state)
+        private = self.settings.compliance.strict_privacy
+        provider_blocks = mask_blocks(blocks, metrics) if private else blocks
         option_id = "option_a" if index == 0 else "option_b"
-        kwargs = dict(context=BookContext.model_validate(state["context"]), blocks=blocks, assets=assets,
+        context = mask_payload(state['context'], metrics) if private else state['context']
+        provider_assets = [ImageAssetMeta.model_validate(mask_payload(asset.model_dump(mode='json'), metrics)) for asset in assets] if private else assets
+        kwargs = dict(context=BookContext.model_validate(context), blocks=provider_blocks, assets=provider_assets,
                       strategy_tag=self.settings.llm.strategy_families[option_id])
         with provider_context(page_number=state["page_number"], rhythm_history=tuple(state["rhythm_history"]),
                               recent_archetypes=tuple(state["rolling_layout_history"])):
             try:
                 if repair and hasattr(self.provider, "repair_candidate"):
-                    kwargs.update(candidate=state["options"][index], issues=[ValidationIssue.model_validate(issue) for issue in state["validation_issues"]])
+                    candidate = state['options'][index]
+                    issues = state['validation_issues']
+                    if private:
+                        candidate, issues = mask_payload(candidate, metrics), mask_payload(issues, metrics)
+                    kwargs.update(candidate=candidate, issues=[ValidationIssue.model_validate(issue) for issue in issues])
                     result = await self.provider.repair_candidate(**kwargs)
                 else:
                     result = await self.provider.generate_candidate(**kwargs)
-                return result.model_dump(mode="json") if hasattr(result, "model_dump") else result
+                raw = result.model_dump(mode="json") if hasattr(result, "model_dump") else result
+                return rehydrate_layout(raw, blocks, metrics) if isinstance(raw, dict) else raw
             except (ValidationError, ValueError) as exc:
                 # Keep malformed structured output in the deterministic repair path.
                 return {"option_id": option_id, "invalid_response": str(exc)}
@@ -52,8 +78,7 @@ class PageNodes:
         return {"options": list(await asyncio.gather(self._candidate(state, 0), self._candidate(state, 1)))}
 
     def validate(self, state):
-        blocks, assets = self._sources(state)
-        issues = deterministic_validator(state["options"], blocks, assets, state["rolling_layout_history"], grammar=self.settings.grammar)
+        issues = self._validate(state, state['options'])
         return {"validation_issues": [issue.model_dump(mode="json") for issue in issues]}
 
     async def repair(self, state):
@@ -63,14 +88,14 @@ class PageNodes:
     def fallback(self, state):
         blocks, assets = self._sources(state)
         options = safe_fallback_builder(blocks, assets, state["rolling_layout_history"], grammar=self.settings.grammar)
-        issues = deterministic_validator(options, blocks, assets, state["rolling_layout_history"], grammar=self.settings.grammar)
+        issues = self._validate(state, options)
         if any(issue.severity == "error" for issue in issues):
             raise ValueError("Fallback failed deterministic validation")
         return {"options": [option.model_dump(mode="json") for option in options], "validation_issues": [], "used_fallback": True}
 
     def build_review(self, state):
         page = PageGenerationResult(page_id=state["page_id"], page_number=state["page_number"],
-            input_blocks=state["blocks"], input_assets=state["assets"], metrics_ledger=[],
+            input_blocks=state["blocks"], input_assets=state["assets"], metrics_ledger=state['metrics_ledger'],
             option_a=state["options"][0], option_b=state["options"][1],
             validation_issues=state["profile_issues"], repair_attempts=state["repair_attempts"], used_fallback=state["used_fallback"])
         return {"result": page.model_dump(mode="json")}
