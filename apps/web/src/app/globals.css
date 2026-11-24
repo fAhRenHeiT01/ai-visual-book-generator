@@ -88,3 +88,31 @@ body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-
   .preview-clip { overflow: visible; }
   .preview-sheet { transform: none !important; }
 }
+
+/* Palette controls remain outside the shared physical-page renderer. */
+.theme-library { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .75rem; }
+.studio button.theme-card { width: 100%; display: grid; gap: .6rem; text-align: left; padding: 1rem; background: white; color: #172033; border: 2px solid #c3ccda; }
+.studio button.theme-card[aria-checked="true"] { border-color: #174ba0; box-shadow: 0 0 0 1px #174ba0; background: #edf3ff; }
+.theme-card small { font-weight: 400; overflow-wrap: anywhere; }
+.theme-card-swatches { display: flex; height: 1.4rem; border: 1px solid #bdc8d8; border-radius: .25rem; overflow: hidden; }
+.theme-card-swatches > span { flex: 1; }
+.theme-extraction { display: flex; flex-wrap: wrap; align-items: end; gap: 1rem; padding-block: .5rem; }
+.theme-extraction label { flex: 1 1 15rem; }
+.theme-editor { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 2rem; align-items: start; }
+.theme-fields { min-width: 0; display: grid; gap: 1.5rem; }
+.theme-fields fieldset { display: grid; min-width: 0; border: 0; padding: 0; gap: .75rem; }
+.studio .theme-fields label:has(> input[type="checkbox"]) { display: flex; align-items: center; gap: .6rem; }
+.theme-fields legend { font-size: 1rem; font-weight: 700; margin-bottom: .75rem; }
+.theme-role-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.theme-role { display: flex; align-items: end; min-width: 0; gap: .75rem; }
+.theme-role label { min-width: 0; flex: 1; }
+.theme-swatch { display: block; flex: 0 0 2.8rem; height: 2.8rem; border: 1px solid #9aa6b5; border-radius: .35rem; }
+.studio .theme-role input[aria-invalid="true"] { border: 2px solid #b34b36; }
+.theme-contrast { border: 1px solid #d5dce5; padding: 1rem; border-radius: .4rem; font-size: .85rem; }
+.theme-contrast h3 { font-weight: 700; margin-bottom: .4rem; }
+.theme-contrast p:last-child { margin-top: .6rem; color: #53637a; }
+.theme-miniature { width: 100%; max-width: 22rem; justify-self: center; min-width: 0; }
+.theme-miniature figcaption { font-size: .9rem; font-weight: 600; margin-bottom: .75rem; }
+.theme-miniature .page-preview { box-shadow: 0 2px 12px #0002; }
+@media (max-width: 65rem) { .theme-editor { grid-template-columns: 1fr; } }
+@media (max-width: 35rem) { .theme-role-grid { grid-template-columns: 1fr; } }
