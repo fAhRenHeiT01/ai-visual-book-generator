@@ -13,7 +13,7 @@ export function ComplianceBanner({ sessionId, snapshot, onDecision }: Compliance
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     let active = true;
-    setReport(undefined);
+    setReport(undefined); setError('');
     if (sessionId) sessionApi.compliance(sessionId).then(value => { if (active) setReport(value); }).catch(reason => { if (active) setError(String(reason)); });
     return () => { active = false; };
   }, [sessionId, snapshot]);
@@ -29,7 +29,7 @@ export function ComplianceBanner({ sessionId, snapshot, onDecision }: Compliance
   }
   return <aside className="compliance-banner studio-controls" data-session-id={sessionId} data-feature-state={report?.status ?? 'loading'} aria-label="Compliance review">
     <p>Compliance review · Audience: {report?.audience_mode ?? snapshot?.context.audience_mode ?? '—'}</p>
-    <p>{report?.eligible ? 'Export ready' : 'Export locked · Review flagged claims and commit all pages.'}</p>
+    <p>{!report ? 'Checking export readiness…' : report.eligible ? 'Export ready' : 'Export locked · Review flagged claims and commit all pages.'}</p>
     {report?.ledger?.map(({ page_id, metric, decision }) => <div key={`${page_id}-${metric.metric_id}`}>
       <p>{metric.context_snippet}</p>
       <p>{metric.classification} · Source {metric.source_block_id} · <span>{decision ?? 'Needs review'}</span></p>

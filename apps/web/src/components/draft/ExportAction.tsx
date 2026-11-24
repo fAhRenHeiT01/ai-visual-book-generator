@@ -69,8 +69,8 @@ export function ExportAction({ disabled, sessionId, pages, context, appearance }
     finally { setBusy(false); }
   }
   return <>
-    <button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={download}>Download PDF</button>
-    <button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={print}>Print draft</button>
+    <div className="export-actions studio-controls" aria-label="Export draft"><button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={download}>Download PDF</button>
+    <button className="studio-controls" type="button" disabled={disabled || !eligible || busy} onClick={print}>Print draft</button>{busy && <p role="status">Preparing verified export…</p>}{!disabled && !eligible && <p className="field-help">Complete compliance review to unlock export.</p>}</div>
     {error && <p className="studio-controls" role="alert">{error}</p>}
     {mounted && createPortal(<>
       <style>{(protectedPrint ? '@media print { body > * { display: none !important; } body > #compliance-print { display: block !important; } }' : '@media print { #compliance-print { display: none !important; } }') + ' @media screen { #compliance-print { display: none; } }'}</style>

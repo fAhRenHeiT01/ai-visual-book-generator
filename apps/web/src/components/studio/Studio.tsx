@@ -68,8 +68,10 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
   const debugging = debugWorkspace && debug?.status === 'paused';
   const debugReview = debugging && debug.interrupts?.[0]?.event === 'review' && !!session?.pending_review && session.pending_review.page_id === debug.state?.page_id;
   const otherWorkflow = session && (debugWorkspace ? !session.debug_enabled || debug?.studio_active : session.debug_active);
+  const action = !session ? 'Setup' : session.pending_review ? 'Review' : 'Compose';
   return <main className="studio">
     <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && <p>Saved automatically · <a href={`/sessions/${session.session_id}`}>{debugWorkspace ? 'Open Studio' : 'Reopen this book'}</a>{session.debug_enabled && !debugWorkspace && <> · <a href={`/sessions/${session.session_id}/debug`}>Open debugger</a></>}</p>}</header>
+    <nav className="authoring-progress studio-controls" aria-label="Authoring progress"><ol>{['Setup', 'Compose', 'Review'].map(step => <li key={step} aria-current={step === action ? 'step' : undefined}>{step}</li>)}</ol>{session && <a href="#draft">View draft · {session.committed_pages?.length ?? 0} pages</a>}</nav>
     {status && <p className="studio-controls" role="status">{status}</p>}
     {error && <div className="studio-controls" role="alert">{error}{sessionId && !session && <button onClick={() => { setStatus('Loading book…'); setRetry(value => value + 1); }}>Retry loading book</button>}</div>}
     {!session && !sessionId && <div className="studio-controls"><BookSetup busy={!!status} onCreate={context => { void run('Creating book…', async () => {
@@ -77,8 +79,6 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
       const theme = await sessionApi.appearance(created.session_id);
       setSession(created); setAppearance(theme); window.history.pushState(null, '', `/sessions/${created.session_id}`);
     }); }} /></div>}
-    <ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.debug_active || !!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} />
-    <ComplianceBanner sessionId={session?.session_id} snapshot={session} onDecision={refresh} />
     {session && appearance && <>
       {otherWorkflow && <p className="studio-controls">{debugWorkspace ? session.debug_enabled ? 'This page is using Studio. Resume it in Studio before starting a manual run.' : 'The debugger is unavailable on this server. Continue in Studio.' : 'This page is paused in the debugger. Open the debugger to resume and review it.'}</p>}
       {debugWorkspace && session.debug_enabled && debug && !otherWorkflow && <DebugPanel key={debug.checkpoint_id} snapshot={{ ...debug, appearance }} busy={!!status} onStep={debugStep} onReload={() => { void run('Reloading checkpoint…', refresh); }} />}
@@ -98,7 +98,10 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
         const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise);
         setSession({ ...session, active_page: activePage, pending_review: page });
       }); }} />}
+      <details className="appearance-disclosure studio-controls"><summary>Book appearance</summary><ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.debug_active || !!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} /></details>
+      <ComplianceBanner sessionId={session.session_id} snapshot={session} onDecision={refresh} />
       <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} />
     </>}
+    {!session && !sessionId && <details className="appearance-disclosure studio-controls"><summary>Book appearance</summary><ThemeControls /></details>}
   </main>;
 }

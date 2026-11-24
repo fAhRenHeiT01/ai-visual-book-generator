@@ -9,11 +9,11 @@ export function PageComposer({ pageNumber, busy, activePage, onGenerate }: { pag
   const uploadInput = useRef<HTMLInputElement>(null);
   useEffect(() => { setFiles([]); if (uploadInput.current) uploadInput.current.value = ''; }, [activePage]);
   const revised = !!activePage && (text !== activePage.text || files.length > 0);
-  return <form className="page-composer studio-controls" onSubmit={event => { event.preventDefault(); void onGenerate(text, files, revised); }}>
-    <h2>Compose page {pageNumber}</h2>
+  return <section className="compose-workspace studio-controls" aria-label="Compose a page"><form className="page-composer studio-controls" onSubmit={event => { event.preventDefault(); void onGenerate(text, files, revised); }}>
+    <p className="eyebrow">02 / Page {pageNumber}</p><h2>Compose page {pageNumber}</h2><p className="field-help">Add your original copy and supporting images. We will create two layouts for you to compare.</p>{activePage && <p className="recovery-note">Your page input is saved. Retry generation or revise it below.</p>}
     <label>Page text<textarea value={text} onChange={event => setText(event.target.value)} rows={7} disabled={busy} /></label>
     <label>Page images<input ref={uploadInput} type="file" accept="image/*" multiple disabled={busy} onChange={event => setFiles(Array.from(event.target.files ?? []))} /></label>
     {!!activePage?.asset_ids?.length && <p>{activePage.asset_ids?.length} saved image(s). Choose files to replace them.</p>}
     <button disabled={busy || (!text.trim() && !files.length && !activePage?.asset_ids?.length)}>{activePage ? revised ? 'Generate revised page' : 'Retry generation' : 'Generate options'}</button>
-  </form>;
+  </form><div className="preview-placeholder"><span aria-hidden="true">A / B</span><h2>Your next page starts here</h2><p>Generate options to compare two complete page previews.</p><p>Choose a layout to add it to your draft.</p></div></section>;
 }
