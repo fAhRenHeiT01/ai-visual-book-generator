@@ -9,6 +9,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await response.json().catch(() => null);
     throw new Error(typeof body?.detail === 'string' ? body.detail : `Request failed (${response.status}). Please retry.`);
   }
+  if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 const json = (body: unknown, method = 'POST'): RequestInit => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
@@ -20,6 +21,11 @@ function savedDraft(id: string): S['ActivePage'] | undefined {
   } catch { /* Server snapshots remain available when browser storage is blocked. */ }
 }
 export const sessionApi = {
+  list: () => request<S['SessionListResponse']>('/api/v1/sessions'),
+  remove: async (id: string) => {
+    await request<void>(prefix(id), { method: 'DELETE' });
+    try { window.localStorage.removeItem(draftKey(id)); } catch { /* Books can still be removed when browser storage is blocked. */ }
+  },
   examples: () => request<S['ExampleCatalog']>('/api/v1/examples'),
   openExample: (id: string) => request<S['SessionSnapshot']>(`/api/v1/examples/${encodeURIComponent(id)}/sessions`, { method: 'POST' }),
   create: (context: S['BookContext']) => request<S['SessionSnapshot']>('/api/v1/sessions', json({ context })),

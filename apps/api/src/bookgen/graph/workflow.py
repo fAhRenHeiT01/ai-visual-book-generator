@@ -101,6 +101,10 @@ class PageWorkflow:
         return SessionSnapshot(session_id=self.repository.create_session(context), context=context,
             debug_enabled=self.settings.app.debug_mode)
 
+    async def delete_session(self, session_id):
+        async with self._page_lock(session_id), self._page_lock('asset-storage'):
+            await asyncio.to_thread(self.repository.delete_session, session_id, delete_asset=self.storage.delete)
+
     async def snapshot(self, session_id):
         # A committing worker can hold the repository lock while an async
         # checkpoint writer owns SQLite's write lock. Keep these reads off the

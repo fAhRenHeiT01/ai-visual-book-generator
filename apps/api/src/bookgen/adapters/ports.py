@@ -34,6 +34,10 @@ class StorageAdapter(Protocol):
         """Read the bytes identified by a storage key."""
         ...
 
+    def delete(self, key: str) -> None:
+        """Delete a stored object, allowing an already missing key."""
+        ...
+
 
 @runtime_checkable
 class SessionRepository(Protocol):

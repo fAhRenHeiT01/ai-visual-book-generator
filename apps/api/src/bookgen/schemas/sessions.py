@@ -34,6 +34,17 @@ class AssetUploadResponse(StrictModel):
     assets: list[ImageAssetMeta]
 
 
+class SessionSummary(StrictModel):
+    session_id: str
+    title: str
+    committed_page_count: int = Field(ge=0)
+    current_page_index: int = Field(ge=1)
+
+
+class SessionListResponse(StrictModel):
+    sessions: list[SessionSummary]
+
+
 class ActivePage(StrictModel):
     page_id: str
     page_number: int = Field(ge=1)

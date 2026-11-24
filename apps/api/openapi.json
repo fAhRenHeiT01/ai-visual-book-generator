@@ -1427,6 +1427,23 @@
         "title": "SessionAppearance",
         "type": "object"
       },
+      "SessionListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/SessionSummary"
+            },
+            "title": "Sessions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "title": "SessionListResponse",
+        "type": "object"
+      },
       "SessionSnapshot": {
         "additionalProperties": false,
         "properties": {
@@ -1511,6 +1528,37 @@
           "context"
         ],
         "title": "SessionSnapshot",
+        "type": "object"
+      },
+      "SessionSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "committed_page_count": {
+            "minimum": 0.0,
+            "title": "Committed Page Count",
+            "type": "integer"
+          },
+          "current_page_index": {
+            "minimum": 1.0,
+            "title": "Current Page Index",
+            "type": "integer"
+          },
+          "session_id": {
+            "title": "Session Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "session_id",
+          "title",
+          "committed_page_count",
+          "current_page_index"
+        ],
+        "title": "SessionSummary",
         "type": "object"
       },
       "SourceGrouping": {
@@ -1935,6 +1983,25 @@
       }
     },
     "/api/v1/sessions": {
+      "get": {
+        "operationId": "list_sessions_api_v1_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Sessions",
+        "tags": [
+          "sessions"
+        ]
+      },
       "post": {
         "operationId": "create_session_api_v1_sessions_post",
         "requestBody": {
@@ -1976,6 +2043,39 @@
       }
     },
     "/api/v1/sessions/{session_id}": {
+      "delete": {
+        "operationId": "delete_session_api_v1_sessions__session_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Session",
+        "tags": [
+          "sessions"
+        ]
+      },
       "get": {
         "operationId": "get_session_api_v1_sessions__session_id__get",
         "parameters": [

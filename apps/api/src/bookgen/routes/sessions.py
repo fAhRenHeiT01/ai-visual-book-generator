@@ -1,5 +1,6 @@
 """Versioned session endpoints backed by durable page graph checkpoints."""
 
+import asyncio
 import json
 from io import BytesIO
 from uuid import uuid4
@@ -11,7 +12,7 @@ from PIL import Image
 from bookgen.graph.workflow import PageConflict
 from bookgen.domain.profiler import ImageInput, profile_content
 from bookgen.schemas import PageGenerationResult
-from bookgen.schemas.sessions import AssetUploadResponse, CreateSessionRequest, GeneratePageRequest, SelectOptionRequest, SessionSnapshot
+from bookgen.schemas.sessions import AssetUploadResponse, CreateSessionRequest, GeneratePageRequest, SelectOptionRequest, SessionListResponse, SessionSnapshot
 
 
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
@@ -33,6 +34,22 @@ async def create_session(body: CreateSessionRequest, request: Request):
     return workflow(request).create_session(body.context)
 
 
+@router.get("", response_model=SessionListResponse)
+async def list_sessions(request: Request):
+    return SessionListResponse(sessions=await asyncio.to_thread(workflow(request).repository.list_sessions))
+
+
+@router.delete("/{session_id}", status_code=204, response_class=Response)
+async def delete_session(session_id: str, request: Request):
+    try:
+        await workflow(request).delete_session(session_id)
+    except KeyError as exc:
+        raise HTTPException(404, "Session not found") from exc
+    except OSError as exc:
+        raise HTTPException(503, "Book could not be deleted. Retry deleting this book.") from exc
+    return Response(status_code=204)
+
+
 @router.get("/{session_id}", response_model=SessionSnapshot)
 async def get_session(session_id: str, request: Request):
     return await load_snapshot(request, session_id)
@@ -40,14 +57,15 @@ async def get_session(session_id: str, request: Request):
 
 @router.post("/{session_id}/assets", response_model=AssetUploadResponse, status_code=201)
 async def upload_assets(session_id: str, request: Request, files: list[UploadFile] = File(...)):
-    await load_snapshot(request, session_id)
     service = workflow(request)
     try:
-        images = [ImageInput(data=await file.read(), filename=file.filename or "") for file in files]
-        profile = profile_content("", images, storage=service.storage, settings=service.settings.profiling)
-        assets = [asset.model_copy(update={"asset_id": uuid4().hex}) for asset in profile.assets]
-        service.repository.save_assets(session_id, assets)
-        return AssetUploadResponse(assets=assets)
+        async with service._page_lock(session_id), service._page_lock('asset-storage'):
+            await load_snapshot(request, session_id)
+            images = [ImageInput(data=await file.read(), filename=file.filename or "") for file in files]
+            profile = profile_content("", images, storage=service.storage, settings=service.settings.profiling)
+            assets = [asset.model_copy(update={"asset_id": uuid4().hex}) for asset in profile.assets]
+            service.repository.save_assets(session_id, assets)
+            return AssetUploadResponse(assets=assets)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
     finally:

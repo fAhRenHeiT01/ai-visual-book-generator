@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from bookgen.schemas import BookContext, DesignTokens, ImageAssetMeta, MasterChromeConfig, PageGenerationResult
 from bookgen.schemas.publishing import SessionAppearance, ThemeLibraryEntry
+from bookgen.schemas.sessions import SessionSummary
 
 
 class SQLiteSessionRepository:
@@ -88,6 +89,45 @@ class SQLiteSessionRepository:
         if row is None:
             raise KeyError(session_id)
         return BookContext.model_validate_json(row[0])
+
+    def list_sessions(self):
+        """Summarize metadata without loading page payloads or graph checkpoints."""
+        with self._lock:
+            rows = self._connection.execute('''
+                SELECT s.session_id, s.context, COUNT(p.page_id)
+                FROM sessions s LEFT JOIN page_snapshots p ON p.session_id=s.session_id
+                GROUP BY s.session_id ORDER BY s.rowid DESC
+            ''').fetchall()
+        return [SessionSummary(session_id=identity, title=BookContext.model_validate_json(context).title.strip() or 'Untitled book',
+                               committed_page_count=count, current_page_index=count + 1)
+                for identity, context, count in rows]
+
+    def delete_session(self, session_id, *, delete_asset):
+        """Remove all session rows atomically and keep content shared by other books.
+
+        The caller holds the cross-worker asset lock as well as the page lock.
+        Clean files before committing so a failed cleanup leaves a retryable session.
+        """
+        with self._lock, self._connection:
+            self._connection.execute('BEGIN IMMEDIATE')
+            self.load_context(session_id)
+            rows = self._connection.execute('SELECT session_id, payload FROM session_assets').fetchall()
+            owned, shared = set(), set()
+            for owner, payload in rows:
+                asset = ImageAssetMeta.model_validate_json(payload)
+                keys = {key for key in (asset.storage_key, asset.thumbnail_key) if key}
+                (owned if owner == session_id else shared).update(keys)
+            for key in owned - shared:
+                delete_asset(key)
+            tables = {row[0] for row in self._connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            for table in ('session_assets', 'session_appearance', 'page_snapshots', 'example_sessions', 'metric_decisions'):
+                if table in tables:
+                    self._connection.execute(f'DELETE FROM {table} WHERE session_id=?', (session_id,))
+            # The SQLite checkpointer stores all namespaces for a session thread here.
+            for table in ('checkpoints', 'writes'):
+                if table in tables:
+                    self._connection.execute(f'DELETE FROM {table} WHERE thread_id=?', (session_id,))
+            self._connection.execute('DELETE FROM sessions WHERE session_id=?', (session_id,))
 
     def save_assets(self, session_id, assets):
         self.load_context(session_id)

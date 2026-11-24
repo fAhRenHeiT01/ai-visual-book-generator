@@ -129,7 +129,10 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     await expect(page.getByText('Appearance is locked for this book.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save appearance' })).toBeDisabled();
     await page.keyboard.press('Enter');
-    const reopen = page.getByRole('link', { name: 'Reopen this book' });
+    await expect(page.getByRole('link', { name: /Reopen this book/ })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Visual Book Generator', exact: true }).click();
+    const reopen = page.locator(`a[href="/sessions/${sessionId}"]`);
+    await expect(reopen).toBeVisible();
     await reopen.focus();
     await Promise.all([page.waitForEvent('load'), page.keyboard.press('Enter')]);
     await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
@@ -152,3 +155,58 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 }
+
+test('home resumes saved pages and confirms complete deletion with retry on a narrow screen', async ({ page, request }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const api = 'http://127.0.0.1:8007/api/v1/sessions';
+  const saved = await (await request.post(api, { data: { context: { title: 'A saved book' } } })).json();
+  const other = await (await request.post(api, { data: { context: { title: 'Another saved book' } } })).json();
+  const sid = saved.session_id;
+  const generated = await (await request.post(`${api}/${sid}/pages`, { data: { text: 'Original committed copy.' } })).json();
+  await request.post(`${api}/${sid}/pages/${generated.page_id}/selection`, { data: { option_id: 'option_a' } });
+  const loaded: string[] = [];
+  page.on('request', req => { if (req.method() === 'GET' && [api + '/' + sid, api + '/' + other.session_id].includes(req.url())) loaded.push(req.url()); });
+  await page.goto('/');
+  await page.evaluate(({ sid, otherId }) => {
+    localStorage.setItem(`bookgen:active-page:${sid}`, JSON.stringify({ page_id: 'saved-draft', page_number: 2, text: 'Saved next-page copy.', asset_ids: [] }));
+    localStorage.setItem(`bookgen:active-page:${otherId}`, 'other saved draft');
+  }, { sid, otherId: other.session_id });
+  const row = page.getByRole('listitem').filter({ has: page.getByRole('heading', { name: 'A saved book', exact: true }) });
+  await expect(row).toContainText('1 committed page');
+  await expect(row).toContainText('Next page 2');
+  expect(loaded).toEqual([]);
+  const summary = await (await request.get(api)).json();
+  expect(summary.sessions.find((entry: { session_id: string }) => entry.session_id === sid)).not.toHaveProperty('committed_pages');
+  await row.getByRole('link', { name: 'Reopen this book: A saved book' }).click();
+  await expect(page).toHaveURL(`/sessions/${sid}`);
+  await expect(page.getByLabel('Page text')).toHaveValue('Saved next-page copy.');
+  await expect(page.getByText('1 committed page', { exact: true })).toBeVisible();
+  await expect(page.locator('.examples')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Reopen this book/ })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Visual Book Generator', exact: true }).click();
+  await row.getByRole('button', { name: 'Delete A saved book' }).click();
+  await expect(page.getByRole('dialog', { name: 'Delete A saved book?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  expect((await request.get(`${api}/${sid}`)).status()).toBe(200);
+  let failDelete = true;
+  await page.route(`${api}/${sid}`, async route => {
+    if (route.request().method() === 'DELETE' && failDelete) {
+      failDelete = false;
+      await route.fulfill({ status: 503, headers: { 'access-control-allow-origin': 'http://127.0.0.1:3007' }, json: { detail: 'Retry deleting this book' } });
+    } else await route.continue();
+  });
+  await row.getByRole('button', { name: 'Delete A saved book' }).click();
+  await page.getByRole('button', { name: 'Permanently delete book' }).click();
+  await expect(page.locator('.studio [role="alert"]')).toContainText('Retry deleting this book');
+  await expect(row).toBeVisible();
+  await page.getByRole('button', { name: 'Permanently delete book' }).click();
+  await expect(row).toHaveCount(0);
+  expect((await request.get(`${api}/${sid}`)).status()).toBe(404);
+  expect((await request.get(`${api}/${other.session_id}`)).status()).toBe(200);
+  expect(await page.evaluate(id => localStorage.getItem(`bookgen:active-page:${id}`), sid)).toBeNull();
+  expect(await page.evaluate(id => localStorage.getItem(`bookgen:active-page:${id}`), other.session_id)).toBe('other saved draft');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.goto(`/sessions/${sid}`);
+  await expect(page.locator('.studio [role="alert"]')).toContainText('Session not found');
+  await expect(page.getByRole('button', { name: 'Retry loading book' })).toBeVisible();
+});
