@@ -56,6 +56,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sessions/{session_id}/appearance/theme": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Theme */
+        post: operations["apply_theme_api_v1_sessions__session_id__appearance_theme_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions/{session_id}/assets": {
         parameters: {
             query?: never;
@@ -252,6 +269,23 @@ export interface paths {
         };
         /** Print Data */
         get: operations["print_data_api_v1_sessions__session_id__print_data_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/themes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Themes */
+        get: operations["list_themes_api_v1_themes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -924,8 +958,15 @@ export interface components {
          * @enum {string}
          */
         SurfaceRole: "paper" | "surface_tint" | "brand_dark" | "accent_soft";
+        /** ThemeApplyRequest */
+        ThemeApplyRequest: {
+            /** Theme Id */
+            theme_id: string;
+        };
         /** ThemeExtractRequest */
         ThemeExtractRequest: {
+            /** Name */
+            name?: string | null;
             /**
              * Url
              * Format: uri
@@ -940,7 +981,24 @@ export interface components {
              * @enum {string}
              */
             status: "available" | "unavailable";
+            /** Theme Id */
+            theme_id?: string | null;
             tokens?: components["schemas"]["DesignTokens"] | null;
+        };
+        /** ThemeLibraryEntry */
+        ThemeLibraryEntry: {
+            /** Name */
+            name: string;
+            /** Source Url */
+            source_url?: string | null;
+            /** Theme Id */
+            theme_id: string;
+            tokens: components["schemas"]["DesignTokens"];
+        };
+        /** ThemeListResponse */
+        ThemeListResponse: {
+            /** Themes */
+            themes?: components["schemas"]["ThemeLibraryEntry"][];
         };
         /** TocEntry */
         TocEntry: {
@@ -1087,6 +1145,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SessionAppearance"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppearanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_theme_api_v1_sessions__session_id__appearance_theme_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThemeApplyRequest"];
             };
         };
         responses: {
@@ -1514,6 +1607,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_themes_api_v1_themes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThemeListResponse"];
                 };
             };
         };

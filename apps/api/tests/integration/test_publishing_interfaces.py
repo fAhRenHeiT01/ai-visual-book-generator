@@ -24,6 +24,8 @@ def test_publishing_interfaces_are_registered_and_strict(tmp_path):
         assert '/api/v1/sessions/{session_id}/compliance' in paths
         assert '/api/v1/sessions/{session_id}/compliance/decisions' in paths
         assert '/api/v1/themes/extract' in paths
+        assert '/api/v1/themes' in paths
+        assert '/api/v1/sessions/{session_id}/appearance/theme' in paths
         sid = api.post('/api/v1/sessions', json={}).json()['session_id']
         prefix = f'/api/v1/sessions/{sid}'
         assert api.get(prefix + '/compliance').json() == {'status': 'available', 'ledger': [], 'eligible': False, 'audience_mode': 'internal', 'publishable_pages': []}
