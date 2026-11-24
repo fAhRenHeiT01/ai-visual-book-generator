@@ -43,6 +43,40 @@ function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("PageCanvas", () => {
+  test.each([
+    { direction: "editorial", archetype: "editorial_asymmetric", composition: "portrait_story", media_placement: "portrait_rail", surface_treatment: "plain", emphasis_treatment: "testimonial", kind: "photo" },
+    { direction: "consulting", archetype: "dashboard_split", composition: "comparison", media_placement: "paired", surface_treatment: "tinted_band", emphasis_treatment: "evidence", kind: "chart" },
+    { direction: "campaign", archetype: "top_media_narrative", composition: "opener", media_placement: "panoramic", surface_treatment: "brand_panel", emphasis_treatment: "headline", kind: "photo" },
+  ] as const)("renders $direction hierarchy and media placement from named treatments", (treatment) => {
+    const result = fixture(treatment.archetype, treatment.composition === "comparison" ? ["chart", "chart"] : [treatment.kind]);
+    if (treatment.composition === "portrait_story") Object.assign(result.input_assets[0], { aspect_ratio: .8, width_px: 400, height_px: 500 });
+    Object.assign(result.option_a, { composition: treatment.composition, media_placement: treatment.media_placement, surface_treatment: treatment.surface_treatment, emphasis_treatment: treatment.emphasis_treatment });
+    const before = JSON.stringify(result);
+    const { container } = mount(result);
+    const content = screen.getByTestId("page-content");
+    expect(content.classList.contains(`composition-${treatment.composition}`)).toBe(true);
+    expect(content.classList.contains(`media-${treatment.media_placement}`)).toBe(true);
+    expect(container.querySelector(".block-heading")?.classList.contains(`hierarchy-${treatment.emphasis_treatment}`)).toBe(true);
+    expect(container.querySelector("figure")?.classList.contains(`placement-${treatment.media_placement}`)).toBe(true);
+    expect(screen.getByTestId("page-canvas").getAttribute("data-surface-treatment")).toBe(treatment.surface_treatment);
+    expect(container.querySelector("[data-component-id='image0']")?.getAttribute("data-asset-kind")).toBe(treatment.kind);
+    expect(JSON.stringify(result)).toBe(before);
+  });
+
+  test("treatment healing restores flowing media and balanced hierarchy without changing the AST", async () => {
+    vi.spyOn(HTMLImageElement.prototype, "complete", "get").mockReturnValue(true);
+    vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(200);
+    vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(100);
+    const result = fixture("top_media_narrative", ["photo"]);
+    Object.assign(result.option_a, { composition: "opener", media_placement: "panoramic", emphasis_treatment: "headline", surface_treatment: "brand_panel" });
+    const before = JSON.stringify(result);
+    const { container } = mount(result);
+    await waitFor(() => expect(screen.getByTestId("page-canvas").dataset.settled).toBe("true"));
+    expect(screen.getByTestId("page-content").className).toContain("media-in_flow");
+    expect(container.querySelector(".block-heading")?.className).toContain("hierarchy-balanced");
+    expect(container.querySelector("figure")?.className).toContain("placement-in_flow");
+    expect(JSON.stringify(result)).toBe(before);
+  });
   test("review and draft use screen derivatives while print keeps original URLs", () => {
     const result = fixture("chart_focus_band", ["chart", "diagram", "photo"]);
     // Old assets retain their derivative even when their dimensions are small.

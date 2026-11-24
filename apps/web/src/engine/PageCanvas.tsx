@@ -32,9 +32,12 @@ export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", 
   const Renderer = heal.safeFlow ? ColumnFlow : archetypeRenderers[layout.archetype];
   const blocks = new Map(result.input_blocks.map((block) => [block.block_id, block]));
   const assets = new Map(result.input_assets.map((asset) => [asset.asset_id, asset]));
+  const composition = heal.safeFlow ? "flow" : layout.composition ?? "flow";
+  const mediaPlacement = heal.safeFlow ? "in_flow" : layout.media_placement ?? "in_flow";
+  const emphasis = heal.safeFlow ? "balanced" : layout.emphasis_treatment ?? "balanced";
   const fullPage = !heal.safeFlow && (layout.archetype === "full_bleed_hero" || layout.archetype === "section_divider");
   const media = layout.components.filter((component) => component.component_type === "image_frame");
-  const photoBackground = fullPage && media.length === 1 && assets.get(media[0].source_asset_id ?? "")?.asset_kind === "photo";
+  const photoBackground = fullPage && mediaPlacement === "in_flow" && media.length === 1 && assets.get(media[0].source_asset_id ?? "")?.asset_kind === "photo";
   const config = chrome?.config;
   const bands = chromeBands(config, !!chrome?.isCover || layout.archetype === "full_bleed_hero" || layout.archetype === "section_divider" || !!config?.suppress_on_archetypes?.includes(layout.archetype));
   const chromeValues = { pageNumber: chrome?.pageNumber ?? result.page_number, totalPages: chrome?.totalPages, chapterTitle: chrome?.chapterTitle };
@@ -51,10 +54,11 @@ export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", 
   return <article data-testid="page-canvas" data-page-id={result.page_id} data-page-size={pageSize} data-archetype={layout.archetype}
     data-density={heal.density} data-safe-flow={heal.safeFlow} data-settled={heal.settled} data-overflow={heal.overflow}
     data-chrome-header={bands.header} data-chrome-footer={bands.footer}
+    data-surface-treatment={heal.safeFlow ? "plain" : layout.surface_treatment ?? "plain"}
     className={`page-canvas ${surfaceClasses[layout.surface_role]}${photoBackground ? " has-full-bleed" : ""}`} style={style}>
     {bands.header && config && <MasterChrome config={config} band="header" values={chromeValues} />}
-    <Renderer contentRef={contentRef} archetype={heal.safeFlow ? "safe_flow_fallback" : layout.archetype} photoBackground={photoBackground} safeFlow={heal.safeFlow}>
-      {layout.components.map((component) => <SemanticBlock key={component.component_id} component={component} blocks={blocks} assets={assets} fullBleed={photoBackground} />)}
+    <Renderer contentRef={contentRef} archetype={heal.safeFlow ? "safe_flow_fallback" : layout.archetype} photoBackground={photoBackground} safeFlow={heal.safeFlow} composition={composition} mediaPlacement={mediaPlacement}>
+      {layout.components.map((component) => <SemanticBlock key={component.component_id} component={component} blocks={blocks} assets={assets} fullBleed={photoBackground} emphasis={emphasis} mediaPlacement={mediaPlacement} />)}
     </Renderer>
     {bands.footer && config && <MasterChrome config={config} band="footer" values={chromeValues} />}
   </article>;
