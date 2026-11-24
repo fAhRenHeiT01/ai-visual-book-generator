@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/v1/examples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Examples */
+        get: operations["list_examples_api_v1_examples_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/examples/{example_id}/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Example */
+        post: operations["create_example_api_v1_examples__example_id__sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sessions": {
         parameters: {
             query?: never;
@@ -635,6 +669,25 @@ export interface components {
             /** Theme Id */
             theme_id: string;
         };
+        /** ExampleCatalog */
+        ExampleCatalog: {
+            /** Examples */
+            examples: components["schemas"]["ExampleSummary"][];
+        };
+        /** ExampleSummary */
+        ExampleSummary: {
+            /** Coverage Tags */
+            coverage_tags: string[];
+            /** Id */
+            id: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "normal" | "repair" | "fallback" | "export-blocked";
+            /** Title */
+            title: string;
+        };
         /** GeneratePageRequest */
         GeneratePageRequest: {
             /** Asset Ids */
@@ -935,6 +988,8 @@ export interface components {
              * @default false
              */
             debug_enabled: boolean;
+            /** Example Id */
+            example_id?: string | null;
             pending_review?: components["schemas"]["PageGenerationResult"] | null;
             /** Rolling Layout History */
             rolling_layout_history?: components["schemas"]["LayoutArchetype"][];
@@ -1066,6 +1121,57 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_examples_api_v1_examples_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExampleCatalog"];
+                };
+            };
+        };
+    };
+    create_example_api_v1_examples__example_id__sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                example_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionSnapshot"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     create_session_api_v1_sessions_post: {
         parameters: {
             query?: never;

@@ -54,6 +54,8 @@ class PageWorkflow:
         self.provider = provider
         self.storage = storage
         self.settings = settings
+        from bookgen.examples import ExampleBindings
+        self.examples = ExampleBindings(self.repository.path)
         self._locks = self._session_locks
         from .debug import PageDebugger
         self.debugger = PageDebugger(self)
@@ -75,8 +77,13 @@ class PageWorkflow:
                 handle.close()
 
     @asynccontextmanager
-    async def _graph(self, *, manual_debug=False):
+    async def _graph(self, *, manual_debug=False, session_id=None):
         provider = self.provider
+        example_id = await asyncio.to_thread(self.examples.get, session_id) if session_id else None
+        if example_id:
+            from bookgen.adapters.llm.examples import ExampleLLMProvider
+            from bookgen.examples import scenario
+            provider = ExampleLLMProvider(case=scenario(example_id), settings=self.settings)
         if manual_debug:
             from bookgen.adapters.llm.manual import ManualLLMProvider
             provider = ManualLLMProvider(storage=self.storage, settings=self.settings)
@@ -95,9 +102,14 @@ class PageWorkflow:
             debug_enabled=self.settings.app.debug_mode)
 
     async def snapshot(self, session_id):
-        context = self.repository.load_context(session_id)
-        committed = self.repository.load_snapshots(session_id)
-        async with self._graph() as graph:
+        # A committing worker can hold the repository lock while an async
+        # checkpoint writer owns SQLite's write lock. Keep these reads off the
+        # event loop so the checkpoint can finish and release that lock.
+        context = await asyncio.to_thread(self.repository.load_context, session_id)
+        committed = await asyncio.to_thread(self.repository.load_snapshots, session_id)
+        assets = await asyncio.to_thread(self.repository.load_assets, session_id)
+        example_id = await asyncio.to_thread(self.examples.get, session_id)
+        async with self._graph(session_id=session_id) as graph:
             checkpoint = await graph.aget_state(self._config(session_id))
         values = checkpoint.values
         result = values.get("result")
@@ -106,10 +118,10 @@ class PageWorkflow:
         pending = PageGenerationResult.model_validate(result) if result and paused and uncommitted and result.get("page_id") == values.get("page_id") and not result.get("selected_option_id") else None
         active = ActivePage(page_id=values["page_id"], page_number=values["page_number"],
             text=values.get("text", ""), asset_ids=[asset["asset_id"] for asset in values.get("assets", [])]) if paused and uncommitted and values.get("page_id") else None
-        return SessionSnapshot(session_id=session_id, context=context, pending_review=pending, active_page=active,
+        return SessionSnapshot(session_id=session_id, example_id=example_id, context=context, pending_review=pending, active_page=active,
             debug_enabled=self.settings.app.debug_mode, debug_active=bool(values.get("debug_mode") and paused),
             committed_pages=committed, current_page_index=len(committed) + 1,
-            rolling_layout_history=values.get("rolling_layout_history", []), assets=self.repository.load_assets(session_id))
+            rolling_layout_history=values.get("rolling_layout_history", []), assets=assets)
 
     async def generate(self, session_id, *, text, assets=(), page_id=None, revise=False):
         async with self._page_lock(session_id):
@@ -119,13 +131,13 @@ class PageWorkflow:
             committed = next((page for page in snapshot.committed_pages if page.page_id == page_id), None)
             if committed is not None:
                 # Finish a commit checkpoint left behind by an interrupted response.
-                async with self._graph() as graph:
+                async with self._graph(session_id=session_id) as graph:
                     checkpoint = await graph.aget_state(self._config(session_id))
                     if checkpoint.next and checkpoint.values.get("page_id") == page_id:
                         resume = Command(resume=committed.selected_option_id) if "human_review_interrupt" in checkpoint.next else None
                         await graph.ainvoke(resume, self._config(session_id))
                 return committed
-            async with self._graph() as graph:
+            async with self._graph(session_id=session_id) as graph:
                 checkpoint = await graph.aget_state(self._config(session_id))
                 values = checkpoint.values
                 checkpoint_commit = next((page for page in snapshot.committed_pages if page.page_id == values.get("page_id")), None)
@@ -175,7 +187,7 @@ class PageWorkflow:
                 # The snapshot transaction can finish just before a process dies.
                 # Replay the unfinished commit node to finish its graph checkpoint;
                 # the repository's insert-once write makes this safe.
-                async with self._graph() as graph:
+                async with self._graph(session_id=session_id) as graph:
                     checkpoint = await graph.aget_state(self._config(session_id))
                     if checkpoint.next and checkpoint.values.get("page_id") == page_id:
                         resume = Command(resume=option_id) if "human_review_interrupt" in checkpoint.next else None
@@ -183,6 +195,6 @@ class PageWorkflow:
                 return committed
             if snapshot.pending_review is None or snapshot.pending_review.page_id != page_id:
                 raise KeyError(page_id)
-            async with self._graph() as graph:
+            async with self._graph(session_id=session_id) as graph:
                 selected = await graph.ainvoke(Command(resume=option_id), self._config(session_id))
             return PageGenerationResult.model_validate(selected["result"])

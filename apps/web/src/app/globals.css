@@ -1,4 +1,13 @@
 @import "tailwindcss";
+
+.examples { margin-block: 1.25rem; }
+.examples summary { cursor: pointer; font-weight: 650; }
+.examples > p { max-width: 70ch; margin-block: .75rem; }
+.example-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 1rem; padding: 0; list-style: none; margin-block: 1rem; }
+.example-grid li { border: 1px solid var(--workspace-border, #d1d5db); padding: 1rem; border-radius: .5rem; }
+.example-grid button { width: 100%; text-align: left; font-weight: 650; }
+.example-grid p, .example-grid small { display: block; margin-top: .5rem; }
+.example-notice { padding-block: .5rem; font-size: .875rem; }
 @source "./**/*.{ts,tsx}";
 @source "../components/**/*.{ts,tsx}";
 @source "../engine/**/*.{ts,tsx}";

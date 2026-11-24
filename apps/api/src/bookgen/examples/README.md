@@ -55,8 +55,41 @@ Run the corpus gate from the repository root:
 python -m pytest -W error apps/api/tests/golden/test_corpus.py
 ```
 
-The existing `make backend` target does not discover `tests/golden`, so run this
-command explicitly until Ticket 23 integrates the golden suite into CI.
+`make backend`, `make test`, and `make coverage` include the golden suite.
+`make golden` runs only the offline corpus and session regression gates.
+
+## Interactive examples and regression artifacts
+
+Open **Examples** in Studio to start a scripted fixture run. Every click creates
+a new session with independent page and asset identities and copied local assets.
+The example binding is stored in SQLite, so reopening the book after an API
+restart keeps generation offline. Ordinary books retain their configured provider.
+Examples use the normal generation graph, review, compliance and PDF endpoints.
+
+The local `ExampleLLMProvider` subclasses `MockLLMProvider`: it builds exact source
+pointers with the current YAML grammar and Ticket 19 direction/treatment rules.
+The original reference pairs remain corpus integrity specimens; the interactive
+script uses current grammar layouts so it also exercises later design changes.
+Named failure probes mutate the first option, exercise the actual validator and
+repair budget, and return the valid current layout on repair (or deliberately
+repeat the failure until safe fallback). No external image or model is fetched.
+The three review anchors explicitly select campaign, consulting and editorial
+directions to match the reviewed Ticket 20 baselines.
+
+The manifest-driven browser suite checks all 25 cases for source text in PDFs,
+overflow, protected media, review-to-print parity and the configured PDF SSIM
+minimum. Restricted examples first demonstrate the export gate, then receive
+explicit fixture approvals through the normal compliance route. Anchor screenshots
+are compared to the existing Ticket 20 baselines without rewriting them.
+
+CI uploads `scripted-fixture-runs`, including case/direction-labeled A/B preview
+screenshots, print screenshots, PDFs and measured SSIM reports from
+`apps/web/test-results/`. The offline report is written to
+`tests/golden/artifacts/test-results/scripted-fixture-report.json`; ordinary
+first-pass validity must be at least 90%, while deliberate repairs and fallback
+are reported separately. These are scripted fixture measurements, not estimates
+of live-model quality. The same suite checks an actual 20-page committed sequence
+for consecutive archetype repetition.
 
 ## Copy and image provenance
 

@@ -28,4 +28,16 @@ jobs:
       - name: Install Chromium for standalone PDF and visual parity tests
         run: python -m playwright install --with-deps chromium
       - run: make test
+        env:
+          BOOKGEN__APP__DEBUG_MODE: "true"
       - run: make coverage
+      - name: Preserve scripted fixture screenshots, comparisons, reports and PDFs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scripted-fixture-runs
+          path: |
+            apps/web/test-results/
+            apps/web/playwright-report/
+            apps/api/tests/golden/artifacts/
+          if-no-files-found: error

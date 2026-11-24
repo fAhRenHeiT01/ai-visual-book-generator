@@ -2,9 +2,9 @@ PYTHON ?= python
 NPM ?= npm
 DOMAIN_BRANCH ?= 90
 GRAPH_BRANCH ?= 80
-PYTEST_DIRS := $(wildcard apps/api/tests/unit apps/api/tests/graph apps/api/tests/integration)
+PYTEST_DIRS := $(wildcard apps/api/tests/unit apps/api/tests/graph apps/api/tests/integration apps/api/tests/golden)
 
-.PHONY: install test backend frontend typecheck browser e2e coverage sync-contracts check-contracts
+.PHONY: install test backend frontend typecheck browser e2e golden coverage sync-contracts check-contracts
 
 install:
 	$(PYTHON) -m pip install -e "./apps/api[test]"
@@ -14,6 +14,9 @@ test: browser backend frontend typecheck e2e
 
 backend:
 	$(PYTHON) -m pytest -W error $(PYTEST_DIRS)
+
+golden:
+	$(PYTHON) -m pytest -W error apps/api/tests/golden
 
 frontend:
 	$(NPM) --prefix apps/web run test

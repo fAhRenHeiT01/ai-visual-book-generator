@@ -43,6 +43,7 @@ class ActivePage(StrictModel):
 
 class SessionSnapshot(StrictModel):
     session_id: str
+    example_id: str | None = None
     debug_enabled: bool = False
     debug_active: bool = False
     context: BookContext
@@ -52,3 +53,14 @@ class SessionSnapshot(StrictModel):
     committed_pages: list[PageGenerationResult] = Field(default_factory=list)
     rolling_layout_history: list[LayoutArchetype] = Field(default_factory=list)
     assets: list[ImageAssetMeta] = Field(default_factory=list)
+
+
+class ExampleSummary(StrictModel):
+    id: str
+    title: str
+    coverage_tags: list[str]
+    outcome: Literal["normal", "repair", "fallback", "export-blocked"]
+
+
+class ExampleCatalog(StrictModel):
+    examples: list[ExampleSummary]

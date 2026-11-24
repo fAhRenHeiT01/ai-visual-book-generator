@@ -3,6 +3,7 @@ import { Component, useCallback, useEffect, useRef, useState, type ReactNode } f
 import type { components } from '../../types/generated';
 import { sessionApi } from '../../lib/sessionApi';
 import { BookSetup } from '../setup/BookSetup';
+import { Examples } from '../setup/Examples';
 import { ThemeControls } from '../setup/ThemeControls';
 import { ComplianceBanner } from '../compliance/ComplianceBanner';
 import { DraftViewer } from '../draft/DraftViewer';
@@ -74,6 +75,13 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
     <nav className="authoring-progress studio-controls" aria-label="Authoring progress"><ol>{['Setup', 'Compose', 'Review'].map(step => <li key={step} aria-current={step === action ? 'step' : undefined}>{step}</li>)}</ol>{session && <a href="#draft">View draft · {session.committed_pages?.length ?? 0} pages</a>}</nav>
     {status && <p className="studio-controls" role="status">{status}</p>}
     {error && <div className="studio-controls" role="alert">{error}{sessionId && !session && <button onClick={() => { setStatus('Loading book…'); setRetry(value => value + 1); }}>Retry loading book</button>}</div>}
+    {!debugWorkspace && <Examples busy={!!status} onOpen={id => { void run('Opening example…', async () => {
+      const created = await sessionApi.openExample(id);
+      const theme = await sessionApi.appearance(created.session_id);
+      setSession(created); setAppearance(theme); setDebug(undefined);
+      window.history.pushState(null, '', `/sessions/${created.session_id}`);
+    }); }} />}
+    {session?.example_id && <p className="example-notice studio-controls">Scripted fixture run · {session.example_id} · This book has its own review and source assets.</p>}
     {!session && !sessionId && <div className="studio-controls"><BookSetup busy={!!status} onCreate={context => { void run('Creating book…', async () => {
       const created = await sessionApi.create(context);
       const theme = await sessionApi.appearance(created.session_id);

@@ -746,6 +746,61 @@
         "title": "DesignTokens",
         "type": "object"
       },
+      "ExampleCatalog": {
+        "additionalProperties": false,
+        "properties": {
+          "examples": {
+            "items": {
+              "$ref": "#/components/schemas/ExampleSummary"
+            },
+            "title": "Examples",
+            "type": "array"
+          }
+        },
+        "required": [
+          "examples"
+        ],
+        "title": "ExampleCatalog",
+        "type": "object"
+      },
+      "ExampleSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "coverage_tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Coverage Tags",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "outcome": {
+            "enum": [
+              "normal",
+              "repair",
+              "fallback",
+              "export-blocked"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "coverage_tags",
+          "outcome"
+        ],
+        "title": "ExampleSummary",
+        "type": "object"
+      },
       "GeneratePageRequest": {
         "additionalProperties": false,
         "properties": {
@@ -1418,6 +1473,17 @@
             "title": "Debug Enabled",
             "type": "boolean"
           },
+          "example_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Example Id"
+          },
           "pending_review": {
             "anyOf": [
               {
@@ -1805,6 +1871,69 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/examples": {
+      "get": {
+        "operationId": "list_examples_api_v1_examples_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExampleCatalog"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Examples",
+        "tags": [
+          "examples"
+        ]
+      }
+    },
+    "/api/v1/examples/{example_id}/sessions": {
+      "post": {
+        "operationId": "create_example_api_v1_examples__example_id__sessions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "example_id",
+            "required": true,
+            "schema": {
+              "title": "Example Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionSnapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Example",
+        "tags": [
+          "examples"
+        ]
+      }
+    },
     "/api/v1/sessions": {
       "post": {
         "operationId": "create_session_api_v1_sessions_post",
