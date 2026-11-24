@@ -60,7 +60,9 @@ test('optional setup allows an empty book context and mounts phase two controls'
   expect(JSON.parse(String(call?.[1]?.body)).context.title).toBe('');
 });
 test('refresh restores pending review with accessible options, keyboard selection and one confirmation', async () => {
-  mockApi(true); mount('s1');
+  mockApi(true);
+  // Flush the async restore and its keyboard effect before sending shortcuts.
+  await act(async () => { mount('s1'); });
   await screen.findByRole('radio', { name: /Option A/ });
   expect(screen.getByText('Clear reading order')).toBeTruthy();
   expect(screen.getByText('Visual rhythm')).toBeTruthy();
@@ -115,8 +117,13 @@ test.each(['success', 'failure'] as const)('generation modal spans upload and ge
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/pages'))).toHaveLength(1);
   await act(async () => { if (outcome === 'success') resolve(Response.json(pending)); else reject(new Error('Generation failed')); });
   expect(screen.queryByRole('dialog', { name: 'Generating options' })).toBeNull();
-  if (outcome === 'success') expect(screen.getByRole('radio', { name: /Option A/ })).toBeTruthy();
-  else expect(screen.getByRole('alert').textContent).toContain('Generation failed');
+  if (outcome === 'success') {
+    expect(screen.getByRole('radio', { name: /Option A/ })).toBeTruthy();
+    fireEvent.keyDown(window, { key: '2' });
+    expect(screen.getByRole('radio', { name: /Option B/ }).getAttribute('aria-checked')).toBe('true');
+    fireEvent.keyDown(window, { key: 'Enter' });
+    await screen.findByText('1 committed page');
+  } else expect(screen.getByRole('alert').textContent).toContain('Generation failed');
 });
 
 test('compose shows only active saved image thumbnails and refreshes them after replacement', async () => {
