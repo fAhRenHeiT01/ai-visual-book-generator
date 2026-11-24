@@ -24,6 +24,16 @@ export type PageCanvasProps = {
   chrome?: ChromeContext;
 };
 
+/** Shared by page canvases and assembled matter rendered outside a canvas. */
+export function themeVariables(tokens: S["DesignTokens"]): CSSProperties {
+  return {
+    "--color-paper": tokens.color_paper, "--color-ink-primary": tokens.color_ink_primary, "--color-ink-muted": tokens.color_ink_muted,
+    "--color-brand-primary": tokens.color_brand_primary, "--color-brand-accent": tokens.color_brand_accent, "--color-surface-tint": tokens.color_surface_tint,
+    "--brand-primary": tokens.color_brand_primary, "--brand-accent": tokens.color_brand_accent, "--surface-tint": tokens.color_surface_tint,
+    "--font-heading": tokens.font_heading, "--font-body": tokens.font_body, "--radius-base": `${tokens.radius_px}px`,
+  } as CSSProperties;
+}
+
 export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", chrome }: PageCanvasProps) {
   const layout = override ?? (result.selected_option_id === result.option_b.option_id ? result.option_b : result.option_a);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -43,10 +53,7 @@ export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", 
   const chromeValues = { pageNumber: chrome?.pageNumber ?? result.page_number, totalPages: chrome?.totalPages, chapterTitle: chrome?.chapterTitle };
   const style = {
     width: pageSize === "A4" ? "210mm" : "8.5in", height: pageSize === "A4" ? "297mm" : "11in",
-    "--color-paper": tokens.color_paper, "--color-ink-primary": tokens.color_ink_primary, "--color-ink-muted": tokens.color_ink_muted,
-    "--color-brand-primary": tokens.color_brand_primary, "--color-brand-accent": tokens.color_brand_accent, "--color-surface-tint": tokens.color_surface_tint,
-    "--brand-primary": tokens.color_brand_primary, "--brand-accent": tokens.color_brand_accent, "--surface-tint": tokens.color_surface_tint,
-    "--font-heading": tokens.font_heading, "--font-body": tokens.font_body, "--radius-base": `${tokens.radius_px}px`,
+    ...themeVariables(tokens),
     "--page-margin": `${tokens.page_margin_mm}mm`, "--chrome-band": `${tokens.chrome_band_mm}mm`,
     "--chrome-header-band": bands.header ? `${tokens.chrome_band_mm}mm` : "0mm", "--chrome-footer-band": bands.footer ? `${tokens.chrome_band_mm}mm` : "0mm",
   } as CSSProperties;

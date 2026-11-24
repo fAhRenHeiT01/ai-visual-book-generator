@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { useParams } from 'next/navigation';
 import type { components } from '../../../types/generated';
 import { apiOrigin } from '../../../config/env';
-import { PageCanvas } from '../../../engine/PageCanvas';
+import { PageCanvas, themeVariables } from '../../../engine/PageCanvas';
 import { sessionApi } from '../../../lib/sessionApi';
 
 type Manifest = components['schemas']['PrintManifest'];
@@ -51,7 +51,7 @@ export default function PrintBook() {
   }, [manifest]);
   if (error) return <p role="alert">{error}</p>;
   if (!manifest) return <p>Preparing book…</p>;
-  const styles = { '--export-safety': `${manifest.safety_buffer_percent}%` } as CSSProperties;
+  const styles = { ...themeVariables(manifest.tokens), '--export-safety': `${manifest.safety_buffer_percent}%` } as CSSProperties;
   return <main className={`print-book${range.compact ? ' print-compact' : ''}`} style={styles}>
     <style>{`@page { size: ${manifest.context.page_size === 'A4' ? 'A4' : 'letter'}; margin: 0; }`}</style>
     {manifest.pages.slice(range.start, range.end).map(item => {

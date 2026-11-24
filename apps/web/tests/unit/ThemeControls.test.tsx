@@ -115,7 +115,7 @@ test('locking discards an unapplied draft and exposes the current appearance rea
   const view = render(<ThemeControls sessionId="s1" appearance={appearance} />);
   fireEvent.click(await screen.findByRole('radio', { name: 'Ocean' }));
   view.rerender(<ThemeControls sessionId="s1" appearance={appearance} locked />);
-  expect(screen.getByText('Appearance is locked for this book.')).toBeDefined();
+  expect(screen.getByText(/Appearance is locked because page 1 creation has started/)).toBeDefined();
   for (const button of screen.getAllByRole('button')) expect((button as HTMLButtonElement).disabled).toBe(true);
   for (const input of screen.getAllByRole('textbox')) expect(input.matches(':disabled')).toBe(true);
   for (const radio of screen.getAllByRole('radio')) expect((radio as HTMLButtonElement).disabled).toBe(true);
@@ -153,4 +153,17 @@ test('theme cards use one tab stop and arrow navigation retains chrome edits', a
   for (const label of ['Paper', 'Primary ink', 'Muted ink', 'Brand primary', 'Brand accent', 'Surface tint']) {
     expect(screen.getAllByRole('img').find(element => element.getAttribute('aria-label')?.startsWith(`${label} swatch:`))).toBeDefined();
   }
+});
+
+
+test('the representative preview includes titles, prose, lists, dividers and both callout styles using the draft palette', async () => {
+  api();
+  const view = render(<ThemeControls sessionId="s1" appearance={appearance} />);
+  fireEvent.click(await screen.findByRole('radio', { name: 'Ocean' }));
+  expect(screen.getByText(/Appearance locks when you start creating page 1/)).toBeTruthy();
+  for (const type of ['heading', 'body_prose', 'bullet_list', 'divider_rule', 'pull_quote', 'stat_callout']) {
+    expect(view.container.querySelector(`.page-canvas .block-${type}`)).toBeTruthy();
+  }
+  expect(screen.getByTestId('page-canvas').style.getPropertyValue('--color-brand-primary')).toBe(ocean.tokens.color_brand_primary);
+  expect(screen.getByTestId('page-canvas').dataset.surfaceTreatment).toBe('brand_panel');
 });

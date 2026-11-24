@@ -57,3 +57,25 @@ def test_ssim_rejects_different_pixels():
     white = Image.new('RGB', (100, 100), 'white')
     assert image_ssim(white, white) == 1
     assert image_ssim(white, Image.new('RGB', (100, 100), 'black')) < .1
+
+
+def test_assembled_matter_uses_light_themed_semantic_treatments_and_retains_appearance():
+    from bookgen.domain.assembler import assemble_book
+    from bookgen.schemas import MasterChromeConfig
+    from bookgen.schemas.export import AssemblyOptions
+    from bookgen.schemas.publishing import SessionAppearance
+    settings = load_settings()
+    appearance = SessionAppearance(tokens=settings.theme.preset_palettes['ocean'],
+        chrome=MasterChromeConfig(header_left='Annual review'))
+    manifest = assemble_book(snapshot(1), appearance=appearance,
+        options=AssemblyOptions(section_titles={'p0': 'Results'}, closing_cover=True))
+    assert manifest.tokens == appearance.tokens
+    assert manifest.chrome == appearance.chrome
+    for page in manifest.pages:
+        if page.kind == 'body':
+            continue
+        layout = page.result.option_a
+        assert layout.surface_role == 'paper'
+        assert layout.surface_treatment == ('brand_panel' if page.kind in ('cover', 'section', 'closing_cover') else 'tinted_band')
+        assert layout.components[0].surface_role == 'paper'
+        assert page.result.input_blocks[0].text == page.title

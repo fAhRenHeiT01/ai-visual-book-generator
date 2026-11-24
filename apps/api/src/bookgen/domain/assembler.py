@@ -10,7 +10,8 @@ def _matter(kind, text):
         word_count=len(text.split()), char_count=len(text))
     def layout(option):
         return PageLayoutAST(option_id=option, strategy_tag='assembly', archetype='section_divider' if kind in ('cover', 'section', 'closing_cover') else 'safe_flow_fallback',
-            rationale='', components=[PlacedComponent(component_id=f'matter-{kind}', component_type='heading', slot_id='header', source_block_ids=[block.block_id])])
+            rationale='', surface_role='paper', surface_treatment='brand_panel' if kind in ('cover', 'section', 'closing_cover') else 'tinted_band',
+            emphasis_treatment='headline' if kind in ('cover', 'section', 'closing_cover') else 'balanced', components=[PlacedComponent(component_id=f'matter-{kind}', component_type='heading', slot_id='header', source_block_ids=[block.block_id])])
     return PageGenerationResult(page_id=f'matter-{kind}', page_number=1, input_blocks=[block], input_assets=[],
         metrics_ledger=[], option_a=layout('option_a'), option_b=layout('option_b'), selected_option_id='option_a')
 

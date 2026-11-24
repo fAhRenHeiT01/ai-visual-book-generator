@@ -33,7 +33,8 @@ test('optional setup allows an empty book context and mounts phase two controls'
   mockApi(); mount();
   expect(screen.getByLabelText('Book title (optional)')).toBeTruthy();
   expect(screen.getByLabelText('Audience')).toBeTruthy();
-  expect(screen.getByText(/Theme customization/)).toBeTruthy();
+  expect(screen.queryByText('Book appearance')).toBeNull();
+  expect(screen.queryByLabelText('Theme customization')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Create book' }));
   await screen.findByRole('button', { name: 'Generate options' });
   const call = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === 'POST');
@@ -371,4 +372,30 @@ test('failed deletion retains saved book and browser draft for an explicit retry
   fireEvent.click(screen.getByRole('button', { name: 'Permanently delete book' }));
   await screen.findByText('No saved books yet. Create a book or open an example to get started.');
   expect(window.localStorage.getItem('bookgen:active-page:s1')).toBeNull();
+});
+
+
+test('session appearance precedes page composition and explains the page-one lock', async () => {
+  mockApi(); mount('s1');
+  const composition = await screen.findByLabelText('Page text');
+  const disclosure = screen.getByText('Book appearance').closest('details')!;
+  expect(disclosure.compareDocumentPosition(composition) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  fireEvent.click(screen.getByText('Book appearance'));
+  expect(screen.getByText(/Appearance locks when you start creating page 1/)).toBeTruthy();
+});
+
+test('an attempted first page keeps appearance locked after a lost generation response', async () => {
+  mockApi();
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/pages')) throw new Error('Lost response');
+    return original(url, init);
+  });
+  mount('s1');
+  fireEvent.change(await screen.findByLabelText('Page text'), { target: { value: 'First page.' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
+  await screen.findByText('Lost response');
+  fireEvent.click(screen.getByText('Book appearance'));
+  expect(screen.getByText(/Appearance is locked because page 1 creation has started/)).toBeTruthy();
+  expect((screen.getByRole('button', { name: 'Save appearance' }) as HTMLButtonElement).disabled).toBe(true);
 });
