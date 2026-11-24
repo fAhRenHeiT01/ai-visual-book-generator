@@ -20,6 +20,8 @@ function savedDraft(id: string): S['ActivePage'] | undefined {
   } catch { /* Server snapshots remain available when browser storage is blocked. */ }
 }
 export const sessionApi = {
+  examples: () => request<S['ExampleCatalog']>('/api/v1/examples'),
+  openExample: (id: string) => request<S['SessionSnapshot']>(`/api/v1/examples/${encodeURIComponent(id)}/sessions`, { method: 'POST' }),
   create: (context: S['BookContext']) => request<S['SessionSnapshot']>('/api/v1/sessions', json({ context })),
   load: async (id: string) => {
     const snapshot = await request<S['SessionSnapshot']>(prefix(id));

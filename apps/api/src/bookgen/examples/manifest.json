@@ -428,7 +428,8 @@
           "human"
         ],
         "audience_mode": "client_facing",
-        "page_size": "LETTER"
+        "page_size": "LETTER",
+        "direction": "campaign_presentation"
       },
       "copy": "A new perspective gives ambitious teams the confidence to build what comes next.",
       "assets": [
@@ -527,7 +528,8 @@
           "human"
         ],
         "audience_mode": "internal",
-        "page_size": "A4"
+        "page_size": "A4",
+        "direction": "consulting_report"
       },
       "copy": "# Growth with discipline\n\n[PUBLIC] Illustrative revenue index increased from 100 to 144 while operating margin moved from 18% to 25%.\n\n- Revenue and margin advanced together.\n- The comparison uses fictional data for layout review.",
       "assets": [
@@ -678,7 +680,8 @@
           "human"
         ],
         "audience_mode": "client_facing",
-        "page_size": "LETTER"
+        "page_size": "LETTER",
+        "direction": "brand_led_editorial"
       },
       "copy": "# A partnership built on clarity\n\nOur fictional customer team uses a shared brief to make every handoff visible.\n\n> The clearest plan is the one our whole team can use.\n\nHistorical NASA portrait of Buzz Aldrin, used only as a layout specimen; the testimonial is fictional and is not attributed to him.",
       "assets": [

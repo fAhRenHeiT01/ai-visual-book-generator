@@ -358,6 +358,25 @@ Before using this service for customer books or sensitive content, close these d
 
 ## Development guidelines
 
+Open **Examples** in Studio to review any of the 25 local marketing scenarios.
+Every opening creates an independent book with its own assets and a durable
+scripted provider binding. No model key or external asset download is required;
+review, editing, compliance decisions and PDF export use the ordinary workflow.
+The page identifies the run as a scripted fixture.
+
+`make golden` runs the offline manifest, isolation, compliance and 20-page rhythm
+gates. The golden tests also run in `make backend`, `make test` and `make coverage`.
+The full browser suite (`make e2e`) exports all 25 examples, checks overflow and
+preview/PDF parity against configured drift bounds, and compares the three art
+direction anchors with the reviewed Ticket 20 screenshots. CI preserves the
+case/direction-labeled previews, print screenshots, PDFs and measurement reports
+in the `scripted-fixture-runs` artifact. Ordinary first-pass validity is gated at
+90%; deliberate repair and fallback fixtures are reported separately. These are
+scripted fixture runs, not live-model quality measurements. See the
+[corpus guide](apps/api/src/bookgen/examples/README.md) for report paths and details.
+CI enables `BOOKGEN__APP__DEBUG_MODE=true` for `make test` so the optional manual
+debugger browser flows also execute; use the same variable to include them locally.
+
 - Keep provider-generated layouts within the constrained `PageLayoutAST` grammar. The model must not author HTML, CSS, colors, or arbitrary pixel spacing.
 - Preserve user text through source block pointers; do not ask the model to rewrite body copy.
 - Keep `CHART` and `DIAGRAM` assets uncropped with `object-contain`.
