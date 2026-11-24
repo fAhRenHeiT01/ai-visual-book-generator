@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
@@ -84,6 +84,67 @@ test('generation pending and error states preserve input and allow retry', async
   await screen.findByRole('alert');
   expect((screen.getByLabelText('Page text') as HTMLTextAreaElement).value).toBe('Exact original copy.');
   expect(screen.getByRole('button', { name: 'Retry generation' }).hasAttribute('disabled')).toBe(false);
+});
+
+test.each(['success', 'failure'] as const)('generation modal spans upload and generation, blocks duplicate submit and closes on %s', async outcome => {
+  mockApi();
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  let upload!: (response: Response) => void;
+  let resolve!: (response: Response) => void;
+  let reject!: (error: Error) => void;
+  vi.mocked(fetch).mockImplementation((url, init) => {
+    if (String(url).endsWith('/assets')) return new Promise(done => { upload = done; });
+    if (String(url).endsWith('/pages')) return new Promise((done, fail) => { resolve = done; reject = fail; });
+    return original(url, init);
+  });
+  mount('s1');
+  fireEvent.change(await screen.findByLabelText('Page text'), { target: { value: 'Original copy.' } });
+  fireEvent.change(screen.getByLabelText('Page images'), { target: { files: [new File(['image'], 'chart.png', { type: 'image/png' })] } });
+  const form = screen.getByLabelText('Page text').closest('form')!;
+  fireEvent.submit(form);
+  const modal = screen.getByRole('dialog', { name: 'Generating options' });
+  expect(modal.getAttribute('aria-modal')).toBe('true');
+  expect(within(modal).getByRole('status').textContent).toBe('Generating options');
+  expect(modal.querySelector('.generation-spinner[aria-hidden="true"]')).toBeTruthy();
+  expect((screen.getByLabelText('Page text') as HTMLTextAreaElement).disabled).toBe(true);
+  fireEvent.submit(form);
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/assets'))).toHaveLength(1);
+  await act(async () => { upload(Response.json({ assets: [] })); });
+  expect(screen.getByRole('dialog', { name: 'Generating options' })).toBeTruthy();
+  fireEvent.submit(screen.getByLabelText('Page text').closest('form')!);
+  expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/pages'))).toHaveLength(1);
+  await act(async () => { if (outcome === 'success') resolve(Response.json(pending)); else reject(new Error('Generation failed')); });
+  expect(screen.queryByRole('dialog', { name: 'Generating options' })).toBeNull();
+  if (outcome === 'success') expect(screen.getByRole('radio', { name: /Option A/ })).toBeTruthy();
+  else expect(screen.getByRole('alert').textContent).toContain('Generation failed');
+});
+
+test('compose shows only active saved image thumbnails and refreshes them after replacement', async () => {
+  mockApi();
+  const asset = (id: string, kind: string, caption: string) => ({ asset_id: id, asset_kind: kind, alt_caption: caption,
+    storage_key: `/private/${id}.png`, thumbnail_key: null, width_px: 1200, height_px: 600, aspect_ratio: 2, mime_type: 'image/png', estimated_dpi: null });
+  state.active_page = { page_id: 'p1', page_number: 1, text: 'Saved copy.', asset_ids: ['chart 1', 'diagram'] };
+  state.assets = [asset('unrelated', 'photo', 'Other page'), asset('chart 1', 'chart', 'Quarterly revenue'), asset('diagram', 'diagram', '')];
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/assets')) return Response.json({ assets: [asset('replacement', 'photo', 'Replacement landscape')] });
+    if (String(url).endsWith('/pages')) throw new Error('Please retry generation');
+    return original(url, init);
+  });
+  mount('s1');
+  const chart = await screen.findByAltText('Quarterly revenue');
+  expect(chart.getAttribute('src')).toBe('/api/v1/sessions/s1/assets/chart%201?thumbnail=true');
+  expect(screen.getByAltText('Saved diagram 2').getAttribute('src')).toBe('/api/v1/sessions/s1/assets/diagram?thumbnail=true');
+  expect(screen.queryByAltText('Other page')).toBeNull();
+  expect(within(screen.getByRole('list', { name: 'Saved image thumbnails' })).getAllByRole('img')).toHaveLength(2);
+  expect(screen.getByText('2 saved image(s). Choose files to replace them.')).toBeTruthy();
+  fireEvent.change(screen.getByLabelText('Page images'), { target: { files: [new File(['image'], 'replacement.png', { type: 'image/png' })] } });
+  fireEvent.click(screen.getByRole('button', { name: 'Generate revised page' }));
+  await screen.findByText('Please retry generation');
+  expect(screen.getByAltText('Replacement landscape').getAttribute('src')).toBe('/api/v1/sessions/s1/assets/replacement?thumbnail=true');
+  expect(screen.queryByAltText('Quarterly revenue')).toBeNull();
+  expect(screen.queryByAltText('Saved diagram 2')).toBeNull();
+  expect(screen.getByText('1 saved image(s). Choose files to replace them.')).toBeTruthy();
 });
 test('1 selects A while a layout control has focus, and editing text ignores shortcuts', async () => {
   mockApi(true); mount('s1');

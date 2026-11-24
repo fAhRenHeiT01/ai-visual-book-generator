@@ -11,6 +11,20 @@ import { PageComposer } from './PageComposer';
 import { OptionComparison } from './OptionComparison';
 import { DebugPanel } from './DebugPanel';
 type S = components['schemas'];
+function GenerationProgress() {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const modal = dialog.current;
+    if (modal && !modal.open) {
+      if (modal.showModal) modal.showModal();
+      else modal.open = true;
+    }
+  }, []);
+  return <dialog ref={dialog} className="generation-progress studio-controls" aria-modal="true" aria-labelledby="generation-progress-title" onCancel={event => event.preventDefault()}>
+    <span className="generation-spinner" aria-hidden="true" />
+    <p id="generation-progress-title" role="status">Generating options</p>
+  </dialog>;
+}
 class ReviewBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
@@ -115,7 +129,7 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
   return <main className="studio">
     <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && (debugWorkspace || session.debug_enabled) && <p>{debugWorkspace && <a href={`/sessions/${session.session_id}`}>Open Studio</a>}{session.debug_enabled && !debugWorkspace && <a href={`/sessions/${session.session_id}/debug`}>Open debugger</a>}</p>}</header>
     <nav className="authoring-progress studio-controls" aria-label="Authoring progress"><ol>{['Setup', 'Compose', 'Review'].map(step => <li key={step} aria-current={step === action ? 'step' : undefined}>{step}</li>)}</ol>{session && <a href="#draft">View draft · {session.committed_pages?.length ?? 0} pages</a>}</nav>
-    {status && <p className="studio-controls" role="status">{status}</p>}
+    {status === 'Generating options…' ? <GenerationProgress /> : status && <p className="studio-controls" role="status">{status}</p>}
     {error && <div className="studio-controls" role="alert">{error}{sessionId && !session && <button onClick={() => { setStatus('Loading book…'); setRetry(value => value + 1); }}>Retry loading book</button>}</div>}
     {!session && !sessionId && !debugWorkspace && <SavedBooks busy={!!status} />}
     {!session && !sessionId && !debugWorkspace && <Examples busy={!!status} onOpen={id => { void run('Opening example…', async () => {
@@ -137,18 +151,20 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
       {otherWorkflow || (debugging && !debugReview) ? null : session.pending_review ? <ReviewBoundary key={session.pending_review.page_id}><OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
         await sessionApi.select(session.session_id, session.pending_review!.page_id, choice);
         await refresh();
-      }); }} /></ReviewBoundary> : <PageComposer key={session.active_page?.page_id ?? session.current_page_index} activePage={session.active_page} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files, revise, title) => { await run('Generating options…', async () => {
-        const assetIds = files.length ? (await sessionApi.upload(session.session_id, files)).assets.map(asset => asset.asset_id) : session.active_page?.asset_ids ?? [];
+      }); }} /></ReviewBoundary> : <PageComposer key={session.active_page?.page_id ?? session.current_page_index} sessionId={session.session_id} assets={session.assets} activePage={session.active_page} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files, revise, title) => { await run('Generating options…', async () => {
+        const uploaded = files.length ? (await sessionApi.upload(session.session_id, files)).assets : [];
+        const assetIds = files.length ? uploaded.map(asset => asset.asset_id) : session.active_page?.asset_ids ?? [];
+        const assets = [...(session.assets ?? []), ...uploaded];
         const activePage = { page_id: session.active_page?.page_id ?? crypto.randomUUID(), page_number: session.current_page_index, text, asset_ids: assetIds, ...(title ? { title } : {}) };
         sessionApi.remember(session.session_id, activePage);
-        setSession({ ...session, active_page: activePage });
+        setSession({ ...session, assets, active_page: activePage });
         if (debugWorkspace) {
           setDebug(await sessionApi.debugStart(session.session_id, text, assetIds, activePage.page_id, title));
           setSession(await sessionApi.load(session.session_id));
           return;
         }
         const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise, title);
-        setSession({ ...session, active_page: activePage, pending_review: page });
+        setSession({ ...session, assets, active_page: activePage, pending_review: page });
       }); }} />}
       <ComplianceBanner sessionId={session.session_id} snapshot={session} onDecision={refresh} />
       <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} />
