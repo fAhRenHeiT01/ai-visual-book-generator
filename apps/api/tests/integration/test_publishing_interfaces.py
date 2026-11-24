@@ -57,5 +57,10 @@ def test_context_and_appearance_survive_reload(tmp_path):
         assert response.json() == {**appearance, 'tokens': {**appearance['tokens'], 'color_brand_accent': '#0A77A8'}, 'status': 'available'}
         assert api.put(prefix + '/appearance', json={**appearance, 'extra': True}).status_code == 422
     with make_client(tmp_path) as api:
-        assert api.get(prefix).json()['context'] == context
+        restored_context = api.get(prefix).json()['context']
+        assert {key: restored_context[key] for key in context} == context
+        assert restored_context['direction'] == 'auto'
+        assert restored_context['resolved_direction'] in {
+            'brand_led_editorial', 'consulting_report', 'campaign_presentation'
+        }
         assert api.get(prefix + '/appearance').json() == {**appearance, 'tokens': {**appearance['tokens'], 'color_brand_accent': '#0A77A8'}, 'status': 'available'}
