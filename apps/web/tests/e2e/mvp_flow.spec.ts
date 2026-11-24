@@ -2,6 +2,64 @@ import { expect, test } from '@playwright/test';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
+test('generation modal blocks interaction and saved thumbnails refresh after replacement on mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Create book' }).click();
+  await expect(page).toHaveURL(/\/sessions\//);
+  const image = { name: 'chart.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAAFUlEQVR4nGP8//8/AyHARFDFsFcEAHkjAw3jrppVAAAAAElFTkSuQmCC', 'base64') };
+  let release!: () => void;
+  const attempts: { asset_ids: string[] }[] = [];
+  await page.route('**/api/v1/sessions/*/pages', async route => {
+    attempts.push(route.request().postDataJSON());
+    await new Promise<void>(resolve => { release = resolve; });
+    await route.abort('failed');
+  });
+  await page.getByLabel('Page text').fill('Saved image copy.');
+  await page.getByLabel('Page images').setInputFiles([image, { ...image, name: 'diagram.png' }]);
+  await page.getByRole('button', { name: 'Generate options' }).click();
+  const modal = page.getByRole('dialog', { name: 'Generating options' });
+  await expect(modal).toBeVisible();
+  await expect(modal.getByRole('status')).toHaveText('Generating options');
+  await expect(modal).toHaveJSProperty('open', true);
+  expect(await modal.evaluate(node => node.matches(':modal'))).toBe(true);
+  await expect(modal.locator('.generation-spinner')).toHaveCSS('animation-name', 'generation-spin');
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Enter');
+  await expect(modal).toBeVisible();
+  await expect.poll(() => attempts.length).toBe(1);
+  release();
+  await expect(modal).toHaveCount(0);
+  const thumbnails = page.getByRole('list', { name: 'Saved image thumbnails' }).getByRole('img');
+  await expect(thumbnails).toHaveCount(2);
+  const originalSources = await thumbnails.evaluateAll(nodes => nodes.map(node => node.getAttribute('src')));
+  for (const thumbnail of await thumbnails.all()) {
+    await expect(thumbnail).toHaveAttribute('src', /\/assets\/[^/]+\?thumbnail=true$/);
+    await expect(thumbnail).toHaveAttribute('alt', /\S+/);
+    await expect.poll(() => thumbnail.evaluate(node => (node as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+    await expect(thumbnail).toHaveCSS('object-fit', 'contain');
+  }
+  await expect(page.getByText('2 saved image(s). Choose files to replace them.')).toBeVisible();
+  await page.reload();
+  await expect(thumbnails).toHaveCount(2);
+  await page.getByLabel('Page images').setInputFiles({ ...image, name: 'replacement.png' });
+  await page.getByRole('button', { name: 'Generate revised page' }).click();
+  await expect(modal).toBeVisible();
+  await expect.poll(() => attempts.length).toBe(2);
+  release();
+  await expect(modal).toHaveCount(0);
+  await expect(thumbnails).toHaveCount(1);
+  expect(originalSources).not.toContain(await thumbnails.getAttribute('src'));
+  expect(attempts[1].asset_ids).toHaveLength(1);
+  expect(attempts[0].asset_ids).not.toContain(attempts[1].asset_ids[0]);
+  await expect(page.getByText('1 saved image(s). Choose files to replace them.')).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.unroute('**/api/v1/sessions/*/pages');
+  await page.getByRole('button', { name: 'Retry generation' }).click();
+  await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
+  await expect(modal).toHaveCount(0);
+});
+
 test('normalized copy keeps separate explicit and inferred chapter titles in Studio and print', async ({ page, request }) => {
   const api = 'http://127.0.0.1:8007/api/v1/sessions';
   const session = await (await request.post(api, { data: { context: { title: 'Book context title' } } })).json();

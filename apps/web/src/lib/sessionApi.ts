@@ -21,6 +21,7 @@ function savedDraft(id: string): S['ActivePage'] | undefined {
   } catch { /* Server snapshots remain available when browser storage is blocked. */ }
 }
 export const sessionApi = {
+  assetThumbnailUrl: (id: string, assetId: string) => apiOrigin + prefix(id) + `/assets/${encodeURIComponent(assetId)}?thumbnail=true`,
   list: () => request<S['SessionListResponse']>('/api/v1/sessions'),
   remove: async (id: string) => {
     await request<void>(prefix(id), { method: 'DELETE' });

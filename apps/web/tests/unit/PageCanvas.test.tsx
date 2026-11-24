@@ -43,6 +43,9 @@ function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("PageCanvas", () => {
+  test("compose thumbnail URLs encode session and asset IDs independently", () => {
+    expect(sessionApi.assetThumbnailUrl("session / 1", "asset / 2")).toBe("/api/v1/sessions/session%20%2F%201/assets/asset%20%2F%202?thumbnail=true");
+  });
   test.each([
     { direction: "editorial", archetype: "editorial_asymmetric", composition: "portrait_story", media_placement: "portrait_rail", surface_treatment: "plain", emphasis_treatment: "testimonial", kind: "photo" },
     { direction: "consulting", archetype: "dashboard_split", composition: "comparison", media_placement: "paired", surface_treatment: "tinted_band", emphasis_treatment: "evidence", kind: "chart" },
