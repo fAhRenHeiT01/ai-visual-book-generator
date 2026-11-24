@@ -11,6 +11,7 @@ __pycache__/
 coverage.json
 htmlcov/
 node_modules/
+bookgen.page-locks/
 .next/
 coverage/
 playwright-report/
@@ -25,3 +26,4 @@ uploads/
 !.env.example
 *.pem
 *.key
+

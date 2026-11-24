@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-labelledby="title desc">
+  <title id="title">LangGraph page workflow</title>
+  <desc id="desc">Page input moves through profiling, compliance scanning, span grouping, two parallel layout choices, validation, a conditional repair loop or fallback, review interruption, and page commit. A checkpoint stores review state.</desc>
+  <defs>
+    <style>.bg{fill:#f7f9fc}.node{fill:#fff;stroke:#c9d5e6;stroke-width:2}.ai{fill:#e9f2ff;stroke:#719bd0;stroke-width:2}.review{fill:#eaf7ef;stroke:#72b28a;stroke-width:2}.warn{fill:#fff4e3;stroke:#d9a55e;stroke-width:2}.ink{fill:#17263d;font:600 17px Arial,sans-serif}.sub{fill:#52657e;font:14px Arial,sans-serif}.tag{fill:#465a72;font:13px Arial,sans-serif}.edge{fill:none;stroke:#7289a5;stroke-width:2.3;marker-end:url(#arrow)}.retry{fill:none;stroke:#d09248;stroke-width:2.3;marker-end:url(#arrow)}</style>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M1 1 L8 4.5 L1 8" fill="none" stroke="#7289a5" stroke-width="1.8"/></marker>
+  </defs>
+  <rect class="bg" width="1200" height="560" rx="18"/>
+  <text class="ink" x="35" y="39">Current LangGraph logic flow</text>
+  <rect class="node" x="35" y="90" width="170" height="66" rx="12"/><text class="ink" x="55" y="119">Page input</text><text class="sub" x="55" y="141">Text + asset IDs</text>
+  <rect class="node" x="248" y="90" width="178" height="66" rx="12"/><text class="ink" x="268" y="119">Profile</text><text class="sub" x="268" y="141">Addressable blocks</text>
+  <rect class="node" x="468" y="90" width="206" height="66" rx="12"/><text class="ink" x="488" y="119">Compliance scan</text><text class="sub" x="488" y="141">Sensitive metrics</text>
+  <rect class="node" x="716" y="90" width="195" height="66" rx="12"/><text class="ink" x="736" y="119">Group spans</text><text class="sub" x="736" y="141">Source-safe grouping</text>
+  <path class="edge" d="M205 123 H248 M426 123 H468 M674 123 H716"/>
+  <path class="edge" d="M911 123 H1000 V222"/>
+  <rect class="ai" x="865" y="222" width="286" height="100" rx="12"/><text class="ink" x="887" y="252">Generate two layouts</text><text class="sub" x="887" y="278">Option A + Option B in parallel</text><text class="sub" x="887" y="302">Structured pointer ASTs</text>
+  <rect class="node" x="590" y="237" width="213" height="70" rx="12"/><text class="ink" x="610" y="266">Validate</text><text class="sub" x="610" y="290">Coverage + grammar</text>
+  <path class="edge" d="M865 272 H803"/>
+  <rect class="warn" x="318" y="340" width="211" height="78" rx="12"/><text class="ink" x="338" y="370">Repair loop</text><text class="sub" x="338" y="393">Bounded retries</text>
+  <rect class="warn" x="590" y="340" width="213" height="78" rx="12"/><text class="ink" x="610" y="370">Safe fallback</text><text class="sub" x="610" y="393">When retries exhaust</text>
+  <path class="retry" d="M653 307 V324 H424 V340"/><text class="tag" x="484" y="333">Invalid</text>
+  <path class="retry" d="M424 340 V275 H590"/>
+  <path class="retry" d="M529 379 H590"/><text class="tag" x="538" y="367">Limit</text>
+  <rect class="review" x="70" y="237" width="190" height="70" rx="12"/><text class="ink" x="90" y="266">Author review</text><text class="sub" x="90" y="290">Graph interrupt</text>
+  <path class="edge" d="M590 271 H260"/><text class="tag" x="472" y="259">Valid</text>
+  <path class="edge" d="M590 379 H279 V292 H260"/>
+  <rect class="review" x="70" y="435" width="190" height="70" rx="12"/><text class="ink" x="90" y="464">Commit page</text><text class="sub" x="90" y="488">Update recent rhythm</text>
+  <path class="edge" d="M165 307 V435"/><text class="tag" x="176" y="379">A / B selected</text>
+  <rect class="node" x="318" y="435" width="485" height="70" rx="12"/><text class="ink" x="338" y="464">SQLite checkpoint + page snapshot</text><text class="sub" x="338" y="488">Resume pending review and inspect graph state</text>
+  <path class="edge" d="M260 470 H318"/>
+</svg>

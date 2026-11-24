@@ -123,7 +123,10 @@ $env:PYTHONPATH = (Resolve-Path apps/api/src).Path
 ```
 
 On macOS/Linux, set `BOOKGEN__APP__DEBUG_MODE=true` before the normal API command.
-Start the web app as usual. Create or reopen a book and generate a page:
+Start the web app as usual. Create or reopen a book in the regular Studio, then
+use the **Open debugger** link in the book header. Generate the page from that
+debugger workspace; normal Studio generation is not available while debug mode
+is enabled.
 
 1. The studio's **DEBUG · manual graph** panel pauses before `profile` and after
    every completed graph node. Inspect **Node input**, **Node output**, and
@@ -171,7 +174,9 @@ The same flow is available through JSON endpoints under
 
 Always use the latest returned `checkpoint_id`, including between A and B.
 Debug endpoints return `403` when the mode is disabled. While enabled, normal
-`POST /pages` returns `409` and the studio uses `/debug/pages` automatically.
+`POST /pages` returns `409`; the debugger workspace submits new pages through
+`POST /debug/pages`. The regular Studio does not switch to the debugger
+automatically.
 Inspection includes source text and manual responses, so use this mode in your
 local development environment.
 
