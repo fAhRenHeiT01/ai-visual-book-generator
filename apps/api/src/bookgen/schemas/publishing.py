@@ -1,7 +1,7 @@
 """Stable phase two envelopes. MVP handlers explicitly report unavailable features."""
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, StringConstraints
 
 from bookgen.schemas import AudienceMode, DesignTokens, MasterChromeConfig, MetricEntry, PageGenerationResult, StrictModel
 
@@ -28,11 +28,28 @@ class ComplianceDecision(StrictModel):
 
 class ThemeExtractRequest(StrictModel):
     url: HttpUrl
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)] | None = None
 
 
 class ThemeExtractResponse(StrictModel):
     status: Literal["available", "unavailable"] = "unavailable"
     tokens: DesignTokens | None = None
+    theme_id: str | None = None
+
+
+class ThemeLibraryEntry(StrictModel):
+    theme_id: str
+    name: str
+    source_url: HttpUrl | None = None
+    tokens: DesignTokens
+
+
+class ThemeListResponse(StrictModel):
+    themes: list[ThemeLibraryEntry] = Field(default_factory=list)
+
+
+class ThemeApplyRequest(StrictModel):
+    theme_id: str = Field(min_length=1)
 
 
 class SessionAppearance(StrictModel):

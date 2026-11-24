@@ -9,7 +9,7 @@ from threading import RLock
 from uuid import uuid4
 
 from bookgen.schemas import BookContext, DesignTokens, ImageAssetMeta, MasterChromeConfig, PageGenerationResult
-from bookgen.schemas.publishing import SessionAppearance
+from bookgen.schemas.publishing import SessionAppearance, ThemeLibraryEntry
 
 
 class SQLiteSessionRepository:
@@ -34,6 +34,9 @@ class SQLiteSessionRepository:
             CREATE TABLE IF NOT EXISTS session_appearance (
                 session_id TEXT PRIMARY KEY REFERENCES sessions(session_id),
                 payload TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS saved_themes (
+                theme_id TEXT PRIMARY KEY, payload TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS page_snapshots (
                 session_id TEXT NOT NULL REFERENCES sessions(session_id),
@@ -129,3 +132,21 @@ class SQLiteSessionRepository:
         with self._lock, self._connection:
             self._connection.execute("INSERT INTO session_appearance VALUES (?, ?) ON CONFLICT(session_id) DO UPDATE SET payload=excluded.payload",
                                      (session_id, appearance.model_dump_json()))
+
+    def save_theme(self, theme: ThemeLibraryEntry):
+        """Persist an independent installation-wide palette, never a session pointer."""
+        with self._lock, self._connection:
+            self._connection.execute("INSERT INTO saved_themes VALUES (?, ?)",
+                                     (theme.theme_id, theme.model_dump_json()))
+
+    def load_themes(self) -> list[ThemeLibraryEntry]:
+        with self._lock:
+            rows = self._connection.execute("SELECT payload FROM saved_themes ORDER BY rowid").fetchall()
+        return [ThemeLibraryEntry.model_validate_json(row[0]) for row in rows]
+
+    def load_theme(self, theme_id: str) -> ThemeLibraryEntry:
+        with self._lock:
+            row = self._connection.execute("SELECT payload FROM saved_themes WHERE theme_id=?", (theme_id,)).fetchone()
+        if row is None:
+            raise KeyError(theme_id)
+        return ThemeLibraryEntry.model_validate_json(row[0])

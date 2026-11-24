@@ -1509,9 +1509,36 @@
         "title": "SurfaceRole",
         "type": "string"
       },
+      "ThemeApplyRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "theme_id": {
+            "minLength": 1,
+            "title": "Theme Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "theme_id"
+        ],
+        "title": "ThemeApplyRequest",
+        "type": "object"
+      },
       "ThemeExtractRequest": {
         "additionalProperties": false,
         "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
           "url": {
             "format": "uri",
             "maxLength": 2083,
@@ -1538,6 +1565,17 @@
             "title": "Status",
             "type": "string"
           },
+          "theme_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Theme Id"
+          },
           "tokens": {
             "anyOf": [
               {
@@ -1550,6 +1588,57 @@
           }
         },
         "title": "ThemeExtractResponse",
+        "type": "object"
+      },
+      "ThemeLibraryEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "format": "uri",
+                "maxLength": 2083,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "theme_id": {
+            "title": "Theme Id",
+            "type": "string"
+          },
+          "tokens": {
+            "$ref": "#/components/schemas/DesignTokens"
+          }
+        },
+        "required": [
+          "theme_id",
+          "name",
+          "tokens"
+        ],
+        "title": "ThemeLibraryEntry",
+        "type": "object"
+      },
+      "ThemeListResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "themes": {
+            "items": {
+              "$ref": "#/components/schemas/ThemeLibraryEntry"
+            },
+            "title": "Themes",
+            "type": "array"
+          }
+        },
+        "title": "ThemeListResponse",
         "type": "object"
       },
       "TocEntry": {
@@ -1817,6 +1906,58 @@
           }
         },
         "summary": "Update Appearance",
+        "tags": [
+          "appearance"
+        ]
+      }
+    },
+    "/api/v1/sessions/{session_id}/appearance/theme": {
+      "post": {
+        "operationId": "apply_theme_api_v1_sessions__session_id__appearance_theme_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThemeApplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppearanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Theme",
         "tags": [
           "appearance"
         ]
@@ -2415,6 +2556,27 @@
         "summary": "Print Data",
         "tags": [
           "export"
+        ]
+      }
+    },
+    "/api/v1/themes": {
+      "get": {
+        "operationId": "list_themes_api_v1_themes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Themes",
+        "tags": [
+          "appearance"
         ]
       }
     },
