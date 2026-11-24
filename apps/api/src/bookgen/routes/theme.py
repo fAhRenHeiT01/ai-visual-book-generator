@@ -42,7 +42,7 @@ async def list_themes(request: Request):
 
 
 async def require_editable_appearance(request: Request, session_id: str):
-    """Caller must hold the workflow's session lock through its appearance write."""
+    """Caller must hold the workflow's page lock through its appearance write."""
     service = workflow(request)
     snapshot = await load_snapshot(request, session_id)
     async with service._graph() as graph:
@@ -54,7 +54,7 @@ async def require_editable_appearance(request: Request, session_id: str):
 @router.post("/api/v1/sessions/{session_id}/appearance/theme", response_model=AppearanceResponse)
 async def apply_theme(session_id: str, body: ThemeApplyRequest, request: Request):
     service = workflow(request)
-    async with service._locks[session_id]:
+    async with service._page_lock(session_id):
         await require_editable_appearance(request, session_id)
         settings = service.settings.theme
         try:
@@ -72,7 +72,7 @@ async def apply_theme(session_id: str, body: ThemeApplyRequest, request: Request
 @router.get("/api/v1/sessions/{session_id}/appearance", response_model=AppearanceResponse)
 async def get_appearance(session_id: str, request: Request):
     service = workflow(request)
-    async with service._locks[session_id]:
+    async with service._page_lock(session_id):
         await load_snapshot(request, session_id)
         appearance = service.repository.load_appearance(session_id)
         tokens = sanitize_tokens(appearance.tokens, service.settings.theme)
@@ -85,8 +85,8 @@ async def get_appearance(session_id: str, request: Request):
 @router.put("/api/v1/sessions/{session_id}/appearance", response_model=AppearanceResponse)
 async def update_appearance(session_id: str, body: SessionAppearance, request: Request):
     service = workflow(request)
-    # Share the graph's per-session lock so a concurrent edit cannot pass generation.
-    async with service._locks[session_id]:
+    # Share generation's lock, including serialization across API workers.
+    async with service._page_lock(session_id):
         await require_editable_appearance(request, session_id)
         settings = service.settings.theme
         try:

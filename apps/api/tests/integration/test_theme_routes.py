@@ -1,5 +1,55 @@
 """Frozen theme routes activate extraction and persist a locked sanitized appearance."""
+import asyncio
+
+import httpx
+import pytest
+
 from test_publishing_interfaces import make_client
+
+
+@pytest.mark.parametrize('method', ['put', 'apply', 'get'])
+async def test_appearance_serializes_with_generation_before_its_first_checkpoint(tmp_path, monkeypatch, method):
+    app = make_client(tmp_path).app
+    started = asyncio.Event()
+    resume = asyncio.Event()
+    generation = edit = None
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url='http://test') as api:
+        sid = (await api.post('/api/v1/sessions', json={})).json()['session_id']
+        path = f'/api/v1/sessions/{sid}/appearance'
+        original = (await api.get(path)).json()
+        service = app.state.get_workflow()
+        snapshot = service.snapshot
+
+        async def paused_snapshot(session_id):
+            if asyncio.current_task() is generation:
+                started.set()  # Generation owns its lock but has no checkpoint yet.
+                await resume.wait()
+            return await snapshot(session_id)
+
+        monkeypatch.setattr(service, 'snapshot', paused_snapshot)
+        try:
+            generation = asyncio.create_task(service.generate(sid, text='A clear annual review.'))
+            await asyncio.wait_for(started.wait(), timeout=5)
+            if method == 'put':
+                appearance = {'tokens': dict(original['tokens']), 'chrome': original['chrome']}
+                appearance['tokens'].update(theme_id='ocean', palette_source='preset')
+                edit = asyncio.create_task(api.put(path, json=appearance))
+            elif method == 'apply':
+                edit = asyncio.create_task(api.post(path + '/theme', json={'theme_id': 'ocean'}))
+            else:
+                edit = asyncio.create_task(api.get(path))
+            # A checkpoint check alone cannot protect this pre-checkpoint window.
+            with pytest.raises(TimeoutError):
+                await asyncio.wait_for(asyncio.shield(edit), timeout=1)
+            resume.set()
+            await generation
+            response = await edit
+            assert response.status_code == (200 if method == 'get' else 409)
+            assert (await api.get(path)).json() == original
+        finally:
+            resume.set()
+            await asyncio.gather(*(task for task in (generation, edit) if task is not None), return_exceptions=True)
+            service.repository.close()
 
 
 def test_extracted_theme_survives_restart_and_applies_to_another_book(tmp_path, monkeypatch):
