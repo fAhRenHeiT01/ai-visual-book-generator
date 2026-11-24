@@ -43,6 +43,13 @@ def test_debug_api_start_inspect_step_and_conflicts(tmp_path):
         while not status['interrupts']:
             status = api.post(prefix + '/debug/step', json={'checkpoint_id': status['checkpoint_id']}).json()
         pending = status['interrupts'][0]
+        assert pending['option_id'] == 'group_spans'
+        assert 'Group the ordered source spans' in pending['prompt']
+        status = api.post(prefix + '/debug/step', json={'checkpoint_id': status['checkpoint_id'],
+            'response': '{"groups":[{"span_ids":["span_0001"],"role":"prose"}]}'}).json()
+        assert status['state']['source_grouping']['groups'][0]['role'] == 'prose'
+        status = api.post(prefix + '/debug/step', json={'checkpoint_id': status['checkpoint_id']}).json()
+        pending = status['interrupts'][0]
         assert 'You are the book\'s art director' in pending['prompt']
         assert 'Body' in pending['prompt']
         assert 'semantic_token_roles' in pending['prompt']

@@ -46,9 +46,13 @@ def compliance_metrics_scan(blocks, *, config=None, detector: MetricDetector | N
             if not 0 <= start < end <= len(block.text) or start < end_of_previous:
                 continue
             end_of_previous = end
-            version = _source_version(block, start, end, classification)
+            # Grouping can separate a metric from its sensitivity tag. Locally
+            # bound annotations carry the original occurrence's classification.
+            source_classification = next((annotation.classification for annotation in block.metric_annotations
+                if annotation.start == start and annotation.end == end), classification)
+            version = _source_version(block, start, end, source_classification)
             ledger.append(MetricEntry(metric_id=version, source_block_id=block.block_id,
-                raw_value=block.text[start:end], context_snippet=block.text, classification=classification))
+                raw_value=block.text[start:end], context_snippet=block.text, classification=source_classification))
     return ledger
 
 

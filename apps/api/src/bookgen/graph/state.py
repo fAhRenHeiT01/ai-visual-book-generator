@@ -16,6 +16,9 @@ class PageState(TypedDict, total=False):
     page_id: str
     page_number: int
     blocks: list[dict[str, Any]]
+    source_spans: list[dict[str, Any]]
+    source_grouping: dict[str, Any] | None
+    grouping_used_fallback: bool
     metrics_ledger: list[dict[str, Any]]
     profile_issues: list[dict[str, Any]]
     options: list[dict[str, Any]]

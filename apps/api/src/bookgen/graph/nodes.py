@@ -3,11 +3,13 @@
 import asyncio
 
 from langgraph.types import interrupt
+from langgraph.errors import GraphBubbleUp
 from pydantic import ValidationError
 
 from bookgen.adapters.llm.context import provider_context
 from bookgen.domain.fallback import safe_fallback_builder
 from bookgen.domain.profiler import profile_content
+from bookgen.domain.grouping import derive_spans, deterministic_grouping, reconstruct_blocks, validate_grouping
 from bookgen.domain.validator import deterministic_validator
 from bookgen.domain.compliance import compliance_metrics_scan, mask_blocks, mask_payload, rehydrate_layout
 from bookgen.schemas import AtomicTextBlock, BookContext, ImageAssetMeta, MetricEntry, PageGenerationResult, ValidationIssue
@@ -24,7 +26,8 @@ class PageNodes:
         profile = profile_content(state["text"], storage=self.storage, settings=self.settings.profiling)
         return {"blocks": [block.model_dump(mode="json") for block in profile.blocks],
                 "profile_issues": [issue.model_dump(mode="json") for issue in profile.issues],
-                "repair_attempts": 0, "used_fallback": False, "selection": ""}
+                "repair_attempts": 0, "used_fallback": False, "selection": "",
+                "source_spans": [], "source_grouping": None, "grouping_used_fallback": False}
 
     @staticmethod
     def _sources(state):
@@ -35,6 +38,55 @@ class PageNodes:
         blocks, _ = self._sources(state)
         ledger = compliance_metrics_scan(blocks, config=self.settings.compliance)
         return {'metrics_ledger': [metric.model_dump(mode='json') for metric in ledger]}
+
+    async def group_spans(self, state):
+        blocks, _ = self._sources(state)
+        metrics = self._metrics(state)
+        config = self.settings.profiling.grouping
+        spans = derive_spans(state['text'], blocks, config=config, ledger=metrics)
+        fallback = deterministic_grouping(spans)
+        used_fallback = False
+        # Limits bound grouping requests; oversize input stays on the local path.
+        if not spans or len(spans) > config.max_spans or len(state['text']) > config.max_input_chars:
+            grouping, used_fallback = fallback, True
+        else:
+            provider_spans = spans
+            if self.settings.compliance.strict_privacy:
+                # Mask by exact source occurrence before exposing span text.
+                from bookgen.domain.compliance import _metric_spans, _placeholder
+                from bookgen.schemas import MetricClassification
+                masked = []
+                by_id = {block.block_id: block for block in blocks}
+                origins = {}
+                for span in spans:
+                    origins.setdefault(span.source_block_id, span.start)
+                for span in spans:
+                    block = by_id[span.source_block_id]
+                    source = span.text
+                    for start, end, metric in sorted(_metric_spans(block, [m for m in metrics
+                            if m.source_block_id == block.block_id and m.classification != MetricClassification.PUBLIC]), reverse=True, key=lambda item: item[0]):
+                        start += origins[span.source_block_id] - span.start
+                        end += origins[span.source_block_id] - span.start
+                        if 0 <= start < end <= len(span.text):
+                            source = source[:start] + _placeholder(metric) + source[end:]
+                    masked.append(span.model_copy(update={'text': source}))
+                provider_spans = masked
+            try:
+                grouping = validate_grouping(await self.provider.group_spans(spans=provider_spans), spans)
+            except GraphBubbleUp:
+                # Manual grouping uses the same durable dynamic interrupt.
+                raise
+            except Exception:
+                # Grouping is optional enrichment. Unusable output or transport
+                # failure retains the deterministic source partition.
+                grouping, used_fallback = fallback, True
+        grouped = reconstruct_blocks(state['text'], spans, grouping, blocks, metrics,
+            word_pattern=self.settings.profiling.block_patterns.word)
+        ledger = compliance_metrics_scan(grouped, config=self.settings.compliance)
+        return {'source_spans': [span.model_dump(mode='json') for span in spans],
+            'source_grouping': grouping.model_dump(mode='json'), 'grouping_used_fallback': used_fallback,
+            'blocks': [block.model_dump(mode='json') for block in grouped],
+            'metrics_ledger': [metric.model_dump(mode='json') for metric in ledger]}
 
     def _metrics(self, state):
         return [MetricEntry.model_validate(metric) for metric in state['metrics_ledger']]

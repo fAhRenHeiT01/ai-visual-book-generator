@@ -29,6 +29,13 @@ class BlockPatterns(StrictConfig):
     word: Pattern
 
 
+class GroupingConfig(StrictConfig):
+    sentence_boundary: Pattern
+    max_span_chars: int = Field(gt=0)
+    max_spans: int = Field(gt=0)
+    max_input_chars: int = Field(gt=0)
+
+
 class ProfilingConfig(StrictConfig):
     # An empty optional module is accepted at configuration boot. Actual profiling
     # requires its YAML values rather than introducing duplicate Python defaults.
@@ -39,6 +46,7 @@ class ProfilingConfig(StrictConfig):
     aspect_ratio_max: float | None = Field(default=None, gt=0, allow_inf_nan=False)
     block_patterns: BlockPatterns | None = None
     chart_heuristics: dict[AssetKind, list[Pattern]] | None = None
+    grouping: GroupingConfig | None = None
 
     @model_validator(mode="after")
     def ordered_aspect_bounds(self) -> Self:

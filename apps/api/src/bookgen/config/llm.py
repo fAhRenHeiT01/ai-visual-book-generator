@@ -29,4 +29,4 @@ class PromptDocument(StrictConfig):
 def load_prompts(directory: Path | None = None) -> dict[str, PromptDocument]:
     directory = directory or Path(__file__).resolve().parents[5] / "config/prompts"
     return {name: PromptDocument.model_validate(yaml.safe_load((directory / f"{name}.yaml").read_text(encoding="utf-8")))
-            for name in ("system_art_director", "strategy_option_a", "strategy_option_b", "critic_repair", "debug_chat")}
+            for name in ("system_art_director", "strategy_option_a", "strategy_option_b", "critic_repair", "debug_chat", "group_spans")}

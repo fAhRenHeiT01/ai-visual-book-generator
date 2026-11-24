@@ -69,7 +69,7 @@ class ManualLLMProvider(GeminiProvider):
         return {"prompt": prompt}
 
     async def _manual_transport(self, request):
-        option_id = next(key for key in self.settings.llm.strategy_families
+        option_id = 'group_spans' if request.get('operation') == 'group_spans' else next(key for key in self.settings.llm.strategy_families
             if request["strategy_directive"] == self.prompts[f"strategy_{key}"].text)
         payload = self.api_payload(request)
         chat = self.chat_input(payload)

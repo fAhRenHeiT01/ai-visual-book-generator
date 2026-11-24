@@ -19,3 +19,8 @@ chart_heuristics:
     - '(?i)\b(?:diagram|workflow|flowchart|schematic)\b'
   logo:
     - '(?i)\b(?:logo|wordmark)\b'
+grouping:
+  sentence_boundary: '(?<=[.!?])(?:["”’»)]*)(?:[ \t]+|\r?\n)|\r?\n'
+  max_span_chars: 1200
+  max_spans: 160
+  max_input_chars: 24000

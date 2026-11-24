@@ -3,11 +3,15 @@
 from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
-from bookgen.schemas import AtomicTextBlock, BookContext, ImageAssetMeta, PageGenerationResult, PageLayoutAST
+from bookgen.schemas import AtomicTextBlock, BookContext, ImageAssetMeta, PageGenerationResult, PageLayoutAST, SourceGrouping, SourceSpan
 
 
 @runtime_checkable
 class LLMProvider(Protocol):
+    async def group_spans(self, *, spans: Sequence[SourceSpan]) -> SourceGrouping:
+        """Assign semantic roles to contiguous source IDs without returning copy."""
+        ...
+
     async def generate_candidate(
         self,
         *,

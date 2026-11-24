@@ -1,6 +1,7 @@
 """Canonical pointer-based contracts shared through the v1 OpenAPI document."""
 
 from enum import Enum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -102,12 +103,40 @@ class BookContext(StrictModel):
     source_website_url: str | None = None
 
 
+class SourceMetricAnnotation(StrictModel):
+    start: int = Field(ge=0)
+    end: int = Field(gt=0)
+    classification: MetricClassification
+
+
+class SourceSpan(StrictModel):
+    span_id: str
+    start: int = Field(ge=0)
+    end: int = Field(gt=0)
+    source_block_id: str
+    text: str
+    kind: str
+
+
+class SpanGroup(StrictModel):
+    span_ids: list[str] = Field(min_length=1)
+    role: Literal["heading", "prose", "list", "quote", "metric", "fact", "shoutout"]
+
+
+class SourceGrouping(StrictModel):
+    groups: list[SpanGroup]
+
+
 class AtomicTextBlock(StrictModel):
     block_id: str
     kind: str
     text: str
     word_count: int
     char_count: int
+    source_span_ids: list[str] = Field(default_factory=list)
+    source_start: int | None = Field(default_factory=lambda: None, ge=0)
+    source_end: int | None = Field(default_factory=lambda: None, ge=0)
+    metric_annotations: list[SourceMetricAnnotation] = Field(default_factory=list)
 
 
 class ImageAssetMeta(StrictModel):
@@ -181,4 +210,5 @@ CONTRACT_MODELS = (
     StrictModel, DesignTokens, MasterChromeConfig, BookContext, AtomicTextBlock,
     ImageAssetMeta, MetricEntry, PlacedComponent, PageLayoutAST, ValidationIssue,
     PageGenerationResult,
+    SourceSpan, SpanGroup, SourceGrouping, SourceMetricAnnotation,
 )

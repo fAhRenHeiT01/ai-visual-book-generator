@@ -9,7 +9,7 @@ from bookgen.schemas.publishing import AppearanceResponse
 
 class DebugInterrupt(StrictModel):
     event: Literal["llm_request", "review"]
-    option_id: str | None = None
+    option_id: str | None = Field(default=None, description="group_spans for source grouping; option_a/option_b for layout requests.")
     prompt: str | None = Field(default=None, description="Copyable chat prompt containing the actual instructions, context and response schema.")
     request: dict[str, Any] | None = None
     page: PageGenerationResult | None = None

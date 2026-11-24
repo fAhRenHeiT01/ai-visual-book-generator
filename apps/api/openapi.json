@@ -153,6 +153,44 @@
             "title": "Kind",
             "type": "string"
           },
+          "metric_annotations": {
+            "items": {
+              "$ref": "#/components/schemas/SourceMetricAnnotation"
+            },
+            "title": "Metric Annotations",
+            "type": "array"
+          },
+          "source_end": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source End"
+          },
+          "source_span_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Span Ids",
+            "type": "array"
+          },
+          "source_start": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Start"
+          },
           "text": {
             "title": "Text",
             "type": "string"
@@ -385,6 +423,7 @@
                 "type": "null"
               }
             ],
+            "description": "group_spans for source grouping; option_a/option_b for layout requests.",
             "title": "Option Id"
           },
           "page": {
@@ -1337,6 +1376,121 @@
           "context"
         ],
         "title": "SessionSnapshot",
+        "type": "object"
+      },
+      "SourceGrouping": {
+        "additionalProperties": false,
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SpanGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          }
+        },
+        "required": [
+          "groups"
+        ],
+        "title": "SourceGrouping",
+        "type": "object"
+      },
+      "SourceMetricAnnotation": {
+        "additionalProperties": false,
+        "properties": {
+          "classification": {
+            "$ref": "#/components/schemas/MetricClassification"
+          },
+          "end": {
+            "exclusiveMinimum": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "start": {
+            "minimum": 0,
+            "title": "Start",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "start",
+          "end",
+          "classification"
+        ],
+        "title": "SourceMetricAnnotation",
+        "type": "object"
+      },
+      "SourceSpan": {
+        "additionalProperties": false,
+        "properties": {
+          "end": {
+            "exclusiveMinimum": 0,
+            "title": "End",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "source_block_id": {
+            "title": "Source Block Id",
+            "type": "string"
+          },
+          "span_id": {
+            "title": "Span Id",
+            "type": "string"
+          },
+          "start": {
+            "minimum": 0,
+            "title": "Start",
+            "type": "integer"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "span_id",
+          "start",
+          "end",
+          "source_block_id",
+          "text",
+          "kind"
+        ],
+        "title": "SourceSpan",
+        "type": "object"
+      },
+      "SpanGroup": {
+        "additionalProperties": false,
+        "properties": {
+          "role": {
+            "enum": [
+              "heading",
+              "prose",
+              "list",
+              "quote",
+              "metric",
+              "fact",
+              "shoutout"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "span_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Span Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "span_ids",
+          "role"
+        ],
+        "title": "SpanGroup",
         "type": "object"
       },
       "StrictModel": {

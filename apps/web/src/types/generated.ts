@@ -339,6 +339,14 @@ export interface components {
             char_count: number;
             /** Kind */
             kind: string;
+            /** Metric Annotations */
+            metric_annotations?: components["schemas"]["SourceMetricAnnotation"][];
+            /** Source End */
+            source_end?: number | null;
+            /** Source Span Ids */
+            source_span_ids?: string[];
+            /** Source Start */
+            source_start?: number | null;
             /** Text */
             text: string;
             /** Word Count */
@@ -434,7 +442,10 @@ export interface components {
              * @enum {string}
              */
             event: "llm_request" | "review";
-            /** Option Id */
+            /**
+             * Option Id
+             * @description group_spans for source grouping; option_a/option_b for layout requests.
+             */
             option_id?: string | null;
             page?: components["schemas"]["PageGenerationResult"] | null;
             /**
@@ -867,6 +878,44 @@ export interface components {
             rolling_layout_history?: components["schemas"]["LayoutArchetype"][];
             /** Session Id */
             session_id: string;
+        };
+        /** SourceGrouping */
+        SourceGrouping: {
+            /** Groups */
+            groups: components["schemas"]["SpanGroup"][];
+        };
+        /** SourceMetricAnnotation */
+        SourceMetricAnnotation: {
+            classification: components["schemas"]["MetricClassification"];
+            /** End */
+            end: number;
+            /** Start */
+            start: number;
+        };
+        /** SourceSpan */
+        SourceSpan: {
+            /** End */
+            end: number;
+            /** Kind */
+            kind: string;
+            /** Source Block Id */
+            source_block_id: string;
+            /** Span Id */
+            span_id: string;
+            /** Start */
+            start: number;
+            /** Text */
+            text: string;
+        };
+        /** SpanGroup */
+        SpanGroup: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "heading" | "prose" | "list" | "quote" | "metric" | "fact" | "shoutout";
+            /** Span Ids */
+            span_ids: string[];
         };
         /** StrictModel */
         StrictModel: Record<string, never>;
