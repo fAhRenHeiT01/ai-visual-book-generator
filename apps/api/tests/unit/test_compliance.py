@@ -12,6 +12,29 @@ def block(text, block_id='b1'):
     return AtomicTextBlock(block_id=block_id, text=text, kind='paragraph', word_count=len(text.split()), char_count=len(text))
 
 
+def test_review_report_exposes_exact_occurrence_offsets_without_changing_legacy_pages():
+    from bookgen.domain.compliance import compliance_metrics_scan, compliance_report
+    from bookgen.domain.fallback import safe_fallback_builder
+    from bookgen.schemas import BookContext, PageGenerationResult
+    from bookgen.schemas.sessions import SessionSnapshot
+    blocks = [block('😀 [INTERNAL] 42% YoY versus 42% YoY')]
+    metrics = compliance_metrics_scan(blocks)
+    a, b = safe_fallback_builder(blocks, [])
+    page = PageGenerationResult(page_id='p', page_number=1, input_blocks=blocks, input_assets=[],
+        option_a=a, option_b=b, selected_option_id='option_a', metrics_ledger=metrics)
+    legacy = page.model_dump(mode='json')
+    snapshot = SessionSnapshot(session_id='s', context=BookContext(audience_mode='client_facing'),
+        committed_pages=[PageGenerationResult.model_validate(legacy)])
+    report = compliance_report(snapshot, decisions={('p', metrics[0].metric_id): 'approve',
+        ('p', metrics[1].metric_id): 'redact'})
+    assert [(item.source_start, item.source_end, item.decision) for item in report.ledger] == [
+        (13, 20, 'approve'), (28, 35, 'redact')]
+    for item in report.ledger:
+        assert blocks[0].text[item.source_start:item.source_end] == item.metric.raw_value
+    assert page.model_dump(mode='json') == legacy
+    assert report.publishable_pages[0].input_blocks[0].text == '😀 [INTERNAL] 42% YoY versus [REDACTED]'
+
+
 def test_scan_classifies_tags_and_preserves_exact_metric_spans():
     from bookgen.domain.compliance import compliance_metrics_scan, mask_blocks, rehydrate_layout
     blocks = [block('[PUBLIC] $4.2M ARR and 42% YoY', 'pub'), block('[INTERNAL] $4.2M ARR', 'int'), block('[CONFIDENTIAL] 42% YoY', 'conf'), block('[UNDISCLOSED] 12 employees', 'und'), block('[DRAFT] 15% growth', 'draft'), block('27% growth', 'unknown')]

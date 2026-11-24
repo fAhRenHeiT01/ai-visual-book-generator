@@ -2,6 +2,33 @@
 from test_publishing_interfaces import make_client
 
 
+def test_current_page_bulk_decisions_are_durable_and_leave_other_page_untouched(tmp_path):
+    with make_client(tmp_path) as api:
+        sid = api.post('/api/v1/sessions', json={'context': {'audience_mode': 'client_facing'}}).json()['session_id']
+        prefix = f'/api/v1/sessions/{sid}'
+        pages = []
+        for text in ('[INTERNAL] 42% YoY and 12 employees', '[INTERNAL] 27% growth'):
+            page = api.post(prefix + '/pages', json={'text': text}).json()
+            api.post(prefix + f"/pages/{page['page_id']}/selection", json={'option_id': 'option_a'})
+            pages.append(page)
+        report = api.get(prefix + '/compliance').json()
+        current = [item for item in report['ledger'] if item['page_id'] == pages[0]['page_id']]
+        assert len(current) == 2
+        assert all(item['source_start'] < item['source_end'] for item in current)
+        for action in ('approve', 'redact'):
+            for item in current:
+                response = api.post(prefix + '/compliance/decisions', json={
+                    'page_id': item['page_id'], 'metric_id': item['metric']['metric_id'], 'action': action})
+                assert response.status_code == 200
+            report = response.json()
+            assert [item['decision'] for item in report['ledger']] == [action, action, None]
+            assert not report['eligible']
+    with make_client(tmp_path) as api:
+        reopened = api.get(prefix + '/compliance').json()
+        assert [item['decision'] for item in reopened['ledger']] == ['redact', 'redact', None]
+        assert not reopened['eligible']
+
+
 def test_locked_approved_redacted_reopened_and_source_preserved(tmp_path):
     from bookgen.domain.compliance import require_export_approval
     from bookgen.routes.sessions import workflow

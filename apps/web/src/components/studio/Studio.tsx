@@ -82,6 +82,8 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
   const [status, setStatus] = useState(sessionId ? 'Loading book…' : '');
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
+  const [reviewPage, setReviewPage] = useState<{ scope: string; pageId: string }>();
+  const [compliance, setCompliance] = useState<S['ComplianceReport']>();
   const locked = useRef(false);
   useEffect(() => {
     if (!sessionId) return;
@@ -126,6 +128,10 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
   const debugReview = debugging && debug.interrupts?.[0]?.event === 'review' && !!session?.pending_review && session.pending_review.page_id === debug.state?.page_id;
   const otherWorkflow = session && (debugWorkspace ? !session.debug_enabled || debug?.studio_active : session.debug_active);
   const action = !session ? 'Setup' : session.pending_review ? 'Review' : 'Compose';
+  const currentPageId = session?.pending_review?.page_id ?? session?.active_page?.page_id;
+  const reviewScope = `${session?.session_id}:${currentPageId ?? session?.current_page_index}`;
+  const activeReviewId = reviewPage?.scope === reviewScope ? reviewPage.pageId : currentPageId;
+  const selectReviewPage = (pageId: string) => setReviewPage({ scope: reviewScope, pageId });
   return <main className="studio">
     <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && (debugWorkspace || session.debug_enabled) && <p>{debugWorkspace && <a href={`/sessions/${session.session_id}`}>Open Studio</a>}{session.debug_enabled && !debugWorkspace && <a href={`/sessions/${session.session_id}/debug`}>Open debugger</a>}</p>}</header>
     <nav className="authoring-progress studio-controls" aria-label="Authoring progress"><ol>{['Setup', 'Compose', 'Review'].map(step => <li key={step} aria-current={step === action ? 'step' : undefined}>{step}</li>)}</ol>{session && <a href="#draft">View draft · {session.committed_pages?.length ?? 0} pages</a>}</nav>
@@ -166,8 +172,13 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
         const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise, title);
         setSession({ ...session, assets, active_page: activePage, pending_review: page });
       }); }} />}
-      <ComplianceBanner sessionId={session.session_id} snapshot={session} onDecision={refresh} />
-      <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} />
+      <label className="studio-controls">Review page<select aria-label="Review page" value={activeReviewId ?? ''} onChange={event => selectReviewPage(event.target.value)}>
+        {!currentPageId && <option value="">Page {session.current_page_index} · Composing</option>}
+        {(session.committed_pages ?? []).map(page => <option key={page.page_id} value={page.page_id}>Page {page.page_number} · Saved</option>)}
+        {currentPageId && <option value={currentPageId}>Page {session.current_page_index} · {session.pending_review ? 'Reviewing options' : 'Composing'}</option>}
+      </select></label>
+      <ComplianceBanner sessionId={session.session_id} pageId={activeReviewId} snapshot={session} onDecision={refresh} onReport={setCompliance} />
+      <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} reviewMetrics={compliance?.ledger} onReviewPage={selectReviewPage} />
     </>}
   </main>;
 }

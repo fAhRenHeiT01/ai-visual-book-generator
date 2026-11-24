@@ -485,6 +485,16 @@ export interface components {
             metric: components["schemas"]["MetricEntry"];
             /** Page Id */
             page_id: string;
+            /**
+             * Source End
+             * @description Exclusive Unicode code point offset in the exact source block.
+             */
+            source_end?: number | null;
+            /**
+             * Source Start
+             * @description Inclusive Unicode code point offset in the exact source block.
+             */
+            source_start?: number | null;
         };
         /** ComplianceReport */
         ComplianceReport: {

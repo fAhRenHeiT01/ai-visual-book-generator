@@ -22,6 +22,8 @@ export type PageCanvasProps = {
   layout?: S["PageLayoutAST"];
   pageSize?: S["PageSize"];
   chrome?: ChromeContext;
+  /** Studio saved-draft review only; omitted by option and print renderers. */
+  reviewMetrics?: S['ComplianceMetric'][];
 };
 
 /** Shared by page canvases and assembled matter rendered outside a canvas. */
@@ -34,7 +36,7 @@ export function themeVariables(tokens: S["DesignTokens"]): CSSProperties {
   } as CSSProperties;
 }
 
-export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", chrome }: PageCanvasProps) {
+export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", chrome, reviewMetrics }: PageCanvasProps) {
   const layout = override ?? (result.selected_option_id === result.option_b.option_id ? result.option_b : result.option_a);
   const contentRef = useRef<HTMLDivElement>(null);
   const resetKey = JSON.stringify([tokens, pageSize, chrome, result.input_blocks, result.input_assets]);
@@ -42,6 +44,7 @@ export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", 
   const Renderer = heal.safeFlow ? ColumnFlow : archetypeRenderers[layout.archetype];
   const blocks = new Map(result.input_blocks.map((block) => [block.block_id, block]));
   const assets = new Map(result.input_assets.map((asset) => [asset.asset_id, asset]));
+  const pageMetrics = reviewMetrics?.filter(item => item.page_id === result.page_id);
   const composition = heal.safeFlow ? "flow" : layout.composition ?? "flow";
   const mediaPlacement = heal.safeFlow ? "in_flow" : layout.media_placement ?? "in_flow";
   const emphasis = heal.safeFlow ? "balanced" : layout.emphasis_treatment ?? "balanced";
@@ -65,7 +68,7 @@ export function PageCanvas({ result, tokens, layout: override, pageSize = "A4", 
     className={`page-canvas ${surfaceClasses[layout.surface_role]}${photoBackground ? " has-full-bleed" : ""}`} style={style}>
     {bands.header && config && <MasterChrome config={config} band="header" values={chromeValues} />}
     <Renderer contentRef={contentRef} archetype={heal.safeFlow ? "safe_flow_fallback" : layout.archetype} photoBackground={photoBackground} safeFlow={heal.safeFlow} composition={composition} mediaPlacement={mediaPlacement}>
-      {layout.components.map((component) => <SemanticBlock key={component.component_id} component={component} blocks={blocks} assets={assets} fullBleed={photoBackground} emphasis={emphasis} mediaPlacement={mediaPlacement} />)}
+      {layout.components.map((component) => <SemanticBlock key={component.component_id} component={component} blocks={blocks} assets={assets} fullBleed={photoBackground} emphasis={emphasis} mediaPlacement={mediaPlacement} reviewMetrics={pageMetrics} />)}
     </Renderer>
     {bands.footer && config && <MasterChrome config={config} band="footer" values={chromeValues} />}
   </article>;

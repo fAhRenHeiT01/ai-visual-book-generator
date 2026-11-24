@@ -109,6 +109,14 @@ body { margin: 0; background: var(--color-paper); color: var(--color-ink); font-
 }
 
 /* Palette controls remain outside the shared physical-page renderer. */
+.compliance-bulk { display: flex; gap: .5rem; margin-block: .75rem; }
+.compliance-statement { border-top: 1px solid #d5dce5; padding-block: .75rem; }
+.compliance-decision { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+.compliance-decision p { flex: 1 1 20rem; }
+.compliance-metric { color: inherit; }
+.compliance-metric.review-approve { background-color: #dcf5df; }
+.compliance-metric.review-redact { background-color: #fbe0e0; }
+@media print { .compliance-metric { background: transparent !important; } }
 .theme-library { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: .75rem; }
 .studio button.theme-card { width: 100%; display: grid; gap: .6rem; text-align: left; padding: 1rem; background: white; color: #172033; border: 2px solid #c3ccda; }
 .studio button.theme-card[aria-checked="true"] { border-color: #174ba0; box-shadow: 0 0 0 1px #174ba0; background: #edf3ff; }

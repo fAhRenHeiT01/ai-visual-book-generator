@@ -5,7 +5,7 @@ import type { components } from "../../src/types/generated";
 import { sessionApi } from "../../src/lib/sessionApi";
 
 type S = components["schemas"];
-type CanvasProps = { result: S["PageGenerationResult"]; tokens: S["DesignTokens"]; layout?: S["PageLayoutAST"]; pageSize?: S["PageSize"]; chrome?: { config?: S["MasterChromeConfig"]; pageNumber?: number; totalPages?: number; chapterTitle?: string; isCover?: boolean } };
+type CanvasProps = { result: S["PageGenerationResult"]; tokens: S["DesignTokens"]; layout?: S["PageLayoutAST"]; pageSize?: S["PageSize"]; reviewMetrics?: S['ComplianceMetric'][]; chrome?: { config?: S["MasterChromeConfig"]; pageNumber?: number; totalPages?: number; chapterTitle?: string; isCover?: boolean } };
 const modules = import.meta.glob("../../src/engine/PageCanvas.tsx", { eager: true });
 const Canvas = (modules["../../src/engine/PageCanvas.tsx"] as { PageCanvas: ComponentType<CanvasProps> } | undefined)?.PageCanvas;
 const shapes = {
@@ -43,6 +43,41 @@ function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("PageCanvas", () => {
+  test('review highlights exact Unicode source occurrences only when explicitly enabled', () => {
+    const result = fixture('minimalist_swiss', []);
+    const text = '😀 [INTERNAL] 42% YoY versus 42% YoY and 12 employees';
+    result.input_blocks = [{ block_id: 'b1', text, kind: 'paragraph', word_count: 10, char_count: Array.from(text).length }];
+    result.option_a.components = [placed('body', 'body_prose', 'body', ['b1']),
+      { ...placed('quote', 'pull_quote', 'callout', ['b1']), extracted_excerpt: 'versus 42% YoY' }];
+    const reviewMetrics: S['ComplianceMetric'][] = [
+      { page_id: 'p1', source_start: 13, source_end: 20, decision: 'approve', metric: { metric_id: 'm1', source_block_id: 'b1', context_snippet: text, raw_value: '42% YoY', classification: 'internal', approved_for_export: true } },
+      { page_id: 'p1', source_start: 28, source_end: 35, decision: 'redact', metric: { metric_id: 'm2', source_block_id: 'b1', context_snippet: text, raw_value: '42% YoY', classification: 'internal', approved_for_export: false } },
+      { page_id: 'p1', source_start: 40, source_end: 52, decision: null, metric: { metric_id: 'm3', source_block_id: 'b1', context_snippet: text, raw_value: '12 employees', classification: 'internal', approved_for_export: false } },
+    ];
+    const before = JSON.stringify(result);
+    const saved = mount(result, { reviewMetrics });
+    const body = saved.container.querySelector('[data-source-block-id="b1"]')!;
+    expect(body.textContent).toBe(text);
+    expect(Array.from(body.querySelectorAll('[data-metric-id]')).map(el => [el.textContent, el.getAttribute('data-decision')])).toEqual([
+      ['42% YoY', 'approve'], ['42% YoY', 'redact'], ['12 employees', 'pending'],
+    ]);
+    expect(saved.container.querySelector('blockquote [data-decision="redact"]')?.textContent).toBe('42% YoY');
+    saved.unmount();
+    const preview = mount(result);
+    expect(preview.container.querySelector('[data-metric-id]')).toBeNull();
+    expect(JSON.stringify(result)).toBe(before);
+    preview.unmount();
+    const stale = mount(result, { reviewMetrics: reviewMetrics.map(item => ({ ...item, page_id: 'other' })) });
+    expect(stale.container.querySelector('[data-metric-id]')).toBeNull();
+    stale.unmount();
+    result.input_blocks.push({ block_id: 'b2', text: '42% YoY', kind: 'paragraph', word_count: 2, char_count: 7 });
+    result.option_a.components[1].source_block_ids = ['b1', 'b2'];
+    result.option_a.components[1].extracted_excerpt = '42% YoY';
+    const ambiguous = mount(result, { reviewMetrics: [...reviewMetrics, {
+      ...reviewMetrics[0], source_start: 0, source_end: 7, metric: { ...reviewMetrics[0].metric, metric_id: 'other-source', source_block_id: 'b2', context_snippet: '42% YoY' },
+    }] });
+    expect(ambiguous.container.querySelector('blockquote [data-metric-id]')).toBeNull();
+  });
   test("option previews expose semantic section rhythm and focal surfaces without changing source pointers", () => {
     const result = fixture("editorial_asymmetric", ["chart", "diagram"]);
     result.input_blocks[0].kind = "heading";
