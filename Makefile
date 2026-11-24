@@ -28,7 +28,7 @@ browser:
 	$(PYTHON) scripts/check_branch_coverage.py --prepare-browsers
 
 e2e:
-	$(PYTHON) scripts/check_branch_coverage.py --e2e
+	$(NPM) --prefix apps/web run e2e -- --workers=1
 
 coverage: browser
 	$(PYTHON) -m coverage run --branch --source=apps/api/src/bookgen -m pytest -W error $(PYTEST_DIRS)
