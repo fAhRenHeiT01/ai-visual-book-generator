@@ -66,7 +66,9 @@ test('refresh recovers uploaded input and a lost generation response with one du
   await page.getByLabel('Page text').fill('Durable original copy.');
   await page.getByLabel('Page images').setInputFiles({ name: 'chart.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAwAAAAICAIAAABChommAAAAFUlEQVR4nGP8//8/AyHARFDFsFcEAHkjAw3jrppVAAAAAElFTkSuQmCC', 'base64') });
   await page.getByRole('button', { name: 'Generate options' }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.locator('.studio [role="alert"]')).toBeVisible();
+  expect(attempts).toHaveLength(1);
+  expect(await page.evaluate(() => Object.values(localStorage))).toContainEqual(expect.stringContaining('Durable original copy.'));
   await page.reload();
   await expect(page.getByLabel('Page text')).toHaveValue('Durable original copy.');
   await page.getByRole('button', { name: 'Retry generation' }).click();
@@ -85,3 +87,68 @@ test('refresh recovers uploaded input and a lost generation response with one du
   expect(saved.committed_pages).toHaveLength(1);
   expect(saved.current_page_index).toBe(2);
 });
+
+for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844 }]) {
+  test(`complete A/B review fits the workspace at ${viewport.width}px without horizontal scrolling`, async ({ page, request }) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.getByLabel('Book direction').selectOption('consulting_report');
+    const create = page.getByRole('button', { name: 'Create book' });
+    if (viewport.width < 1000) { await create.focus(); await page.keyboard.press('Enter'); }
+    else await create.click();
+    await expect(page).toHaveURL(/\/sessions\//);
+    const sessionId = page.url().split('/').at(-1)!;
+    const created = await (await request.get(`http://127.0.0.1:8007/api/v1/sessions/${sessionId}`)).json();
+    expect(created.context.direction).toBe('consulting_report');
+    await expect(page.getByRole('button', { name: 'Download PDF' })).toBeDisabled();
+    await page.getByLabel('Page text').fill('A complete page preview.\n\nOriginal supporting copy stays on the physical page.');
+    await page.getByRole('button', { name: 'Generate options' }).click();
+    const options = page.locator('.option-card');
+    await expect(options).toHaveCount(2);
+    for (const option of await options.all()) {
+      const canvas = option.getByTestId('page-canvas');
+      await expect(canvas).toHaveAttribute('data-settled', 'true');
+      await expect.poll(async () => canvas.evaluate(element => {
+        const bounds = element.getBoundingClientRect();
+        const wrapper = element.closest('.canvas-scroll')!;
+        const frame = wrapper.getBoundingClientRect();
+        return bounds.width <= frame.width + 1 && bounds.height <= frame.height + 1 && wrapper.scrollWidth <= wrapper.clientWidth + 1;
+      })).toBe(true);
+      expect(await canvas.evaluate(element => element.clientWidth)).toBeGreaterThan(790);
+    }
+    const boxes = await options.evaluateAll(elements => elements.map(element => {
+      const box = element.getBoundingClientRect();
+      return { x: box.x, y: box.y };
+    }));
+    if (viewport.width > 1000) expect(boxes[0].y).toBe(boxes[1].y);
+    else expect(boxes[1].y).toBeGreaterThan(boxes[0].y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+    const appearance = page.getByText('Book appearance', { exact: true });
+    await appearance.focus(); await page.keyboard.press('Enter');
+    await expect(page.getByText('Appearance is locked for this book.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save appearance' })).toBeDisabled();
+    await page.keyboard.press('Enter');
+    const reopen = page.getByRole('link', { name: 'Reopen this book' });
+    await reopen.focus();
+    await Promise.all([page.waitForEvent('load'), page.keyboard.press('Enter')]);
+    await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
+    await page.getByRole('radio', { name: /Option A/ }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('radio', { name: /Option B/ })).toBeFocused();
+    await expect(page.getByRole('radio', { name: /Option B/ })).toHaveAttribute('aria-checked', 'true');
+    if (viewport.width < 1000) { await page.keyboard.press('Tab'); await page.keyboard.press('Enter'); }
+    else await page.getByRole('button', { name: 'Confirm selection' }).click();
+    await expect(page.getByText('1 committed page', { exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'Page 1', exact: true }).click();
+    await expect(page.locator('.draft-page .page-canvas')).toBeVisible();
+    const download = page.waitForEvent('download');
+    const exportButton = page.getByRole('button', { name: 'Download PDF' });
+    await expect(exportButton).toBeEnabled();
+    if (viewport.width < 1000) { await exportButton.focus(); await page.keyboard.press('Enter'); }
+    else await exportButton.click();
+    expect((await download).suggestedFilename()).toBe('book.pdf');
+    await expect(exportButton).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

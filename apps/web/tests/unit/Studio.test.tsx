@@ -250,3 +250,33 @@ test('client saves identity and uploaded assets before a lost generation request
   expect(JSON.parse(String(calls.at(-1)?.[1]?.body))).toEqual({ page_id: identity, text: 'Original before network loss.', asset_ids: ['saved-upload'], revise: false });
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/assets'))).toHaveLength(1);
 });
+
+test.each(['auto', 'brand_led_editorial', 'consulting_report', 'campaign_presentation'])('setup sends the %s book direction', async direction => {
+  mockApi(); mount();
+  const select = screen.getByLabelText('Book direction');
+  expect(Array.from((select as HTMLSelectElement).options).map(option => option.value)).toEqual(['auto', 'brand_led_editorial', 'consulting_report', 'campaign_presentation']);
+  fireEvent.change(select, { target: { value: direction } });
+  fireEvent.click(screen.getByRole('button', { name: 'Create book' }));
+  await screen.findByLabelText('Page text');
+  const call = vi.mocked(fetch).mock.calls.find(([, init]) => init?.method === 'POST');
+  expect(JSON.parse(String(call?.[1]?.body)).context.direction).toBe(direction);
+});
+
+test('workspace puts the current action before contextual appearance and draft actions', async () => {
+  mockApi(true); mount('s1');
+  await screen.findByRole('radio', { name: /Option A/ });
+  expect(screen.getByLabelText('Authoring progress').textContent).toContain('Review');
+  expect(screen.getByText('Book appearance').closest('details')?.open).toBe(false);
+  expect(screen.getByRole('radio', { name: /Option A/ }).getAttribute('tabindex')).toBe('0');
+  expect(screen.getByRole('radio', { name: /Option B/ }).getAttribute('tabindex')).toBe('-1');
+  fireEvent.keyDown(screen.getByRole('radio', { name: /Option A/ }), { key: 'ArrowRight' });
+  expect(screen.getByRole('radio', { name: /Option B/ }).getAttribute('aria-checked')).toBe('true');
+  expect(document.activeElement).toBe(screen.getByRole('radio', { name: /Option B/ }));
+});
+
+test('review shortcuts allow keyboard navigation links without committing a layout', async () => {
+  mockApi(true); mount('s1');
+  await screen.findByRole('radio', { name: /Option A/ });
+  fireEvent.keyDown(screen.getByRole('link', { name: 'Reopen this book' }), { key: 'Enter' });
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/selection'))).toBe(false);
+});
