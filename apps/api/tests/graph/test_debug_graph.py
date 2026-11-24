@@ -1,6 +1,7 @@
 """Manual responses exercise the real request builder and durable graph gates."""
 from pathlib import Path
 import sys
+import json
 
 import pytest
 
@@ -23,6 +24,21 @@ def workflow(tmp_path, enabled=True):
 
 async def step(service, sid, snapshot, response=None):
     return await service.debugger.step(sid, checkpoint_id=snapshot.checkpoint_id, response=response)
+
+
+def grouping_reply(pending):
+    content = json.loads(pending.request['contents'][0]['parts'][0]['text'])
+    spans = content['context']['current_page_payload']['spans']
+    from bookgen.domain.grouping import deterministic_grouping
+    from bookgen.schemas import SourceSpan
+    return deterministic_grouping([SourceSpan.model_validate(s) for s in spans]).model_dump_json()
+
+
+async def layout_request(service, sid, status):
+    while not status.interrupts or status.interrupts[0].option_id == 'group_spans':
+        response = grouping_reply(status.interrupts[0]) if status.interrupts else None
+        status = await step(service, sid, status, response)
+    return status
 
 
 async def candidates(service, state):
@@ -52,6 +68,10 @@ async def test_debug_pauses_at_every_node_reopens_and_commits_only_after_approva
         if status.interrupts:
             pending = status.interrupts[0]
             if pending.event == "llm_request":
+                if pending.option_id == 'group_spans':
+                    assert 'Group the ordered source spans' in pending.prompt
+                    status = await step(service, sid, status, grouping_reply(pending))
+                    continue
                 request = pending.request
                 assert request["system_instruction"]
                 assert request["generation_config"]["response_json_schema"]["additionalProperties"] is False
@@ -76,7 +96,7 @@ async def test_debug_pauses_at_every_node_reopens_and_commits_only_after_approva
                 assert service.repository.load_snapshots(sid) == []
             status = await step(service, sid, status)
     assert status.last_node == "commit_page"
-    assert visited == ["profile", "compliance_metrics_scan", "generate_candidates", "validate", "build_review", "human_review_interrupt"]
+    assert visited == ["profile", "compliance_metrics_scan", "group_spans", "generate_candidates", "validate", "build_review", "human_review_interrupt"]
     assert status.node_input["selection"] == "option_a"
     assert status.node_output["result"]["selected_option_id"] == "option_a"
     assert [entry.node for entry in status.timeline] == [*visited, "commit_page"]
@@ -101,9 +121,10 @@ async def test_manual_bad_json_runs_repairs_with_error_trace_then_bounded_fallba
             requests.append(request)
             response = "not JSON"
         status = await step(service, sid, status, response)
-    assert len(requests) == 2 * (service.settings.llm.max_repair_retries + 1)
-    assert 'repair_directive' in requests[2]['contents'][0]['parts'][0]['text']
-    assert 'issues' in requests[2]['contents'][0]['parts'][0]['text']
+    assert len(requests) == 1 + 2 * (service.settings.llm.max_repair_retries + 1)
+    assert status.state["grouping_used_fallback"]
+    assert 'repair_directive' in requests[3]['contents'][0]['parts'][0]['text']
+    assert 'issues' in requests[3]['contents'][0]['parts'][0]['text']
     assert status.state["repair_attempts"] == service.settings.llm.max_repair_retries
     assert status.state["used_fallback"]
     assert status.state["result"]["input_blocks"][1]["text"] == "Second."
@@ -145,7 +166,7 @@ async def test_manual_identity_uses_durable_page_lock_and_timeline_survives_rest
     status = await step(service, sid, status)
     status = await step(service, sid, status)
     assert acquisitions == [sid, sid, sid]
-    assert [entry.node for entry in status.timeline] == ['profile', 'compliance_metrics_scan', 'generate_candidates']
+    assert [entry.node for entry in status.timeline] == ['profile', 'compliance_metrics_scan', 'group_spans']
     assert status.timeline[-1].status == 'paused'
     assert status.timeline[0].node_input['text'] == 'Original'
     assert status.timeline[0].node_output['blocks'][0]['text'] == 'Original'
@@ -187,8 +208,7 @@ async def test_private_request_is_masked_metadata_only_and_resume_bound_to_curre
         pytest.fail(f'Layout debug must not read image storage: {key}')
     service.storage.get = no_reads
     status = await service.debugger.start(sid, text='[INTERNAL] Revenue is $4.2M ARR.', assets=profile.assets)
-    while not status.interrupts:
-        status = await step(service, sid, status)
+    status = await layout_request(service, sid, status)
     request = status.interrupts[0].request
     assert status.interrupts[0].prompt
     assert '$4.2M' not in status.interrupts[0].prompt
@@ -225,6 +245,9 @@ async def test_semantically_invalid_manual_layout_reaches_validator_and_repair(t
     while status.next_nodes != ['repair']:
         response = None
         if status.interrupts:
+            if status.interrupts[0].option_id == 'group_spans':
+                status = await step(service, sid, status, grouping_reply(status.interrupts[0]))
+                continue
             replies = replies or await candidates(service, status.state)
             index = int(status.interrupts[0].option_id == 'option_b')
             raw = replies[index].model_dump(mode='json')
@@ -247,8 +270,7 @@ async def test_chat_prompt_contains_actual_instructions_context_and_schema_witho
     sid = service.create_session().session_id
     text = 'Exact source with {theme_role} and café.'
     status = await service.debugger.start(sid, text=text)
-    while not status.interrupts:
-        status = await step(service, sid, status)
+    status = await layout_request(service, sid, status)
     pending = status.interrupts[0]
     assert pending.prompt, 'The LLM interrupt must expose a directly copyable chat prompt'
     prompts = load_prompts()
@@ -281,6 +303,10 @@ async def test_existing_sdk_only_interrupt_is_presented_as_chat_prompt_after_upg
     sid = service.create_session().session_id
 
     async def old_transport(self, request):
+        if request.get('operation') == 'group_spans':
+            from bookgen.domain.grouping import deterministic_grouping
+            from bookgen.schemas import SourceSpan
+            return deterministic_grouping([SourceSpan.model_validate(s) for s in request['context']['current_page_payload']['spans']])
         payload = self.api_payload(request)
         content = json.loads(payload['contents'][0]['parts'][0]['text'])
         asset = content['context']['current_page_payload']['assets'][0]
@@ -304,8 +330,7 @@ async def test_existing_sdk_only_interrupt_is_presented_as_chat_prompt_after_upg
     with monkeypatch.context() as patch:
         patch.setattr(ManualLLMProvider, '_manual_transport', old_transport)
         status = await service.debugger.start(sid, text='Existing paused source.', assets=assets)
-        while not status.interrupts:
-            status = await step(service, sid, status)
+        status = await layout_request(service, sid, status)
     async with service._graph(manual_debug=True) as graph:
         checkpoint = await graph.aget_state(service._config(sid))
         original_interrupts = [item.value for task in checkpoint.tasks for item in task.interrupts]
@@ -349,8 +374,7 @@ async def test_checkpoint_with_an_older_string_resume_can_finish_the_node(tmp_pa
     service, mock = workflow(tmp_path)
     sid = service.create_session().session_id
     status = await service.debugger.start(sid, text='Previously submitted source.')
-    while not status.interrupts:
-        status = await step(service, sid, status)
+    status = await layout_request(service, sid, status)
     # Earlier releases persisted just the raw reply as the resume value for A.
     async with service._graph(manual_debug=True) as graph:
         await graph.ainvoke(Command(resume='{}'), service._config(sid))
@@ -372,8 +396,7 @@ async def test_resumed_response_keeps_the_prompt_and_payload_the_user_copied(tmp
     service, mock = workflow(tmp_path)
     sid = service.create_session().session_id
     status = await service.debugger.start(sid, text='Exact source with {braces} and caf\u00e9.')
-    while not status.interrupts:
-        status = await step(service, sid, status)
+    status = await layout_request(service, sid, status)
     original = status.interrupts[0]
     service.repository.close()
 
@@ -400,5 +423,58 @@ async def test_resumed_response_keeps_the_prompt_and_payload_the_user_copied(tmp
     assert exchanges[0]['response'] == '{}'
     assert exchanges[1]['request'] == second.request
     assert exchanges[1]['prompt'] == second.prompt
+    assert mock.calls == []
+    service.repository.close()
+
+
+async def test_manual_grouping_interrupt_reopens_and_persists_before_a_b(tmp_path):
+    service, mock = workflow(tmp_path)
+    sid = service.create_session().session_id
+    text = '[INTERNAL] Customers say \u201cCaf\u00e9 works.\u201d Revenue grew 42%.'
+    status = await service.debugger.start(sid, text=text)
+    assert status.next_nodes == ['profile']
+    status = await step(service, sid, status)
+    status = await step(service, sid, status)
+    assert status.next_nodes == ['group_spans']
+    assert status.state.get('source_grouping') is None
+    status = await step(service, sid, status)
+    pending = status.interrupts[0]
+    assert pending.option_id == 'group_spans'
+    assert '42%' not in pending.prompt
+    assert '[METRIC_' in pending.prompt
+    content = json.loads(pending.request['contents'][0]['parts'][0]['text'])
+    assert content['context']['current_page_payload']['assets'] == []
+    spans = content['context']['current_page_payload']['spans']
+    assert [s['span_id'] for s in spans] == ['span_0001', 'span_0002']
+    assert pending.request['generation_config']['response_json_schema']['title'] == 'SourceGrouping'
+    service.repository.close()
+    service, mock = workflow(tmp_path)
+    reopened = await service.debugger.snapshot(sid)
+    assert reopened.checkpoint_id == status.checkpoint_id
+    assert reopened.interrupts[0] == pending
+    response = json.dumps({'groups': [
+        {'span_ids': ['span_0001'], 'role': 'quote'},
+        {'span_ids': ['span_0002'], 'role': 'metric'},
+    ]})
+    status = await step(service, sid, reopened, response)
+    assert status.last_node == 'group_spans'
+    assert status.next_nodes == ['generate_candidates']
+    assert not status.state['grouping_used_fallback']
+    assert [b['kind'] for b in status.state['blocks']] == ['quote', 'metric']
+    assert ''.join(b['text'] for b in status.state['blocks']) == text
+    assert status.state['metrics_ledger'][0]['classification'] == 'internal'
+    assert status.node_output['llm_exchanges'][0]['request'] == pending.request
+    assert status.node_output['llm_exchanges'][0]['response'] == response
+    with pytest.raises(ValueError, match='checkpoint'):
+        await step(service, sid, reopened, response)
+    replies = await candidates(service, status.state)
+    status = await step(service, sid, status)
+    for index in range(2):
+        assert status.interrupts[0].option_id == ('option_a' if index == 0 else 'option_b')
+        layout = json.loads(status.interrupts[0].request['contents'][0]['parts'][0]['text'])
+        assert [b['kind'] for b in layout['context']['current_page_payload']['blocks']] == ['quote', 'metric']
+        status = await step(service, sid, status, replies[index].model_dump_json())
+    assert status.last_node == 'generate_candidates'
+    assert status.state['source_grouping'] == json.loads(response)
     assert mock.calls == []
     service.repository.close()

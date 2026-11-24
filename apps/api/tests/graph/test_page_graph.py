@@ -234,3 +234,144 @@ async def test_new_page_after_lost_commit_response_recovers_checkpoint(tmp_path)
     assert next_page.page_number == 2
     assert len(fresh_repository.load_snapshots(session)) == 1
     fresh_repository.close()
+
+
+async def test_source_grouping_is_shared_exact_role_slices_before_both_options(tmp_path):
+    _, _, Mock, _, _ = implementation()
+
+    class SemanticGrouping(Mock):
+        async def group_spans(self, *, spans):
+            self.grouping_calls.append(spans)
+            return {"groups": [
+                {"span_ids": [spans[0].span_id], "role": "quote"},
+                {"span_ids": [spans[1].span_id], "role": "metric"},
+            ]}
+
+    provider = SemanticGrouping()
+    graph, repository = workflow(tmp_path, provider)
+    graph.settings.compliance.strict_privacy = False
+    text = 'Our customers say \u201cIt changed our work.\u201d Revenue increased 42%.'
+    page = await graph.generate(graph.create_session().session_id, text=text)
+    assert [(b.kind, b.text) for b in page.input_blocks] == [
+        ('quote', 'Our customers say \u201cIt changed our work.\u201d '),
+        ('metric', 'Revenue increased 42%.'),
+    ]
+    assert len(provider.grouping_calls) == 1
+    assert provider.calls[0]['blocks'] == provider.calls[1]['blocks'] == page.input_blocks
+    assert ''.join(b.text for b in page.input_blocks) == text
+    for option in (page.option_a, page.option_b):
+        assert {i for c in option.components for i in c.source_block_ids} == {b.block_id for b in page.input_blocks}
+    repository.close()
+
+
+@pytest.mark.parametrize('invalid', ['not JSON', {'groups': []}, RuntimeError('grouping unavailable')])
+async def test_unusable_grouping_falls_back_once_and_repairs_share_blocks(tmp_path, invalid):
+    _, _, Mock, _, _ = implementation()
+
+    class InvalidGrouping(Mock):
+        async def group_spans(self, *, spans):
+            self.grouping_calls.append(spans)
+            if isinstance(invalid, Exception):
+                raise invalid
+            return invalid
+
+    provider = InvalidGrouping(fail_rounds=1)
+    graph, repository = workflow(tmp_path, provider)
+    page = await graph.generate(graph.create_session().session_id, text='First.\n\nSecond.')
+    assert len(provider.grouping_calls) == 1
+    assert page.repair_attempts == 1
+    assert [b.text for b in page.input_blocks] == ['First.', 'Second.']
+    assert all(call['blocks'] == page.input_blocks for call in provider.calls)
+    repository.close()
+
+
+async def test_completed_grouping_survives_candidate_failure_restart_and_legacy_page(tmp_path):
+    _, _, Mock, _, _ = implementation()
+
+    class Interrupted(Mock):
+        async def generate_candidate(self, **kwargs):
+            raise RuntimeError('interrupted after grouping')
+
+    original = Interrupted()
+    graph, repository = workflow(tmp_path, original)
+    sid = graph.create_session().session_id
+    with pytest.raises(RuntimeError, match='after grouping'):
+        await graph.generate(sid, page_id='stable', text='Repeated. Repeated.')
+    async with graph._graph() as compiled:
+        before = (await compiled.aget_state(graph._config(sid))).values
+    assert before['source_grouping']
+    assert len(original.grouping_calls) == 1
+    repository.close()
+    provider = Mock()
+    fresh, repository = workflow(tmp_path, provider)
+    page = await fresh.generate(sid, page_id='stable', text='Repeated. Repeated.')
+    assert provider.grouping_calls == []
+    assert page.input_blocks[0].source_span_ids == ['span_0001', 'span_0002']
+    # Old snapshots retain arbitrary previously assigned pointer IDs.
+    legacy = page.model_copy(deep=True)
+    legacy.page_id = 'legacy'
+    legacy.input_blocks[0].block_id = 'original_saved_pointer'
+    for option in (legacy.option_a, legacy.option_b):
+        option.components[0].source_block_ids = ['original_saved_pointer']
+    legacy.selected_option_id = 'option_a'
+    repository.save_snapshot(sid, legacy)
+    restored = repository.load_snapshots(sid)[0]
+    assert restored.input_blocks[0].block_id == restored.option_a.components[0].source_block_ids[0]
+    repository.close()
+
+
+@pytest.mark.parametrize('limit', ['max_spans', 'max_input_chars'])
+async def test_grouping_limits_keep_provider_context_bounded(tmp_path, limit):
+    _, _, Mock, _, _ = implementation()
+    provider = Mock()
+    graph, repository = workflow(tmp_path, provider)
+    setattr(graph.settings.profiling.grouping, limit, 1)
+    page = await graph.generate(graph.create_session().session_id, text='First. Second.')
+    assert provider.grouping_calls == []
+    assert page.input_blocks[0].text == 'First. Second.'
+    repository.close()
+
+
+async def test_private_grouping_keeps_restricted_metrics_and_exact_excerpts(tmp_path):
+    from bookgen.schemas import BookContext, AudienceMode, ComponentType, MetricClassification
+    from bookgen.domain.compliance import compliance_report
+    _, _, Mock, _, _ = implementation()
+
+    class SplitAndPromote(Mock):
+        async def group_spans(self, *, spans):
+            self.grouping_calls.append(spans)
+            return {'groups': [{'span_ids': [s.span_id], 'role': 'quote' if i == 0 else 'metric'} for i, s in enumerate(spans)]}
+
+        def _candidate(self, **kwargs):
+            page = super()._candidate(**kwargs)
+            quote = page.components[0].model_copy(deep=True)
+            quote.component_id = 'quote'
+            quote.component_type = ComponentType.PULL_QUOTE
+            quote.extracted_excerpt = 'caf\u00e9 works invented' if not self.repairs else 'caf\u00e9 works.'
+            page.components.append(quote)
+            # Split metric is still forbidden as a client-facing callout.
+            if not self.repairs:
+                metric = page.components[1].model_copy(deep=True)
+                metric.component_id = 'metric'
+                metric.component_type = ComponentType.STAT_CALLOUT
+                metric.extracted_excerpt = kwargs['blocks'][1].text.strip()
+                page.components.append(metric)
+            return page
+
+    provider = SplitAndPromote()
+    graph, repository = workflow(tmp_path, provider)
+    sid = graph.create_session(BookContext(audience_mode=AudienceMode.CLIENT_FACING)).session_id
+    text = '[INTERNAL] Customers say caf\u00e9 works. Revenue grew 42%.'
+    page = await graph.generate(sid, text=text)
+    assert '42%' not in str(provider.grouping_calls[0])
+    assert '[METRIC_' in str(provider.grouping_calls[0])
+    assert page.metrics_ledger[0].classification == MetricClassification.INTERNAL
+    assert any(i.code == 'HALLUCINATED_EXCERPT' for repair in provider.repairs for i in repair['issues'])
+    assert any(i.code == 'RESTRICTED_STAT_CALLOUT' for repair in provider.repairs for i in repair['issues'])
+    assert page.option_a.components[-1].extracted_excerpt == 'caf\u00e9 works.'
+    assert page.option_a.components[-1].extracted_excerpt in page.input_blocks[0].text
+    await graph.select(sid, page.page_id, 'option_a')
+    report = compliance_report(await graph.snapshot(sid), config=graph.settings.compliance)
+    assert report.ledger[0].metric.classification == MetricClassification.INTERNAL
+    assert not report.eligible
+    repository.close()

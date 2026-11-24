@@ -28,12 +28,12 @@ export function DebugPanel({ snapshot, busy, onStep, onReload }: {
     {snapshot.status === 'paused' && !pending && <button type="button" disabled={busy} onClick={() => onStep()}>Run {snapshot.next_nodes?.join(', ')}</button>}
     {prompt && <>
       <h3>LLM prompt · {pending?.option_id}</h3>
-      <p>Copy this prompt into a separate chat. It combines the system and strategy instructions, current page, layout history, and required response schema. Paste the chat's JSON reply below.</p>
+      <p>{pending?.option_id === 'group_spans' ? 'Group the source span IDs and assign semantic roles. Include every ID once, in order. Paste the JSON groups below.' : 'Copy this prompt into a separate chat. It combines the system and strategy instructions, current page, layout history, and required response schema. Paste the chat\'s JSON reply below.'}</p>
       <button type="button" onClick={() => { void copyPrompt(); }}>Copy prompt</button>
       {copyStatus && <p role="status">{copyStatus}</p>}
       <label>Chat prompt<textarea aria-label="Chat prompt" readOnly rows={20} value={prompt} style={{ width: '100%' }} /></label>
       <label>Manual LLM response<textarea aria-label="Manual LLM response" rows={12} value={response} onChange={event => setResponse(event.target.value)} disabled={busy} style={{ width: '100%' }} /></label>
-      <p>Paste the response as returned. Malformed or invalid layouts enter the normal validation, repair, and bounded fallback flow.</p>
+      <p>{pending?.option_id === 'group_spans' ? 'Invalid grouping uses deterministic source blocks. Source text is reconstructed locally.' : 'Paste the response as returned. Malformed or invalid layouts enter the normal validation, repair, and bounded fallback flow.'}</p>
       <button type="button" disabled={busy || !response.trim()} onClick={() => onStep(response)}>Submit response</button>
     </>}
     {pending?.event === 'review' && <p>Review the rendered options below and confirm a selection. The commit node requires a separate step afterward.</p>}

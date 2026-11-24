@@ -1,0 +1,9 @@
+version: "1.0"
+text: |
+  Group the ordered source spans into semantic blocks for this page.
+  Return only groups of contiguous span_ids and a role: heading, prose, list,
+  quote, metric, fact, or shoutout. Distinguish testimonials, numerical claims,
+  factual statements and brief emphatic statements even without Markdown.
+  Include every span exactly once, in its original order. Never return body copy,
+  edited text, excerpts, invented IDs, HTML, CSS, colors or layout instructions.
+  Privacy placeholders are opaque source content; retain their span pointers.

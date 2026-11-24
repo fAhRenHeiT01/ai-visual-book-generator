@@ -6,7 +6,7 @@ import json
 import time
 
 from bookgen.config.llm import load_prompts
-from bookgen.schemas import ComponentType, PageLayoutAST, SurfaceRole
+from bookgen.schemas import ComponentType, PageLayoutAST, SurfaceRole, SourceGrouping
 
 from .context import request_context
 
@@ -98,6 +98,19 @@ class GeminiProvider:
     async def generate_candidate(self, *, context, blocks, assets, strategy_tag, rhythm_history=None, page_number=None):
         request = self._request(context=context, blocks=blocks, assets=assets, strategy_tag=strategy_tag, rhythm_history=rhythm_history, page_number=page_number)
         return self._parse(await self.transport(request))
+
+    async def group_spans(self, *, spans):
+        # Grouping has only this page's masked spans: no images or book history.
+        prefix = json.dumps({'system': self.prompts['group_spans'].model_dump(), 'global_book_context': {}}, sort_keys=True)
+        request = {'model': self.settings.llm.model, 'temperature': self.settings.llm.temperature,
+            'transport_mode': self.settings.llm.transport_mode, 'response_schema': SourceGrouping,
+            'cache_prefix': prefix, 'cache_key': sha256(prefix.encode()).hexdigest(),
+            'cache_ttl_seconds': self.settings.llm.prompt_cache_ttl_seconds,
+            'operation': 'group_spans', 'strategy_directive': self.prompts['group_spans'].text,
+            'context': {'global_book_context': {}, 'current_page_payload': {
+                'spans': [span.model_dump(mode='json') for span in spans], 'assets': []}}}
+        response = await self.transport(request)
+        return SourceGrouping.model_validate_json(response) if isinstance(response, str) else SourceGrouping.model_validate(response)
 
     async def repair_candidate(self, *, context, blocks, assets, strategy_tag, candidate, issues, rhythm_history=None, page_number=None):
         request = self._request(context=context, blocks=blocks, assets=assets, strategy_tag=strategy_tag, rhythm_history=rhythm_history, page_number=page_number)

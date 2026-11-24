@@ -32,9 +32,18 @@ test('dedicated manual workspace copies prompts, repairs layouts and reopens bef
   await request.post(`http://127.0.0.1:8007/api/v1/sessions/${sid}/debug/step`, { data: { checkpoint_id: paused.checkpoint_id } });
   await page.getByRole('button', { name: 'Run profile', exact: true }).click();
   await expect(page.getByRole('alert').filter({ hasText: 'Stale checkpoint' })).toBeVisible();
-  for (const node of ['compliance_metrics_scan', 'generate_candidates']) {
+  for (const node of ['compliance_metrics_scan', 'group_spans']) {
     await page.getByRole('button', { name: `Run ${node}`, exact: true }).click();
   }
+  await expect(page.getByLabel('Chat prompt')).toHaveValue(/Group the ordered source spans/);
+  await expect(page.getByText('LLM prompt \u00b7 group_spans', { exact: true })).toBeVisible();
+  const groupingPrompt = await page.getByLabel('Chat prompt').inputValue();
+  expect(groupingPrompt).toContain('span_0001');
+  await page.reload();
+  await expect(page.getByLabel('Chat prompt')).toHaveValue(groupingPrompt);
+  await page.getByLabel('Manual LLM response').fill(JSON.stringify({ groups: [{ span_ids: ['span_0001'], role: 'prose' }] }));
+  await page.getByRole('button', { name: 'Submit response' }).click();
+  await page.getByRole('button', { name: 'Run generate_candidates', exact: true }).click();
   await expect(page.getByLabel('Chat prompt')).toHaveValue(/You are the book's art director/);
   await expect(page.getByLabel('Chat prompt')).toHaveValue(/Exact manual body\./);
   await expect(page.getByRole('button', { name: 'Copy prompt' })).toBeVisible();

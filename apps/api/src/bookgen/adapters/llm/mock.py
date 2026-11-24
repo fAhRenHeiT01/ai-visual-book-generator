@@ -15,7 +15,13 @@ class MockLLMProvider:
         self.rendezvous = rendezvous
         self.calls = []
         self.repairs = []
+        self.grouping_calls = []
         self._attempts = defaultdict(int)
+
+    async def group_spans(self, *, spans):
+        from bookgen.domain.grouping import deterministic_grouping
+        self.grouping_calls.append(spans)
+        return deterministic_grouping(spans)
 
     async def generate_candidate(self, *, context, blocks, assets, strategy_tag):
         if self.rendezvous is not None:
