@@ -8,7 +8,68 @@ type S = components['schemas'];
 vi.mock('../../src/lib/sessionApi', () => ({ sessionApi: { compliance: vi.fn(), decide: vi.fn(), browserPage: (_id: string, page: unknown) => page } }));
 vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: ({ result }: { result: S['PageGenerationResult'] }) => <div>{result.input_blocks[0]?.text}</div> }));
 const report: S['ComplianceReport'] = { status: 'available', audience_mode: 'client_facing', eligible: false, ledger: [{ page_id: 'p1', decision: null, metric: { metric_id: 'm1', source_block_id: 'b1', raw_value: '$4.2M ARR', context_snippet: '[INTERNAL] $4.2M ARR', classification: 'internal', approved_for_export: false } }], publishable_pages: [] };
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.resetAllMocks(); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.resetAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+test.each([
+  ['Quarterly report', 'Quarterly report'],
+  ['  Café 東京  ', 'Café 東京'],
+  ['../Report\\Q1: "Growth" <draft>|?*', 'ReportQ1 Growth draft'],
+  ['Report\u0000\u001f\u007f', 'Report'],
+  ['', 'book'],
+  ['   \t\n', 'book'],
+  ['<>:"/\\|?*', 'book'],
+  [' ... ', 'book'],
+])('verified download names title %j safely with local datetime', async (title, sanitized) => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(2026, 0, 2, 3, 4));
+  vi.mocked(sessionApi.compliance).mockResolvedValue({ ...report, eligible: true });
+  const verifiedPdf = new Blob(['%PDF-1.7 verified bytes'], { type: 'application/pdf' });
+  const fetch = vi.fn().mockResolvedValue({ ok: true, blob: async () => verifiedPdf });
+  const createObjectURL = vi.fn().mockReturnValue('blob:verified-pdf');
+  vi.stubGlobal('fetch', fetch);
+  vi.stubGlobal('URL', { createObjectURL, revokeObjectURL: vi.fn() });
+  const downloads: { filename: string; url: string }[] = [];
+  vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+    downloads.push({ filename: this.download, url: this.href });
+  });
+  render(<ExportAction sessionId="s1" disabled={false} pages={[]} context={{ audience_mode: 'client_facing', title, objective: '', page_size: 'A4', source_website_url: null }} appearance={{ tokens: {}, chrome: {} } as S['AppearanceResponse']} />);
+  const button = screen.getByRole('button', { name: 'Download PDF' });
+  await waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
+  for (let index = 0; index < 2; index++) {
+    fireEvent.click(button);
+    await waitFor(() => expect(downloads).toHaveLength(index + 1));
+    await waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
+  }
+  expect(downloads).toEqual(Array(2).fill({ filename: `${sanitized}_20260102-0304.pdf`, url: 'blob:verified-pdf' }));
+  expect(createObjectURL).toHaveBeenCalledWith(verifiedPdf);
+  expect(fetch).toHaveBeenCalledTimes(2);
+  expect(fetch.mock.calls[0][0]).toContain('/api/v1/sessions/s1/export');
+  expect(fetch.mock.calls[0][1]).toEqual({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+});
+
+test('download stays compliance-gated and never saves a rejected verified export', async () => {
+  vi.mocked(sessionApi.compliance).mockResolvedValue(report);
+  const fetch = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ detail: 'Compliance review changed.' }) });
+  vi.stubGlobal('fetch', fetch);
+  const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  const props = { sessionId: 's1', disabled: false, pages: [], context: { audience_mode: 'client_facing', title: 'Report', objective: '', page_size: 'A4', source_website_url: null } as S['BookContext'], appearance: { tokens: {}, chrome: {} } as S['AppearanceResponse'] };
+  const view = render(<ExportAction {...props} />);
+  const button = screen.getByRole('button', { name: 'Download PDF' });
+  await screen.findByText('Complete compliance review to unlock export.');
+  fireEvent.click(button);
+  expect(fetch).not.toHaveBeenCalled();
+  vi.mocked(sessionApi.compliance).mockResolvedValue({ ...report, eligible: true });
+  fireEvent(window, new Event('compliance-updated'));
+  await waitFor(() => expect(button.hasAttribute('disabled')).toBe(false));
+  view.rerender(<ExportAction {...props} disabled />);
+  fireEvent.click(button);
+  expect(fetch).not.toHaveBeenCalled();
+  view.rerender(<ExportAction {...props} />);
+  fireEvent.click(button);
+  expect((await screen.findByRole('alert')).textContent).toContain('Compliance review changed.');
+  expect(fetch).toHaveBeenCalledOnce();
+  expect(click).not.toHaveBeenCalled();
+});
 test('current-page review groups repeated metrics into one exact statement and clears on navigation', async () => {
   const snippet = '😀 [INTERNAL] 42% YoY versus 42% YoY';
   const ledger = [

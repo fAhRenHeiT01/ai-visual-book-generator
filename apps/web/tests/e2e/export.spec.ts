@@ -4,8 +4,11 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { components } from '../../src/types/generated';
 
+test.use({ timezoneId: 'America/Los_Angeles' });
+
 test('approved draft downloads assembled PDF with redacted metrics and numbered chrome', async ({ page, request }) => {
   test.setTimeout(120_000);
+  await page.clock.setFixedTime(new Date('2026-01-02T03:04:00Z'));
   const api = 'http://127.0.0.1:8007/api/v1/sessions';
   const created = await request.post(api, { data: { context: { title: 'Public report', audience_mode: 'client_facing' } } });
   const sid = (await created.json()).session_id;
@@ -48,7 +51,7 @@ test('approved draft downloads assembled PDF with redacted metrics and numbered 
   const downloaded = page.waitForEvent('download');
   await action.click();
   const download = await downloaded;
-  expect(download.suggestedFilename()).toBe('book.pdf');
+  expect(download.suggestedFilename()).toBe('Public report_20260101-1904.pdf');
   const extracted = spawnSync(python, ['-c', 'import sys,io; from pypdf import PdfReader; r=PdfReader(io.BytesIO(sys.stdin.buffer.read())); print(len(r.pages)); print("\\n".join(p.extract_text() for p in r.pages)); print(sorted({image.image.size for page in r.pages for image in page.images}))'], { input: readFileSync((await download.path())!), encoding: 'utf8' });
   expect(extracted.status).toBe(0);
   expect(extracted.stdout.split('\n')[0].trim()).toBe('3');
