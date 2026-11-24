@@ -89,7 +89,8 @@ class PageWorkflow:
         return {"configurable": {"thread_id": session_id}}
 
     def create_session(self, context=None):
-        context = context or BookContext()
+        from bookgen.domain.direction import resolve_direction
+        context = resolve_direction(context or BookContext(), grammar=self.settings.grammar)
         return SessionSnapshot(session_id=self.repository.create_session(context), context=context,
             debug_enabled=self.settings.app.debug_mode)
 

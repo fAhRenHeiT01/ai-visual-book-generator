@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from bookgen.config import load_settings
 from bookgen.config.grammar import GrammarConfig
+from bookgen.domain.direction import eligible_treatments
 from bookgen.schemas import (
     AtomicTextBlock, ComponentType, ImageAssetMeta, LayoutArchetype,
     AudienceMode, MetricEntry, PageLayoutAST, ValidationIssue,
@@ -34,6 +35,7 @@ def deterministic_validator(
     blocks = {b.block_id: b for b in source_blocks}
     assets = {a.asset_id: a for a in source_assets}
     rules = grammar.archetypes()
+    treatments = eligible_treatments(source_blocks, source_assets, grammar=grammar)
     issues: list[ValidationIssue] = []
 
     def issue(code: str, target: str, message: str) -> None:
@@ -52,6 +54,15 @@ def deterministic_validator(
             continue
         parsed.append(page)
         rule = rules[page.archetype]
+        # Old snapshots use the neutral flow/in_flow defaults. Named arrangements
+        # must have supporting source roles and media facts on the current page.
+        if (page.composition, page.media_placement) != ("flow", "in_flow") and not any(
+                treatment.composition == page.composition and treatment.media_placement == page.media_placement
+                for treatment in treatments):
+            issue("INELIGIBLE_TREATMENT", target, "Treatment lacks supporting semantic groups or media constraints.")
+        if (page.media_placement in grammar.art_direction.protected_forbidden_placements
+                and any(asset.asset_kind in grammar.protected_asset_kinds for asset in source_assets)):
+            issue("CHART_CROP_FORBIDDEN", target, "Protected media cannot use a background placement.")
         if page.archetype in recent_archetypes:
             issue("RECENT_ARCHETYPE_REPEAT", target, "Archetype is excluded by recent history.")
         if page.density_scale not in grammar.density_scales:

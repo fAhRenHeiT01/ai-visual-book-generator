@@ -6,6 +6,7 @@ import json
 import time
 
 from bookgen.config.llm import load_prompts
+from bookgen.domain.direction import arrangement_context, resolve_direction
 from bookgen.schemas import ComponentType, PageLayoutAST, SurfaceRole, SourceGrouping
 
 from .context import request_context
@@ -64,6 +65,7 @@ class GeminiProvider:
         self._cache_lock = asyncio.Lock()
 
     def _request(self, *, context, blocks, assets, strategy_tag, rhythm_history=None, page_number=None):
+        context = resolve_direction(context, grammar=self.settings.grammar)
         metadata = request_context.get()
         history = list(metadata.rhythm_history if rhythm_history is None else rhythm_history)[-self.settings.llm.rhythm_window:]
         # Pick only compact summary fields even if callers accidentally pass rich history.
@@ -91,6 +93,7 @@ class GeminiProvider:
                     "page_number": page_number if page_number is not None else metadata.page_number,
                     "blocks": [block.model_dump(mode="json") for block in blocks],
                     "assets": [asset_metadata(asset) for asset in assets],
+                    "art_direction": arrangement_context(context, blocks, assets, grammar=self.settings.grammar),
                 },
             },
         }

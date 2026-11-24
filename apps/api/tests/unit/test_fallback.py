@@ -90,3 +90,94 @@ def test_fallback_skips_slots_that_cannot_safely_hold_inputs(mutation):
     pair = builder()(blocks, assets, grammar=grammar)
     assert all(page.archetype != "safe_flow_fallback" for page in pair)
     assert deterministic_validator(pair, blocks, assets, grammar=grammar) == []
+
+@pytest.mark.parametrize('fixture,composition,media', [
+    ('chapter-opener', 'opener', 'panoramic'),
+    ('financial-comparison', 'comparison', 'paired'),
+    ('portrait-testimonial', 'portrait_story', 'portrait_rail'),
+])
+async def test_offline_visual_fixtures_choose_source_led_treatments(fixture, composition, media):
+    import json
+    from pathlib import Path
+    from bookgen.adapters.llm.mock import MockLLMProvider
+    from bookgen.domain.profiler import profile_content
+    from bookgen.schemas import BookContext
+    root = Path(__file__).resolve().parents[4]
+    corpus = json.loads((root / 'apps/api/src/bookgen/examples/manifest.json').read_text(encoding='utf-8'))
+    case = next(c for c in corpus['scenarios'] if c['id'] == fixture)
+    blocks = profile_content(case['copy'], storage=None).blocks
+    assets = [ImageAssetMeta(asset_id=key, storage_key='local', **{
+        name: corpus['assets'][key][name] for name in ('mime_type', 'width_px', 'height_px')
+    }, aspect_ratio=corpus['assets'][key]['width_px'] / corpus['assets'][key]['height_px'],
+        asset_kind=corpus['assets'][key]['kind']) for key in case['assets']]
+    provider = MockLLMProvider()
+    page = await provider.generate_candidate(context=BookContext.model_validate(case['book_context']),
+        blocks=blocks, assets=assets, strategy_tag=provider.settings.llm.strategy_families['option_a'])
+    assert page.composition == composition
+    assert page.media_placement == media
+    assert any(c.component_type == 'heading' for c in page.components)
+    if fixture == 'financial-comparison':
+        assert any(c.component_type == 'bullet_list' for c in page.components)
+    from bookgen.domain.validator import deterministic_validator
+    pair = [page, await provider.generate_candidate(context=BookContext.model_validate(case['book_context']),
+        blocks=blocks, assets=assets, strategy_tag=provider.settings.llm.strategy_families['option_b'])]
+    assert deterministic_validator(pair, blocks, assets) == []
+    assert (pair[0].composition, pair[0].emphasis_treatment, pair[0].surface_treatment) != (pair[1].composition, pair[1].emphasis_treatment, pair[1].surface_treatment)
+
+
+@pytest.mark.parametrize('role,classification,audience,expected', [
+    ('quote', None, 'internal', 'pull_quote'),
+    ('metric', 'public', 'client_facing', 'stat_callout'),
+    ('metric', 'internal', 'client_facing', None),
+    ('metric', 'undisclosed', 'client_facing', None),
+    ('metric', 'undisclosed', 'internal', 'stat_callout'),
+    ('metric', None, 'internal', None),
+])
+def test_fallback_focal_roles_keep_exact_full_pointers_and_respect_restrictions(role, classification, audience, expected):
+    from bookgen.schemas import BookContext, MetricEntry
+    from bookgen.domain.validator import deterministic_validator
+    text = 'An exact quotation.' if role == 'quote' else 'Revenue grew 42%.'
+    blocks = [AtomicTextBlock(block_id='source', kind=role, text=text, word_count=3, char_count=len(text))]
+    metrics = [] if classification is None else [MetricEntry(metric_id='metric', source_block_id='source', raw_value='42%', context_snippet=text, classification=classification)]
+    pair = builder()(blocks, [], context=BookContext(audience_mode=audience), metrics=metrics)
+    assert deterministic_validator(pair, blocks, [], metrics=metrics, audience_mode=audience) == []
+    for page in pair:
+        body = [c for c in page.components if c.component_type == 'body_prose']
+        assert len(body) == 1 and body[0].source_block_ids == ['source']
+        focal = [c for c in page.components if c.extracted_excerpt]
+        assert [c.component_type for c in focal] == ([expected] if expected else [])
+        assert all(c.extracted_excerpt == text and c.source_block_ids == ['source'] for c in focal)
+
+
+def test_named_treatment_changes_when_source_role_or_asset_facts_change():
+    from bookgen.schemas import BookContext
+    blocks = [AtomicTextBlock(block_id='quote', kind='quote', text='Exact source quote.', word_count=3, char_count=19)]
+    _, assets = inputs(2, ['photo'])
+    before = builder()(blocks, assets, context=BookContext())[0]
+    assert before.composition == 'portrait_story'
+    no_role = builder()([blocks[0].model_copy(update={'kind': 'paragraph'})], assets)[0]
+    no_portrait = builder()(blocks, [assets[0].model_copy(update={'aspect_ratio': 2})])[0]
+    assert no_role.composition != 'portrait_story'
+    assert no_portrait.composition != 'portrait_story'
+    no_media = builder()(blocks, [])[0]
+    assert no_media.media_placement == 'in_flow'
+
+
+def test_treatment_budgets_and_focal_slot_capacities_are_respected():
+    from bookgen.domain.validator import deterministic_validator
+    grammar = load_settings().grammar
+    blocks, assets = inputs(100, ['photo'])
+    assets[0].aspect_ratio = 3
+    assert builder()(blocks, assets, grammar=grammar)[0].composition != 'opener'
+    # Insufficient heading and focal capacity keeps exact full prose in body flow.
+    for rule in grammar.archetypes().values():
+        if 'header' in rule.slots:
+            rule.slots['header'].max_chars = 0
+        if 'callout' in rule.slots:
+            rule.slots['callout'].max_chars = 0
+    blocks[0].kind = 'heading'
+    blocks[1].kind = 'quote'
+    pair = builder()(blocks, [], grammar=grammar)
+    assert deterministic_validator(pair, blocks, [], grammar=grammar) == []
+    assert all(c.slot_id == 'body' for page in pair for c in page.components)
+    assert all(c.extracted_excerpt is None for page in pair for c in page.components)

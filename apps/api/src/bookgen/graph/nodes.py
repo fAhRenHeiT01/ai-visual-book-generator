@@ -145,7 +145,8 @@ class PageNodes:
 
     def fallback(self, state):
         blocks, assets = self._sources(state)
-        options = safe_fallback_builder(blocks, assets, state["rolling_layout_history"], grammar=self.settings.grammar)
+        options = safe_fallback_builder(blocks, assets, state["rolling_layout_history"], grammar=self.settings.grammar,
+            context=BookContext.model_validate(state['context']), metrics=self._metrics(state), compliance=self.settings.compliance)
         issues = self._validate(state, options)
         if any(issue.severity == "error" for issue in issues):
             raise ValueError("Fallback failed deterministic validation")

@@ -120,3 +120,16 @@ def test_create_app_validates_settings_before_serving(monkeypatch):
     monkeypatch.setenv("BOOKGEN__LLM__MAX_REPAIR_RETRIES", "-1")
     with pytest.raises(ValidationError):
         create_app()
+
+@pytest.mark.parametrize('direction', ['brand_led_editorial', 'consulting_report', 'campaign_presentation'])
+def test_direction_and_treatments_have_legacy_defaults_and_constrained_values(direction):
+    contracts = schemas()
+    assert contracts.BookContext().direction == 'auto'
+    context = contracts.BookContext(direction=direction)
+    assert contracts.BookContext.model_validate_json(context.model_dump_json()) == context
+    page = contracts.PageLayoutAST.model_validate(layout())
+    assert (page.composition, page.surface_treatment, page.emphasis_treatment, page.media_placement) == ('flow', 'plain', 'balanced', 'in_flow')
+    for field in ('composition', 'surface_treatment', 'emphasis_treatment', 'media_placement'):
+        for value in ('<div>', '#123456', 'width:100px'):
+            with pytest.raises(ValidationError):
+                contracts.PageLayoutAST.model_validate(layout(**{field: value}))

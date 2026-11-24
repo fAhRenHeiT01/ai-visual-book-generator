@@ -16,6 +16,19 @@ class PageSize(str, Enum):
     US_LETTER = "LETTER"
 
 
+class BookDirection(str, Enum):
+    AUTO = "auto"
+    BRAND_LED_EDITORIAL = "brand_led_editorial"
+    CONSULTING_REPORT = "consulting_report"
+    CAMPAIGN_PRESENTATION = "campaign_presentation"
+
+
+Composition = Literal["flow", "opener", "comparison", "portrait_story"]
+SurfaceTreatment = Literal["plain", "brand_panel", "tinted_band"]
+EmphasisTreatment = Literal["balanced", "headline", "evidence", "testimonial"]
+MediaPlacement = Literal["in_flow", "panoramic", "paired", "portrait_rail", "protected"]
+
+
 class AssetKind(str, Enum):
     PHOTO = "photo"
     CHART = "chart"
@@ -101,6 +114,8 @@ class BookContext(StrictModel):
     audience_mode: AudienceMode = AudienceMode.INTERNAL
     page_size: PageSize = PageSize.A4
     source_website_url: str | None = None
+    direction: BookDirection = Field(default_factory=lambda: BookDirection.AUTO)
+    resolved_direction: Literal["brand_led_editorial", "consulting_report", "campaign_presentation"] | None = Field(default_factory=lambda: None)
 
 
 class SourceMetricAnnotation(StrictModel):
@@ -182,6 +197,10 @@ class PageLayoutAST(StrictModel):
     density_scale: str = "normal"
     components: list[PlacedComponent]
     column_count: int = Field(default=1, ge=1, le=3)
+    composition: Composition = Field(default_factory=lambda: "flow")
+    surface_treatment: SurfaceTreatment = Field(default_factory=lambda: "plain")
+    emphasis_treatment: EmphasisTreatment = Field(default_factory=lambda: "balanced")
+    media_placement: MediaPlacement = Field(default_factory=lambda: "in_flow")
 
 
 class ValidationIssue(StrictModel):
