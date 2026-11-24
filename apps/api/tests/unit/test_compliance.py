@@ -167,6 +167,24 @@ def test_export_gate_masks_only_redacted_source_and_never_accepts_promotion():
     assert not compliance_report(snapshot, decisions={('p', ledger[0].metric_id): 'approve'}).eligible
 
 
+@pytest.mark.parametrize('title,expected', [('Revenue $4.2M ARR', 'Revenue [REDACTED]'), ('$4.2M', '[REDACTED]')])
+def test_publishable_title_redacts_metric_metadata_without_mutating_source(title, expected):
+    from bookgen.domain.compliance import compliance_metrics_scan, require_export_approval
+    from bookgen.domain.fallback import safe_fallback_builder
+    from bookgen.schemas import BookContext, PageGenerationResult
+    from bookgen.schemas.sessions import SessionSnapshot
+    blocks = [block('[INTERNAL] $4.2M ARR')]
+    ledger = compliance_metrics_scan(blocks)
+    a, b = safe_fallback_builder(blocks, [])
+    page = PageGenerationResult(page_id='p', page_number=1, title=title, input_blocks=blocks,
+        input_assets=[], metrics_ledger=ledger, option_a=a, option_b=b, selected_option_id='option_a')
+    source = SessionSnapshot(session_id='s', context=BookContext(audience_mode='client_facing'), committed_pages=[page])
+    published = require_export_approval(source, decisions={('p', ledger[0].metric_id): 'redact'})[0]
+    assert published.title == expected
+    assert page.title == title
+    assert blocks[0].text == '[INTERNAL] $4.2M ARR'
+
+
 def test_rehydration_is_scoped_and_nonexistent_placeholders_fail_exact_validation():
     from bookgen.domain.compliance import compliance_metrics_scan, mask_blocks, rehydrate_layout
     blocks = [block('[INTERNAL] 42%', 'private'), block('[PUBLIC] 42%', 'public')]

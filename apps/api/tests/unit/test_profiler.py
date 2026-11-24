@@ -69,6 +69,32 @@ def test_source_blocks_are_stable_ordered_and_exact():
     assert first.assets == first.issues == []
 
 
+@pytest.mark.parametrize('text,title,expected', [
+    ('# Source heading\nBody copy stays.', 'Explicit title', 'Explicit title'),
+    ('# Source heading\nBody copy stays.', None, 'Source heading'),
+    (r'# Source heading\nBody copy stays.', None, 'Source heading'),
+    ('Ordinary first sentence. More source copy.', None, 'Ordinary first sentence.'),
+    ('Plain\twords\ncontinue', '  ', 'Plain words continue'),
+    ('\n\t', None, ''),
+])
+def test_page_title_metadata_is_separate_from_normalized_source(text, title, expected):
+    module = profiler()
+    assert module.infer_page_title(text, title=title, settings=settings()) == expected
+    assert module.normalize_page_input(text) == module.normalize_page_input(module.normalize_page_input(text))
+
+
+def test_title_inference_obeys_yaml_word_budget_and_rules():
+    module = profiler()
+    config = settings().model_copy(deep=True)
+    config.title.max_words = 3
+    config.title.heading = '^TITLE: (.+)$'
+    config.title.sentence_boundary = '; '
+    assert module.infer_page_title('TITLE: Exact source heading\nBody.', settings=config) == 'Exact source heading'
+    assert module.infer_page_title('One  two three four five', settings=config) == 'One  two three'
+    assert module.infer_page_title('One two; Three four.', settings=config) == 'One two'
+    assert module.infer_page_title('Body.', title='Long explicit title keeps all its words', settings=config) == 'Long explicit title keeps all its words'
+
+
 @pytest.mark.parametrize("source", ["", "\n\n", " \r\n\t\r\n"])
 def test_empty_text_and_no_images(source):
     result = profiler().profile_content(source, storage=MemoryStorage())

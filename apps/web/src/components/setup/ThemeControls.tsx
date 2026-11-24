@@ -43,7 +43,7 @@ const previewLayout: S['PageLayoutAST'] = {
     { object_fit: 'contain', source_asset_id: null, component_id: 'quote', component_type: 'pull_quote', slot_id: 'callout', source_block_ids: ['quote'], extracted_excerpt: previewBlocks[2].text, surface_role: 'accent_soft', emphasis: true },
   ],
 };
-const preview: S['PageGenerationResult'] = { page_id: 'theme-preview', page_number: 1, input_blocks: previewBlocks, input_assets: [], option_a: previewLayout, option_b: { ...previewLayout, option_id: 'theme-preview-b' }, selected_option_id: 'theme-preview', metrics_ledger: [], repair_attempts: 0, used_fallback: false };
+const preview: S['PageGenerationResult'] = { page_id: 'theme-preview', page_number: 1, title: null, input_blocks: previewBlocks, input_assets: [], option_a: previewLayout, option_b: { ...previewLayout, option_id: 'theme-preview-b' }, selected_option_id: 'theme-preview', metrics_ledger: [], repair_attempts: 0, used_fallback: false };
 
 export function ThemeControls({ sessionId, appearance, locked = false, onAppearanceChange }: ThemeControlsProps) {
   const id = useId();

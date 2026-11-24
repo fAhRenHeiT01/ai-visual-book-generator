@@ -37,7 +37,7 @@ test('redacted state survives remount and decision failures keep review locked',
 test('print rechecks authoritative eligibility and renders server redacted copy', async () => {
   const print = vi.spyOn(window, 'print').mockImplementation(() => {});
   const layout: S['PageLayoutAST'] = { option_id: 'option_a', archetype: 'minimalist_swiss', strategy_tag: 'clear', rationale: 'Source placement', components: [], surface_role: 'paper', density_scale: 'normal', column_count: 1 };
-  const page: S['PageGenerationResult'] = { page_id: 'p1', page_number: 1, input_blocks: [{ block_id: 'b1', text: '[INTERNAL] [REDACTED]', kind: 'paragraph', word_count: 2, char_count: 21 }], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b' }, selected_option_id: 'option_a', repair_attempts: 0, used_fallback: false };
+  const page: S['PageGenerationResult'] = { page_id: 'p1', page_number: 1, title: null, input_blocks: [{ block_id: 'b1', text: '[INTERNAL] [REDACTED]', kind: 'paragraph', word_count: 2, char_count: 21 }], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b' }, selected_option_id: 'option_a', repair_attempts: 0, used_fallback: false };
   vi.mocked(sessionApi.compliance).mockResolvedValue({ ...report, eligible: true, publishable_pages: [page] });
   render(<ExportAction sessionId="s1" disabled={false} pages={[page]} context={{ audience_mode: 'client_facing', title: '', objective: '', page_size: 'A4', source_website_url: null }} appearance={{ tokens: {}, chrome: {} } as S['AppearanceResponse']} />);
   const button = screen.getByRole('button', { name: 'Print draft' });

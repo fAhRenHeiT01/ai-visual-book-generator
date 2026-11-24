@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from bookgen.adapters.llm.context import provider_context
 from bookgen.domain.fallback import safe_fallback_builder
-from bookgen.domain.profiler import profile_content
+from bookgen.domain.profiler import infer_page_title, profile_content
 from bookgen.domain.grouping import derive_spans, deterministic_grouping, reconstruct_blocks, validate_grouping
 from bookgen.domain.validator import deterministic_validator
 from bookgen.domain.compliance import compliance_metrics_scan, mask_blocks, mask_payload, rehydrate_layout
@@ -25,6 +25,7 @@ class PageNodes:
     def profile(self, state):
         profile = profile_content(state["text"], storage=self.storage, settings=self.settings.profiling)
         return {"blocks": [block.model_dump(mode="json") for block in profile.blocks],
+                'page_title': state.get('page_title') or infer_page_title(state['text'], title=state.get('title'), settings=self.settings.profiling),
                 "profile_issues": [issue.model_dump(mode="json") for issue in profile.issues],
                 "repair_attempts": 0, "used_fallback": False, "selection": "",
                 "source_spans": [], "source_grouping": None, "grouping_used_fallback": False}
@@ -154,6 +155,7 @@ class PageNodes:
 
     def build_review(self, state):
         page = PageGenerationResult(page_id=state["page_id"], page_number=state["page_number"],
+            title=state.get('page_title', ''),
             input_blocks=state["blocks"], input_assets=state["assets"], metrics_ledger=state['metrics_ledger'],
             option_a=state["options"][0], option_b=state["options"][1],
             validation_issues=state["profile_issues"], repair_attempts=state["repair_attempts"], used_fallback=state["used_fallback"])

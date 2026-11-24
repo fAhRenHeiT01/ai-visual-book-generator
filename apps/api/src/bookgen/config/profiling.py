@@ -36,6 +36,18 @@ class GroupingConfig(StrictConfig):
     max_input_chars: int = Field(gt=0)
 
 
+class TitleConfig(StrictConfig):
+    heading: Pattern
+    sentence_boundary: Pattern
+    max_words: int = Field(gt=0)
+
+    @model_validator(mode='after')
+    def heading_has_capture(self) -> Self:
+        if re.compile(self.heading).groups < 1:
+            raise ValueError('Title heading pattern must capture the title')
+        return self
+
+
 class ProfilingConfig(StrictConfig):
     # An empty optional module is accepted at configuration boot. Actual profiling
     # requires its YAML values rather than introducing duplicate Python defaults.
@@ -47,6 +59,7 @@ class ProfilingConfig(StrictConfig):
     block_patterns: BlockPatterns | None = None
     chart_heuristics: dict[AssetKind, list[Pattern]] | None = None
     grouping: GroupingConfig | None = None
+    title: TitleConfig | None = None
 
     @model_validator(mode="after")
     def ordered_aspect_bounds(self) -> Self:

@@ -2,6 +2,43 @@ import { expect, test } from '@playwright/test';
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 
+test('normalized copy keeps separate explicit and inferred chapter titles in Studio and print', async ({ page, request }) => {
+  const api = 'http://127.0.0.1:8007/api/v1/sessions';
+  const session = await (await request.post(api, { data: { context: { title: 'Book context title' } } })).json();
+  const prefix = `${api}/${session.session_id}`;
+  const appearance = await (await request.get(`${prefix}/appearance`)).json();
+  expect((await request.put(`${prefix}/appearance`, { data: { tokens: appearance.tokens,
+    chrome: { ...appearance.chrome, suppress_on_archetypes: [] } } })).status()).toBe(200);
+  const inferred = await (await request.post(`${prefix}/pages`, { data: { text: '# Opening title\nBody\tcopy.' } })).json();
+  expect(inferred.title).toBe('Opening title');
+  expect(inferred.input_blocks.map((block: { text: string }) => block.text)).toEqual(['# Opening title Body copy.']);
+  await request.post(`${prefix}/pages/${inferred.page_id}/selection`, { data: { option_id: 'option_a' } });
+  await page.goto(`/sessions/${session.session_id}`);
+  await page.getByLabel('Page title (optional)').fill('Explicit chapter');
+  await page.getByLabel('Page text').fill('# Different source heading\\nBody\\tcopy.');
+  await page.getByRole('button', { name: 'Generate options' }).click();
+  await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('radio', { name: /Option A/ })).toBeVisible();
+  const snapshot = await (await request.get(prefix)).json();
+  expect(snapshot.pending_review.title).toBe('Explicit chapter');
+  expect(snapshot.pending_review.input_blocks.map((block: { text: string }) => block.text)).toEqual(['# Different source heading Body copy.']);
+  await page.getByRole('button', { name: 'Confirm selection' }).click();
+  await expect(page.getByText('2 committed pages', { exact: true })).toBeVisible();
+  const draftHeaders = page.locator('.draft-pages .master-chrome.chrome-header');
+  await expect(draftHeaders).toHaveText(['Opening title', 'Explicit chapter']);
+  await page.evaluate(() => { window.print = () => {}; });
+  await page.getByRole('button', { name: 'Print draft' }).click();
+  await expect(page.locator('#compliance-print .master-chrome.chrome-header')).toHaveText(['Opening title', 'Explicit chapter']);
+  await page.goto(`/print/${session.session_id}`);
+  await expect.poll(() => page.locator('html').getAttribute('data-print-ready')).toBe('true');
+  await expect(page.locator('[data-kind="body"] .master-chrome.chrome-header')).toHaveText(['Opening title', 'Explicit chapter']);
+  const manifest = await (await request.get(`${prefix}/print-data`)).json();
+  expect(manifest.pages.filter((item: { kind: string }) => item.kind === 'body').map((item: { title: string; chapter_title: string }) => [item.title, item.chapter_title])).toEqual([
+    ['Opening title', 'Opening title'], ['Explicit chapter', 'Explicit chapter'],
+  ]);
+});
+
 test('three pages persist, pending review reloads, and print contains only ordered draft pages', async ({ page, request }) => {
   const errors: string[] = [];
   page.on('pageerror', error => errors.push(error.message));
@@ -126,7 +163,7 @@ for (const viewport of [{ width: 1440, height: 1000 }, { width: 390, height: 844
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     const appearance = page.getByText('Book appearance', { exact: true });
     await appearance.focus(); await page.keyboard.press('Enter');
-    await expect(page.getByText('Appearance is locked for this book.')).toBeVisible();
+    await expect(page.getByText('Appearance is locked because page 1 creation has started.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save appearance' })).toBeDisabled();
     await page.keyboard.press('Enter');
     await expect(page.getByRole('link', { name: /Reopen this book/ })).toHaveCount(0);

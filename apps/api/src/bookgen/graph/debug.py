@@ -7,6 +7,7 @@ from uuid import uuid4
 from langgraph.types import Command
 
 from bookgen.domain.theme import sanitize_tokens
+from bookgen.domain.profiler import infer_page_title, normalize_page_input
 from bookgen.schemas.debug import DebugSnapshot, DebugTimelineEntry
 from bookgen.schemas.publishing import AppearanceResponse
 
@@ -98,9 +99,11 @@ class PageDebugger:
         async with self.workflow._graph(manual_debug=True) as graph:
             return await self._inspect(sid, graph)
 
-    async def start(self, sid, *, text, assets=(), page_id=None, revise=False):
+    async def start(self, sid, *, text, assets=(), page_id=None, revise=False, title=None, inferred_title=None):
         self._enabled()
         service = self.workflow
+        title = normalize_page_input(title or '').strip() or None
+        page_title = inferred_title if inferred_title is not None else infer_page_title(text, title=title, settings=service.settings.profiling)
         async with service._page_lock(sid):
             snapshot = await service.snapshot(sid)
             async with service._graph(manual_debug=True) as graph:
@@ -108,7 +111,7 @@ class PageDebugger:
                 checkpoint = await graph.aget_state(config)
                 values = checkpoint.values
                 if checkpoint.next or any(task.interrupts for task in checkpoint.tasks):
-                    if values.get("debug_mode") and page_id is not None and page_id == values.get("page_id") and not revise and values.get("text") == text and [asset["asset_id"] for asset in values.get("assets", [])] == [asset.asset_id for asset in assets]:
+                    if values.get("debug_mode") and page_id is not None and page_id == values.get("page_id") and not revise and values.get("text") == text and values.get('title') == title and [asset["asset_id"] for asset in values.get("assets", [])] == [asset.asset_id for asset in assets]:
                         return await self._inspect(sid, graph)
                     raise ValueError("A pending generation must finish before starting another")
                 if any(page.page_id == page_id for page in snapshot.committed_pages):
@@ -118,6 +121,7 @@ class PageDebugger:
                 if revise:
                     raise ValueError("A manual run must resume its saved checkpoint")
                 state = {"session_id": sid, "context": snapshot.context.model_dump(mode="json"), "text": text,
+                    'title': title, 'page_title': page_title,
                     "assets": [asset.model_dump(mode="json") for asset in assets], "page_id": page_id or uuid4().hex,
                     "page_number": snapshot.current_page_index, "current_page_index": snapshot.current_page_index,
                     "rolling_layout_history": [item.value for item in snapshot.rolling_layout_history],

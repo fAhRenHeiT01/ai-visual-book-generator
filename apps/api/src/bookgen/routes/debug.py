@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException, Request
 from bookgen.routes.sessions import workflow
 from bookgen.schemas.debug import DebugSnapshot, DebugStepRequest
 from bookgen.schemas.sessions import GeneratePageRequest
+from bookgen.domain.profiler import infer_page_title, normalize_page_input
 
 router = APIRouter(prefix="/api/v1/sessions/{session_id}/debug", tags=["debug"])
 
@@ -33,8 +34,9 @@ async def start_debug(session_id: str, body: GeneratePageRequest, request: Reque
         assets = {asset.asset_id: asset for asset in service.repository.load_assets(session_id)}
         if any(key not in assets for key in body.asset_ids):
             raise HTTPException(422, "Unknown uploaded asset ID")
-        return await service.debugger.start(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids],
-            page_id=body.page_id, revise=body.revise)
+        return await service.debugger.start(session_id, text=normalize_page_input(body.text), assets=[assets[key] for key in body.asset_ids],
+            page_id=body.page_id, revise=body.revise, title=body.title,
+            inferred_title=infer_page_title(body.text, title=body.title, settings=service.settings.profiling))
 
     return await execute(start)
 

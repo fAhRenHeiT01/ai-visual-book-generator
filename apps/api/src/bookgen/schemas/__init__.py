@@ -213,6 +213,7 @@ class ValidationIssue(StrictModel):
 class PageGenerationResult(StrictModel):
     page_id: str
     page_number: int
+    title: str | None = None
     input_blocks: list[AtomicTextBlock]
     input_assets: list[ImageAssetMeta]
     metrics_ledger: list[MetricEntry]

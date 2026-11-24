@@ -132,6 +132,25 @@ def test_nested_environment_yaml_preserves_unmodified_rules(config_dir, monkeypa
     assert settings.grammar.safe_flow_fallback.max_words > 0
 
 
+def test_title_inference_rules_are_yaml_owned_and_environment_overridable(config_dir, monkeypatch):
+    (config_dir / 'profiling.prod.yaml').write_text('title:\n  max_words: 5\n', encoding='utf-8')
+    monkeypatch.setenv('APP_ENV', 'prod')
+    config = loader()(config_dir=config_dir).profiling
+    assert config.title.max_words == 5
+    assert config.title.heading
+    monkeypatch.setenv('BOOKGEN__PROFILING__TITLE__MAX_WORDS', '3')
+    assert loader()(config_dir=config_dir).profiling.title.max_words == 3
+
+
+@pytest.mark.parametrize('rule', ['max_words: 0', "heading: '['", "heading: '^TITLE:'"])
+def test_invalid_title_inference_rules_fail_at_boot(config_dir, monkeypatch, rule):
+    from pydantic import ValidationError
+    (config_dir / 'profiling.prod.yaml').write_text(f'title:\n  {rule}\n', encoding='utf-8')
+    monkeypatch.setenv('APP_ENV', 'prod')
+    with pytest.raises(ValidationError):
+        loader()(config_dir=config_dir)
+
+
 @pytest.mark.parametrize("document", ["[]", "null", "a string"])
 def test_invalid_yaml_shapes_fail_validation(config_dir, document):
     load_settings = loader()

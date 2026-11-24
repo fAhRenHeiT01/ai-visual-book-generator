@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from bookgen.schemas import BookContext, ImageAssetMeta, LayoutArchetype, PageGenerationResult, StrictModel
 
@@ -15,11 +15,19 @@ class GeneratePageRequest(StrictModel):
     page_id: str | None = Field(default=None, min_length=1)
     revise: bool = False
     text: str = ""
+    title: str | None = None
     asset_ids: list[str] = Field(default_factory=list)
+
+    @field_validator("title")
+    @classmethod
+    def normalize_title(cls, title: str | None) -> str | None:
+        from bookgen.domain.profiler import normalize_page_input
+        return normalize_page_input(title).strip() or None if title is not None else None
 
     @model_validator(mode="after")
     def require_content(self):
-        if not self.text.strip() and not self.asset_ids:
+        from bookgen.domain.profiler import normalize_page_input
+        if not normalize_page_input(self.text).strip() and not self.asset_ids:
             raise ValueError("Provide text or uploaded asset IDs")
         if len(set(self.asset_ids)) != len(self.asset_ids):
             raise ValueError("Uploaded asset IDs must be unique")
@@ -49,6 +57,7 @@ class ActivePage(StrictModel):
     page_id: str
     page_number: int = Field(ge=1)
     text: str
+    title: str | None = None
     asset_ids: list[str] = Field(default_factory=list)
 
 
