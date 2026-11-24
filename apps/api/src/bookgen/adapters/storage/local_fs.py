@@ -22,3 +22,7 @@ class LocalFSStorage:
 
     def get(self, key: str) -> bytes:
         return self._path(key).read_bytes()
+
+    def delete(self, key: str) -> None:
+        """Remove one confined object; retrying an absent object is harmless."""
+        self._path(key).unlink(missing_ok=True)

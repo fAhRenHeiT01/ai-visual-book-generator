@@ -42,9 +42,11 @@ test('Examples opens the same scenario twice with independent review and edits',
   await expect(page.getByRole('region', { name: 'Review page options' })).toBeVisible();
   const first = page.url().split('/').at(-1)!;
   await expect(page.getByText(/Scripted fixture run · portrait-testimonial/)).toBeVisible();
-  await expect(page.locator('.examples')).not.toHaveAttribute('open', '');
+  await expect(page.locator('.examples')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Visual Book Generator', exact: true }).click();
   await page.getByText('Examples · Explore 25 sample pages', { exact: true }).click();
   await open.click();
+  await expect(page).toHaveURL(/\/sessions\//);
   await expect.poll(() => page.url().split('/').at(-1)).not.toBe(first);
   const second = page.url().split('/').at(-1)!;
   await page.getByRole('button', { name: 'Confirm selection', exact: true }).click();

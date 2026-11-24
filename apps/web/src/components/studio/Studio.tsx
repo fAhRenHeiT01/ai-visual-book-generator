@@ -19,6 +19,48 @@ class ReviewBoundary extends Component<{ children: ReactNode }, { failed: boolea
     return this.props.children;
   }
 }
+function SavedBooks({ busy }: { busy: boolean }) {
+  const [books, setBooks] = useState<S['SessionSummary'][]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const [confirmation, setConfirmation] = useState<string>();
+  const [deleting, setDeleting] = useState(false);
+  useEffect(() => {
+    let active = true;
+    setLoading(true); setError('');
+    sessionApi.list().then(result => { if (active) setBooks(result.sessions); })
+      .catch((cause: Error) => { if (active) setError(cause.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [attempt]);
+  async function remove(id: string) {
+    if (deleting) return;
+    setDeleting(true); setError('');
+    try {
+      await sessionApi.remove(id);
+      setBooks(current => current.filter(book => book.session_id !== id)); setConfirmation(undefined);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Please retry deleting this book.'); }
+    finally { setDeleting(false); }
+  }
+  return <section className="studio-controls" aria-labelledby="saved-books-title">
+    <h2 id="saved-books-title">Saved books</h2>
+    {loading && <p role="status">Loading saved books…</p>}
+    {error && <p role="alert"><span>{error}</span> <button type="button" disabled={deleting || busy} onClick={() => setAttempt(value => value + 1)}>Reload saved books</button></p>}
+    {!loading && !error && !books.length && <p>No saved books yet. Create a book or open an example to get started.</p>}
+    <ul>{books.map(book => <li key={book.session_id}>
+      <h3>{book.title}</h3>
+      <p>{book.committed_page_count} committed {book.committed_page_count === 1 ? 'page' : 'pages'} · Next page {book.current_page_index}</p>
+      <p>Saved automatically · <a href={`/sessions/${encodeURIComponent(book.session_id)}`} aria-label={`Reopen this book: ${book.title}`}>Reopen this book</a></p>
+      {confirmation === book.session_id ? <div role="dialog" aria-labelledby={`delete-${book.session_id}`} onKeyDown={event => { if (event.key === 'Escape' && !deleting) setConfirmation(undefined); }}>
+        <h4 id={`delete-${book.session_id}`}>Delete {book.title}?</h4>
+        <p>This permanently deletes this book, its pages and uploaded assets.</p>
+        <button type="button" autoFocus disabled={deleting} onClick={() => setConfirmation(undefined)}>Cancel</button>
+        <button type="button" disabled={deleting || busy} onClick={() => { void remove(book.session_id); }}>{deleting ? 'Deleting book…' : 'Permanently delete book'}</button>
+      </div> : <button type="button" disabled={deleting || busy} aria-label={`Delete ${book.title}`} onClick={() => setConfirmation(book.session_id)}>Delete</button>}
+    </li>)}</ul>
+  </section>;
+}
 export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: string; debugWorkspace?: boolean }) {
   const [session, setSession] = useState<S['SessionSnapshot']>();
   const [appearance, setAppearance] = useState<S['AppearanceResponse']>();
@@ -71,11 +113,12 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
   const otherWorkflow = session && (debugWorkspace ? !session.debug_enabled || debug?.studio_active : session.debug_active);
   const action = !session ? 'Setup' : session.pending_review ? 'Review' : 'Compose';
   return <main className="studio">
-    <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && <p>Saved automatically · <a href={`/sessions/${session.session_id}`}>{debugWorkspace ? 'Open Studio' : 'Reopen this book'}</a>{session.debug_enabled && !debugWorkspace && <> · <a href={`/sessions/${session.session_id}/debug`}>Open debugger</a></>}</p>}</header>
+    <header className="studio-controls studio-header"><a href="/">Visual Book Generator</a><h1>{session?.context.title || 'Visual Book Generator'}</h1>{session && (debugWorkspace || session.debug_enabled) && <p>{debugWorkspace && <a href={`/sessions/${session.session_id}`}>Open Studio</a>}{session.debug_enabled && !debugWorkspace && <a href={`/sessions/${session.session_id}/debug`}>Open debugger</a>}</p>}</header>
     <nav className="authoring-progress studio-controls" aria-label="Authoring progress"><ol>{['Setup', 'Compose', 'Review'].map(step => <li key={step} aria-current={step === action ? 'step' : undefined}>{step}</li>)}</ol>{session && <a href="#draft">View draft · {session.committed_pages?.length ?? 0} pages</a>}</nav>
     {status && <p className="studio-controls" role="status">{status}</p>}
     {error && <div className="studio-controls" role="alert">{error}{sessionId && !session && <button onClick={() => { setStatus('Loading book…'); setRetry(value => value + 1); }}>Retry loading book</button>}</div>}
-    {!debugWorkspace && <Examples busy={!!status} onOpen={id => { void run('Opening example…', async () => {
+    {!session && !sessionId && !debugWorkspace && <SavedBooks busy={!!status} />}
+    {!session && !sessionId && !debugWorkspace && <Examples busy={!!status} onOpen={id => { void run('Opening example…', async () => {
       const created = await sessionApi.openExample(id);
       const theme = await sessionApi.appearance(created.session_id);
       setSession(created); setAppearance(theme); setDebug(undefined);

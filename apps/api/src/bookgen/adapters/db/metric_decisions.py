@@ -18,4 +18,9 @@ class MetricDecisionRepository:
 
     def save(self, session_id, page_id, metric_id, action):
         with sqlite3.connect(self.path) as connection:
-            connection.execute('INSERT INTO metric_decisions VALUES (?, ?, ?, ?) ON CONFLICT(session_id, page_id, metric_id) DO UPDATE SET action=excluded.action', (session_id, page_id, metric_id, action))
+            # The snapshot read can race deletion. Check ownership in this same
+            # write statement so stale requests cannot resurrect orphan records.
+            connection.execute('''INSERT INTO metric_decisions
+                SELECT ?, ?, ?, ? WHERE EXISTS (SELECT 1 FROM sessions WHERE session_id=?)
+                ON CONFLICT(session_id, page_id, metric_id) DO UPDATE SET action=excluded.action''',
+                (session_id, page_id, metric_id, action, session_id))

@@ -53,7 +53,7 @@ def create_app(*, settings=None, provider=None, repository=None, storage=None) -
 
     application.state.get_workflow = get_workflow
     application.add_middleware(CORSMiddleware, allow_origins=application.state.settings.app.cors_origins,
-                               allow_methods=["GET", "POST", "PUT"], allow_headers=["Content-Type"])
+                               allow_methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type"])
     application.include_router(sessions_router)
     application.include_router(compliance_router)
     application.include_router(theme_router)

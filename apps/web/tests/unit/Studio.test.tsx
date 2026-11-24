@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
@@ -17,6 +17,7 @@ function mount(sessionId?: string, debugWorkspace = false) {
 function mockApi(review = false) {
   state = { session_id: 's1', context, current_page_index: 1, assets: [], committed_pages: [], pending_review: review ? pending : null };
   return vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.endsWith('/api/v1/sessions') && !init?.method) return Response.json({ sessions: [] });
     if (url.endsWith('/appearance')) return Response.json({ status: 'unavailable', tokens: { theme_id: 'default', palette_source: 'preset' }, chrome: { enabled: false } });
     if (url.endsWith('/selection')) { state = { ...state, pending_review: null, committed_pages: [{ ...pending, selected_option_id: JSON.parse(String(init?.body)).option_id }], current_page_index: 2 }; return Response.json(pending); }
     if (url.endsWith('/pages')) { state.pending_review = pending; return Response.json(pending); }
@@ -25,7 +26,7 @@ function mockApi(review = false) {
 }
 beforeEach(() => {
   const saved = new Map<string, string>();
-  vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => saved.set(key, value) });
+  vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => saved.set(key, value), removeItem: (key: string) => saved.delete(key) });
 });
 afterEach(() => { cleanup(); canvas.broken = false; vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 test('optional setup allows an empty book context and mounts phase two controls', async () => {
@@ -277,6 +278,97 @@ test('workspace puts the current action before contextual appearance and draft a
 test('review shortcuts allow keyboard navigation links without committing a layout', async () => {
   mockApi(true); mount('s1');
   await screen.findByRole('radio', { name: /Option A/ });
-  fireEvent.keyDown(screen.getByRole('link', { name: 'Reopen this book' }), { key: 'Enter' });
+  fireEvent.keyDown(screen.getByRole('link', { name: 'Visual Book Generator' }), { key: 'Enter' });
   expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/selection'))).toBe(false);
+});
+
+test('home lists lightweight saved books with progress, resume links and explicit cancellable deletion', async () => {
+  mockApi();
+  window.localStorage.setItem('bookgen:active-page:s1', 'saved draft');
+  window.localStorage.setItem('bookgen:active-page:s2', 'other draft');
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/api/v1/sessions') && !init?.method) return Response.json({ sessions: [
+      { session_id: 's1', title: 'Saved book', committed_page_count: 2, current_page_index: 3 },
+      { session_id: 's2', title: 'Untitled book', committed_page_count: 0, current_page_index: 1 },
+    ] });
+    if (init?.method === 'DELETE') return new Response(null, { status: 204 });
+    return original(url, init);
+  });
+  mount();
+  await screen.findByRole('heading', { name: 'Saved books' });
+  await screen.findByText('Saved book');
+  expect(screen.getByText(/2 committed pages/)).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Reopen this book: Saved book' }).getAttribute('href')).toBe('/sessions/s1');
+  expect(screen.getByText('Untitled book')).toBeTruthy();
+  expect(screen.getByText(/Examples/)).toBeTruthy();
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/sessions/s1'))).toBe(false);
+  fireEvent.click(screen.getByRole('button', { name: 'Delete Saved book' }));
+  expect(vi.mocked(fetch).mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false);
+  expect(screen.getByRole('dialog', { name: 'Delete Saved book?' })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(screen.queryByRole('dialog')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Delete Saved book' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Permanently delete book' }));
+  await waitFor(() => expect(screen.queryByText('Saved book')).toBeNull());
+  expect(window.localStorage.getItem('bookgen:active-page:s1')).toBeNull();
+  expect(window.localStorage.getItem('bookgen:active-page:s2')).toBe('other draft');
+  expect(screen.getByText('Untitled book')).toBeTruthy();
+});
+
+test('saved book list errors retry to a recoverable empty state', async () => {
+  mockApi();
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  let fail = true;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/api/v1/sessions') && !init?.method && fail) return Response.json({ detail: 'Saved books unavailable' }, { status: 503 });
+    return original(url, init);
+  });
+  mount();
+  await screen.findByText('Saved books unavailable');
+  fail = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Reload saved books' }));
+  await screen.findByText('No saved books yet. Create a book or open an example to get started.');
+  expect(screen.getByRole('button', { name: 'Create book' })).toBeTruthy();
+});
+
+test('Compose hides home examples and saved book reopen links', async () => {
+  mockApi(); mount('s1');
+  await screen.findByLabelText('Page text');
+  expect(screen.queryByText(/Examples/)).toBeNull();
+  expect(screen.queryByRole('link', { name: /Reopen this book/ })).toBeNull();
+  expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).endsWith('/api/v1/sessions'))).toBe(false);
+});
+
+test('missing resume links offer loading retry and home recovery', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => Response.json({ detail: 'Session not found' }, { status: 404 })));
+  mount('missing');
+  await screen.findByText('Session not found');
+  expect(screen.getByRole('button', { name: 'Retry loading book' })).toBeTruthy();
+  expect(screen.getByRole('link', { name: 'Visual Book Generator' }).getAttribute('href')).toBe('/');
+  expect(screen.queryByText(/Examples/)).toBeNull();
+});
+
+test('failed deletion retains saved book and browser draft for an explicit retry', async () => {
+  mockApi();
+  window.localStorage.setItem('bookgen:active-page:s1', 'saved draft');
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  let fail = true;
+  vi.mocked(fetch).mockImplementation(async (url, init) => {
+    if (String(url).endsWith('/api/v1/sessions') && !init?.method) return Response.json({ sessions: [
+      { session_id: 's1', title: 'Saved book', committed_page_count: 0, current_page_index: 1 },
+    ] });
+    if (init?.method === 'DELETE') return fail ? Response.json({ detail: 'Retry deleting this book' }, { status: 503 }) : new Response(null, { status: 204 });
+    return original(url, init);
+  });
+  mount();
+  fireEvent.click(await screen.findByRole('button', { name: 'Delete Saved book' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Permanently delete book' }));
+  await screen.findByText('Retry deleting this book');
+  expect(window.localStorage.getItem('bookgen:active-page:s1')).toBe('saved draft');
+  expect(screen.getByText('Saved book')).toBeTruthy();
+  fail = false;
+  fireEvent.click(screen.getByRole('button', { name: 'Permanently delete book' }));
+  await screen.findByText('No saved books yet. Create a book or open an example to get started.');
+  expect(window.localStorage.getItem('bookgen:active-page:s1')).toBeNull();
 });

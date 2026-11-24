@@ -45,7 +45,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Sessions */
+        get: operations["list_sessions_api_v1_sessions_get"];
         put?: never;
         /** Create Session */
         post: operations["create_session_api_v1_sessions_post"];
@@ -66,7 +67,8 @@ export interface paths {
         get: operations["get_session_api_v1_sessions__session_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Session */
+        delete: operations["delete_session_api_v1_sessions__session_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -965,6 +967,11 @@ export interface components {
             chrome: components["schemas"]["MasterChromeConfig"];
             tokens: components["schemas"]["DesignTokens"];
         };
+        /** SessionListResponse */
+        SessionListResponse: {
+            /** Sessions */
+            sessions: components["schemas"]["SessionSummary"][];
+        };
         /** SessionSnapshot */
         SessionSnapshot: {
             active_page?: components["schemas"]["ActivePage"] | null;
@@ -995,6 +1002,17 @@ export interface components {
             rolling_layout_history?: components["schemas"]["LayoutArchetype"][];
             /** Session Id */
             session_id: string;
+        };
+        /** SessionSummary */
+        SessionSummary: {
+            /** Committed Page Count */
+            committed_page_count: number;
+            /** Current Page Index */
+            current_page_index: number;
+            /** Session Id */
+            session_id: string;
+            /** Title */
+            title: string;
         };
         /** SourceGrouping */
         SourceGrouping: {
@@ -1172,6 +1190,26 @@ export interface operations {
             };
         };
     };
+    list_sessions_api_v1_sessions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionListResponse"];
+                };
+            };
+        };
+    };
     create_session_api_v1_sessions_post: {
         parameters: {
             query?: never;
@@ -1224,6 +1262,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SessionSnapshot"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_session_api_v1_sessions__session_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

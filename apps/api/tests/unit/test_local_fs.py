@@ -67,3 +67,16 @@ def test_absolute_outside_path_is_rejected(tmp_path):
 def test_missing_object_raises_file_not_found(tmp_path):
     with pytest.raises(FileNotFoundError):
         storage_class()(tmp_path).get("absent.bin")
+
+
+def test_delete_is_confined_and_missing_keys_are_safe_to_retry(tmp_path):
+    storage = storage_class()(tmp_path / 'uploads')
+    key = storage.put('owned/original', b'owned')
+    other = storage.put('other/original', b'other')
+    storage.delete(key)
+    storage.delete(key)
+    assert not Path(key).exists()
+    assert storage.get(other) == b'other'
+    for invalid in ('../outside', '', '.'):
+        with pytest.raises(ValueError, match='storage root'):
+            storage.delete(invalid)
