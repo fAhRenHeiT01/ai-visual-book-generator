@@ -5,7 +5,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from bookgen.schemas import (AssetKind, AudienceMode, BookDirection, ComponentType,
-    LayoutArchetype, Composition, SurfaceTreatment, EmphasisTreatment, MediaPlacement)
+    LayoutArchetype, Composition, SurfaceTreatment, EmphasisTreatment, MediaPlacement, SurfaceRole)
 
 from .base import StrictConfig
 
@@ -71,6 +71,20 @@ class TreatmentRule(StrictConfig):
     archetypes_b: list[LayoutArchetype]
 
 
+class ComponentTreatment(StrictConfig):
+    section_dividers: bool
+    heading_emphasis: bool
+    focal_emphasis: bool
+    focal_surface: SurfaceRole
+
+
+class RationaleConfig(StrictConfig):
+    layout: str = Field(min_length=1)
+    media: str = Field(min_length=1)
+    no_text: str = Field(min_length=1)
+    no_media: str = Field(min_length=1)
+
+
 class ArtDirectionConfig(StrictConfig):
     default_direction: BookDirection
     auto_rules: list[DirectionRule]
@@ -81,6 +95,9 @@ class ArtDirectionConfig(StrictConfig):
     heading_slot: SlotId
     focal_slot: SlotId
     protected_forbidden_placements: list[MediaPlacement]
+    component_treatments: dict[Literal['option_a', 'option_b'], ComponentTreatment]
+    divider_component: Literal[ComponentType.DIVIDER_RULE]
+    rationale: RationaleConfig
 
 
 class GrammarConfig(StrictConfig):

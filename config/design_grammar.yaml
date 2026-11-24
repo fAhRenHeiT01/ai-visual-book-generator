@@ -223,6 +223,16 @@ art_direction:
   protected_forbidden_placements: [panoramic]
   role_components: {heading: heading, list: bullet_list, caption: caption}
   focal_components: {quote: pull_quote, metric: stat_callout}
+  # Component-level variations are semantic tokens, independent of theme colors.
+  component_treatments:
+    option_a: {section_dividers: false, heading_emphasis: true, focal_emphasis: true, focal_surface: accent_soft}
+    option_b: {section_dividers: true, heading_emphasis: false, focal_emphasis: false, focal_surface: paper}
+  divider_component: divider_rule
+  rationale:
+    layout: '{archetype}: {columns}-column {composition}, {surface} surface, {emphasis} hierarchy; {components}; {media}.'
+    media: '{kinds} frames use {fit} in {placement}'
+    no_text: 'no text components'
+    no_media: 'no media'
   treatments:
     - composition: comparison
       media_placement: paired

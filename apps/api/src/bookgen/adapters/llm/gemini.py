@@ -93,7 +93,8 @@ class GeminiProvider:
                     "page_number": page_number if page_number is not None else metadata.page_number,
                     "blocks": [block.model_dump(mode="json") for block in blocks],
                     "assets": [asset_metadata(asset) for asset in assets],
-                    "art_direction": arrangement_context(context, blocks, assets, grammar=self.settings.grammar),
+                    "art_direction": arrangement_context(context, blocks, assets, grammar=self.settings.grammar,
+                        compliance=self.settings.compliance),
                 },
             },
         }
