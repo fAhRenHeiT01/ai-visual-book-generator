@@ -228,3 +228,27 @@ def test_default_appearance_is_accessible_before_any_edit(tmp_path):
         assert appearance['status'] == 'available'
         tokens = appearance['tokens']
         assert contrast_ratio(tokens['color_brand_accent'], tokens['color_paper']) >= 4.5
+
+
+def test_legacy_appearance_payload_and_missing_row_remain_readable_after_restart(tmp_path):
+    import json
+    import sqlite3
+    with make_client(tmp_path) as api:
+        sid = api.post('/api/v1/sessions', json={}).json()['session_id']
+        default = api.get(f'/api/v1/sessions/{sid}/appearance').json()
+        assert default['tokens']['color_paper']
+    legacy = {'tokens': {'theme_id': 'old-brand', 'palette_source': 'manual',
+        'color_brand_primary': '#164E63'}, 'chrome': {'header_left': 'Legacy book'}}
+    with sqlite3.connect(tmp_path / 'publishing.db') as database:
+        database.execute('INSERT INTO session_appearance VALUES (?, ?) ON CONFLICT(session_id) DO UPDATE SET payload=excluded.payload',
+            (sid, json.dumps(legacy)))
+    with make_client(tmp_path) as api:
+        path = f'/api/v1/sessions/{sid}/appearance'
+        saved = api.get(path)
+        assert saved.status_code == 200
+        assert saved.json()['tokens']['color_brand_primary'] == '#164E63'
+        assert saved.json()['chrome']['header_left'] == 'Legacy book'
+        assert api.post(f'/api/v1/sessions/{sid}/pages', json={'text': 'Legacy book body.'}).status_code == 201
+        assert api.put(path, json=legacy).status_code == 409
+        assert api.post(path + '/theme', json={'theme_id': 'ocean'}).status_code == 409
+        assert api.get(path).json() == saved.json()

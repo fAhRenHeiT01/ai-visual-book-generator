@@ -131,6 +131,7 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
       setSession(created); setAppearance(theme); window.history.pushState(null, '', `/sessions/${created.session_id}`);
     }); }} /></div>}
     {session && appearance && <>
+      <details className="appearance-disclosure studio-controls"><summary>Book appearance</summary><ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.active_page || !!session?.debug_active || !!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} /></details>
       {otherWorkflow && <p className="studio-controls">{debugWorkspace ? session.debug_enabled ? 'This page is using Studio. Resume it in Studio before starting a manual run.' : 'The debugger is unavailable on this server. Continue in Studio.' : 'This page is paused in the debugger. Open the debugger to resume and review it.'}</p>}
       {debugWorkspace && session.debug_enabled && debug && !otherWorkflow && <DebugPanel key={debug.checkpoint_id} snapshot={{ ...debug, appearance }} busy={!!status} onStep={debugStep} onReload={() => { void run('Reloading checkpoint…', refresh); }} />}
       {otherWorkflow || (debugging && !debugReview) ? null : session.pending_review ? <ReviewBoundary key={session.pending_review.page_id}><OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
@@ -149,10 +150,8 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
         const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise);
         setSession({ ...session, active_page: activePage, pending_review: page });
       }); }} />}
-      <details className="appearance-disclosure studio-controls"><summary>Book appearance</summary><ThemeControls sessionId={session?.session_id} appearance={appearance} onAppearanceChange={setAppearance} locked={!!session?.debug_active || !!session?.pending_review || !!session?.committed_pages?.length || status === 'Generating options…'} /></details>
       <ComplianceBanner sessionId={session.session_id} snapshot={session} onDecision={refresh} />
       <DraftViewer sessionId={session.session_id} pages={(session.committed_pages ?? []).map(page => sessionApi.browserPage(session.session_id, page))} context={session.context} appearance={appearance} />
     </>}
-    {!session && !sessionId && <details className="appearance-disclosure studio-controls"><summary>Book appearance</summary><ThemeControls /></details>}
   </main>;
 }

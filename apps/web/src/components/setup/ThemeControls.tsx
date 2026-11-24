@@ -30,7 +30,7 @@ function contrast(foreground: string, background: string) {
 }
 // Static demonstration copy uses the same pointer contract as authored pages.
 const previewBlocks: S['AtomicTextBlock'][] = [
-  ['heading', 'Your next chapter'], ['body', 'A clear story, in your colors. Preview the palette, headers, and footers before applying it to this book.'], ['quote', 'Make every page feel like your brand.'],
+  ['heading', 'Your next chapter'], ['body', 'A clear story, in your colors. Preview the palette, headers, and footers before applying it to this book.'], ['quote', 'Make every page feel like your brand.'], ['stat', '12 chapters, one consistent style.'], ['list', 'Clear titles and generous breathing room.'],
 ].map(([block_id, text]) => ({ block_id, text, kind: 'paragraph', char_count: text.length, word_count: text.split(' ').length }));
 const previewLayout: S['PageLayoutAST'] = {
   option_id: 'theme-preview', archetype: 'minimalist_swiss', strategy_tag: 'theme-preview', rationale: '', surface_role: 'paper', density_scale: 'airy', column_count: 1, surface_treatment: 'brand_panel', emphasis_treatment: 'headline',
@@ -38,6 +38,8 @@ const previewLayout: S['PageLayoutAST'] = {
     { emphasis: false, extracted_excerpt: null, object_fit: 'contain', source_asset_id: null, component_id: 'heading', component_type: 'heading', slot_id: 'header', source_block_ids: ['heading'], surface_role: 'paper' },
     { emphasis: false, extracted_excerpt: null, object_fit: 'contain', source_asset_id: null, component_id: 'rule', component_type: 'divider_rule', slot_id: 'body', source_block_ids: [], surface_role: 'paper' },
     { emphasis: false, extracted_excerpt: null, object_fit: 'contain', source_asset_id: null, component_id: 'body', component_type: 'body_prose', slot_id: 'body', source_block_ids: ['body'], surface_role: 'surface_tint' },
+    { emphasis: false, extracted_excerpt: null, object_fit: 'contain', source_asset_id: null, component_id: 'list', component_type: 'bullet_list', slot_id: 'body', source_block_ids: ['list'], surface_role: 'paper' },
+    { object_fit: 'contain', source_asset_id: null, component_id: 'stat', component_type: 'stat_callout', slot_id: 'callout', source_block_ids: ['stat'], extracted_excerpt: '12 chapters', surface_role: 'surface_tint', emphasis: true },
     { object_fit: 'contain', source_asset_id: null, component_id: 'quote', component_type: 'pull_quote', slot_id: 'callout', source_block_ids: ['quote'], extracted_excerpt: previewBlocks[2].text, surface_role: 'accent_soft', emphasis: true },
   ],
 };
@@ -120,7 +122,7 @@ export function ThemeControls({ sessionId, appearance, locked = false, onAppeara
   }
   return <aside className="theme-controls studio-controls" data-feature-state={appearance?.status ?? 'unavailable'} aria-label="Theme customization">
     <h2>Theme customization</h2>
-    {locked ? <p>Appearance is locked for this book.</p> : <p>Select a theme or edit its colors. Changes stay in this preview until you apply them to this book.</p>}
+    {locked ? <p>Appearance is locked because page 1 creation has started.</p> : <p>Select a theme or edit its colors. Changes stay in this preview until you apply them to this book. Appearance locks when you start creating page 1.</p>}
     {!sessionId && <p>Create a book to choose its appearance.</p>}
     {libraryLoading && <p role="status">Loading theme library...</p>}
     {libraryError && <div role="alert">{libraryError} <button disabled={disabled} onClick={() => setReload(value => value + 1)}>Retry theme library</button></div>}

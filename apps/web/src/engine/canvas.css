@@ -12,6 +12,8 @@
   font-family: var(--font-body), serif;
   color: var(--color-ink-primary);
   background: var(--color-paper);
+  --color-brand-soft: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-paper));
+  --color-accent-soft: color-mix(in srgb, var(--color-brand-accent) 8%, var(--color-paper));
   --block-gap: 5mm;
   --body-size: 11pt;
   --body-leading: 1.55;
@@ -38,13 +40,14 @@
 .semantic-block { grid-column: 1 / -1; min-width: 0; margin: 0; white-space: break-spaces; overflow-wrap: anywhere; font-size: var(--body-size); line-height: var(--body-leading); }
 .semantic-block > :first-child { margin-top: 0; }
 .semantic-block > :last-child { margin-bottom: 0; }
-.page-canvas .semantic-block h2 { margin: 0; font-family: var(--font-heading), sans-serif; font-size: calc(var(--body-size) * 2.35); line-height: 1.12; font-weight: 700; }
+.page-canvas .semantic-block h2 { margin: 0; font-family: var(--font-heading), sans-serif; font-size: calc(var(--body-size) * 2.35); line-height: 1.12; font-weight: 700; color: var(--color-brand-primary); }
 .page-canvas .semantic-block p { margin: 0; }
 .page-canvas .semantic-block p + p { margin-block-start: calc(var(--block-gap) * .65); }
 .surface-paper { background: var(--color-paper); color: var(--color-ink-primary); }
 .surface-tint { background: var(--color-surface-tint); color: var(--color-ink-primary); }
-.surface-brand-dark { background: var(--color-brand-primary); color: var(--color-paper); }
-.surface-accent-soft { background: color-mix(in srgb, var(--color-brand-accent) 12%, var(--color-paper)); color: var(--color-ink-primary); }
+/* Legacy brand_dark ASTs retain their semantic role with a light brand wash. */
+.surface-brand-dark { background: var(--color-brand-soft); color: var(--color-ink-primary); }
+.surface-accent-soft { background: var(--color-accent-soft); color: var(--color-ink-primary); }
 .is-emphasized { font-weight: 700; border-inline-start: 0.8mm solid var(--color-brand-accent); padding-inline-start: 3mm; }
 .block-pull_quote, .block-stat_callout { padding: 4mm; border-radius: var(--radius-base); font-size: 16pt; }
 .block-caption { color: var(--color-ink-muted); font-size: 9pt; }
@@ -69,6 +72,7 @@
 .page-canvas.has-full-bleed { padding: 0; }
 .full-page-photo { padding: var(--page-margin); }
 .full-page-photo > .semantic-block { position: relative; z-index: 1; background: transparent; color: var(--color-paper); }
+.full-page-photo > .semantic-block h2 { color: inherit; }
 .full-page-photo > .block-image_frame { position: absolute; inset: 0; z-index: 0; }
 .full-page-photo .photo-background { height: 100%; }
 .photo-scrim { position: absolute; inset: 0; background: linear-gradient(transparent, var(--color-ink-primary)); opacity: 0.75; }
@@ -101,8 +105,9 @@
 .page-canvas .block-stat_callout.hierarchy-evidence { font-size: calc(var(--body-size) * 2.4); font-weight: 700; }
 .page-canvas[data-surface-treatment="brand_panel"] .block-heading {
   padding: calc(var(--block-gap) * 1.5);
-  background: var(--color-brand-primary);
-  color: var(--color-paper);
+  background: var(--color-brand-soft);
+  color: var(--color-brand-primary);
+  border-block-start: .8mm solid var(--color-brand-accent);
 }
 .page-canvas[data-surface-treatment="tinted_band"] .block-heading,
 .page-canvas[data-surface-treatment="tinted_band"] .block-image_frame { background: var(--color-surface-tint); color: var(--color-ink-primary); padding: var(--block-gap); }
@@ -154,7 +159,7 @@
 .print-page:last-child { break-after: auto; }
 .print-book .page-content { height: calc(100% - var(--export-safety)); }
 .print-book img { content-visibility: visible; }
-.print-toc { position: absolute; top: 65mm; left: 20mm; right: 20mm; display: grid; gap: 3mm; font: 11pt Inter, sans-serif; }
-.print-toc a { display: flex; justify-content: space-between; gap: 8mm; color: inherit; text-decoration: none; }
+.print-toc { color: var(--color-ink-primary); background: var(--color-paper); position: absolute; top: 65mm; left: 20mm; right: 20mm; display: grid; gap: 3mm; font: 11pt var(--font-heading), sans-serif; }
+.print-toc a { border-block-end: .2mm solid var(--color-brand-primary); padding-block-end: 2mm; display: flex; justify-content: space-between; gap: 8mm; color: inherit; text-decoration: none; }
 .print-compact .page-canvas { --block-gap: 3mm; --body-size: 10pt; --body-leading: 1.35; }
 @media print { .print-book { margin: 0; } }

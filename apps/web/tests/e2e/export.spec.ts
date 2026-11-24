@@ -69,3 +69,50 @@ test('approved draft downloads assembled PDF with redacted metrics and numbered 
     await expect(image.locator('xpath=ancestor::figure').locator('[data-scrim]')).toHaveCount(0);
   }
 });
+
+
+test('session theme stays light across preview, semantic pages, assembled covers and contents', async ({ page, request }) => {
+  const api = 'http://127.0.0.1:8007/api/v1/sessions';
+  const created = await request.post(api, { data: { context: { title: 'Ocean field notes' } } });
+  const sid = (await created.json()).session_id;
+  const applied = await request.post(`${api}/${sid}/appearance/theme`, { data: { theme_id: 'ocean' } });
+  expect(applied.status()).toBe(200);
+  const appearance = await applied.json();
+  await page.goto(`/sessions/${sid}`);
+  await page.getByText('Book appearance', { exact: true }).click();
+  await expect(page.getByText(/Appearance locks when you start creating page 1/)).toBeVisible();
+  const preview = page.locator('.theme-miniature .page-canvas');
+  await expect(preview).toHaveAttribute('data-settled', 'true');
+  for (const type of ['heading', 'body_prose', 'bullet_list', 'divider_rule', 'pull_quote', 'stat_callout']) {
+    await expect(preview.locator(`.block-${type}`)).toBeVisible();
+  }
+  const previewTitle = await preview.locator('.block-heading').evaluate(element => getComputedStyle(element).color);
+  const generated = await request.post(`${api}/${sid}/pages`, { data: { text: 'Field results\n\nA clear story with an exact source quote.' } });
+  expect(generated.status()).toBe(201);
+  const result = await generated.json();
+  expect((await request.post(`${api}/${sid}/pages/${result.page_id}/selection`, { data: { option_id: result.option_a.option_id } })).status()).toBe(200);
+  await page.goto(`/print/${sid}`);
+  await expect.poll(() => page.locator('html').getAttribute('data-print-ready')).toBe('true');
+  const cover = page.locator('[data-kind="cover"] .page-canvas');
+  const toc = page.locator('[data-kind="toc"]');
+  const body = page.locator('[data-kind="body"] .page-canvas');
+  for (const canvas of [cover, toc.locator('.page-canvas'), body]) {
+    await expect(canvas).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+    expect(await canvas.evaluate(element => getComputedStyle(element).getPropertyValue('--color-brand-primary').trim())).toBe(appearance.tokens.color_brand_primary);
+  }
+  await expect(cover.locator('.block-heading')).toHaveCSS('color', previewTitle);
+  const cssColor = (hex: string) => `rgb(${[1, 3, 5].map(index => parseInt(hex.slice(index, index + 2), 16)).join(', ')})`;
+  await expect(toc.locator('.print-toc')).toHaveCSS('color', cssColor(appearance.tokens.color_ink_primary));
+  await expect(toc.locator('.print-toc a')).toHaveCSS('border-bottom-color', cssColor(appearance.tokens.color_brand_primary));
+  for (const surface of [cover.locator('.block-heading'), toc.locator('.block-heading')]) {
+    const brightness = await surface.evaluate(element => {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 1;
+      const context = canvas.getContext('2d')!;
+      context.fillStyle = getComputedStyle(element).backgroundColor;
+      context.fillRect(0, 0, 1, 1);
+      return [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).reduce((sum, value) => sum + value, 0);
+    });
+    expect(brightness).toBeGreaterThan(650);
+  }
+});
