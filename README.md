@@ -205,8 +205,12 @@ npm --prefix apps/web run test
 npm --prefix apps/web run typecheck
 
 # Browser end-to-end tests (Playwright starts the API and web servers)
-npm --prefix apps/web run e2e
+make e2e
 ```
+
+`make e2e` runs with one Playwright worker because the browser fixtures share a
+SQLite session/checkpoint database. Parallel workers can contend for its write
+lock; use this target for local and CI browser runs.
 
 The Playwright configuration expects the API virtual environment at the repository root (`.venv`). If using another environment, set `PYTHON` to its Python executable before running E2E tests.
 
