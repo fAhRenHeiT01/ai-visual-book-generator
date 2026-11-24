@@ -371,6 +371,32 @@
           "page_id": {
             "title": "Page Id",
             "type": "string"
+          },
+          "source_end": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Exclusive Unicode code point offset in the exact source block.",
+            "title": "Source End"
+          },
+          "source_start": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Inclusive Unicode code point offset in the exact source block.",
+            "title": "Source Start"
           }
         },
         "required": [

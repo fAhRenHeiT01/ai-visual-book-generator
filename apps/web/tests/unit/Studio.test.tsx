@@ -4,7 +4,7 @@ import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
 const Studio = (modules['../../src/components/studio/Studio.tsx'] as { Studio: ComponentType<{ sessionId?: string; debugWorkspace?: boolean }> } | undefined)?.Studio;
 const canvas = vi.hoisted(() => ({ broken: false }));
-vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: ({ result, chrome }: { result: { page_id: string }; chrome?: { chapterTitle?: string } }) => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div data-page-id={result.page_id} data-chapter-title={chrome?.chapterTitle ?? ''}>Canvas</div>; } }));
+vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: ({ result, chrome, reviewMetrics }: { result: { page_id: string }; chrome?: { chapterTitle?: string }; reviewMetrics?: { decision?: string | null }[] }) => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div data-page-id={result.page_id} data-review-decisions={reviewMetrics?.map(item => item.decision ?? 'pending').join(',')} data-chapter-title={chrome?.chapterTitle ?? ''}>Canvas</div>; } }));
 const context = { title: '', objective: '', tone_keywords: [], audience_mode: 'internal', page_size: 'A4', source_website_url: null };
 const layout = { option_id: 'option_a', strategy_tag: 'clear', archetype: 'minimalist_swiss', rationale: 'Clear reading order', components: [] };
 const pending = { page_id: 'p1', page_number: 1, input_blocks: [], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b', rationale: 'Visual rhythm' } };
@@ -29,6 +29,25 @@ beforeEach(() => {
   vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => saved.set(key, value), removeItem: (key: string) => saved.delete(key) });
 });
 afterEach(() => { cleanup(); canvas.broken = false; vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+test('page navigation scopes review and only saved canvases receive persisted review decisions', async () => {
+  mockApi(true);
+  const committed = { ...pending, page_id: 'saved', selected_option_id: 'option_a' };
+  state.committed_pages = [committed];
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  const ledger = [{ page_id: 'saved', source_start: 11, source_end: 14, decision: 'redact', metric: { metric_id: 'saved-metric', source_block_id: 'saved-source', raw_value: '42%', context_snippet: '[INTERNAL] 42%', classification: 'internal' } },
+    { page_id: 'p1', source_start: 11, source_end: 14, decision: null, metric: { metric_id: 'new-metric', source_block_id: 'new-source', raw_value: '27%', context_snippet: '[INTERNAL] 27%', classification: 'internal' } }];
+  vi.mocked(fetch).mockImplementation(async (url, init) => String(url).endsWith('/compliance')
+    ? Response.json({ status: 'available', eligible: false, audience_mode: 'internal', ledger }) : original(url, init));
+  const view = mount('s1');
+  const review = await screen.findByLabelText('Compliance review');
+  await waitFor(() => expect(within(review).getByTestId('compliance-statement').textContent).toBe('[INTERNAL] 27%'));
+  expect(view.container.querySelector('.draft-pages [data-review-decisions]')?.getAttribute('data-review-decisions')).toBe('redact');
+  expect(view.container.querySelector('[role="radio"] [data-review-decisions]')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Review page'), { target: { value: 'saved' } });
+  expect(within(review).getByTestId('compliance-statement').textContent).toBe('[INTERNAL] 42%');
+  fireEvent.change(screen.getByLabelText('Review page'), { target: { value: 'p1' } });
+  expect(within(review).getByTestId('compliance-statement').textContent).toBe('[INTERNAL] 27%');
+});
 test('Studio draft and protected print share source chapter headers instead of the book title', async () => {
   mockApi();
   const pages = [1, 2, 3].map(page_number => ({ ...pending, page_id: `p${page_number}`, page_number, selected_option_id: 'option_a',

@@ -74,7 +74,7 @@ def mask_blocks(blocks, ledger):
 
 
 def _metric_spans(block, metrics):
-    """Recover exact occurrence offsets locally without changing public schemas."""
+    """Recover exact occurrence offsets from the source-versioned identifiers."""
     spans = []
     for metric in metrics:
         start = block.text.find(metric.raw_value)
@@ -183,6 +183,8 @@ def compliance_report(session_snapshot, *, decisions=None, config=None):
     locked = not snapshot.committed_pages or snapshot.pending_review is not None
     for page in pages:
         metrics = compliance_metrics_scan(page.input_blocks, config=config)
+        offsets = {metric.metric_id: (start, end) for block in page.input_blocks
+            for start, end, metric in _metric_spans(block, [item for item in metrics if item.source_block_id == block.block_id])}
         if page.selected_option_id:
             selected = getattr(page, page.selected_option_id)
             if any(component.component_type == ComponentType.STAT_CALLOUT and
@@ -194,7 +196,9 @@ def compliance_report(session_snapshot, *, decisions=None, config=None):
         for metric in metrics:
             decision = decisions.get((page.page_id, metric.metric_id))
             metric.approved_for_export = decision == 'approve'
-            ledger.append(ComplianceMetric(page_id=page.page_id, metric=metric, decision=decision))
+            start, end = offsets[metric.metric_id]
+            ledger.append(ComplianceMetric(page_id=page.page_id, metric=metric, decision=decision,
+                source_start=start, source_end=end))
             if metric.classification in policy.approval_required and decision not in ('approve', 'redact'):
                 locked = True
             if decision == 'redact':

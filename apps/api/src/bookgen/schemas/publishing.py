@@ -10,6 +10,8 @@ class ComplianceMetric(StrictModel):
     page_id: str
     metric: MetricEntry
     decision: Literal["approve", "redact"] | None = None
+    source_start: int | None = Field(default=None, ge=0, description="Inclusive Unicode code point offset in the exact source block.")
+    source_end: int | None = Field(default=None, ge=0, description="Exclusive Unicode code point offset in the exact source block.")
 
 
 class ComplianceReport(StrictModel):
