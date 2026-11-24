@@ -7,6 +7,21 @@ import { PageCanvas } from '../../engine/PageCanvas';
 import { apiOrigin } from '../../config/env';
 import { pageChapterTitles } from '../../engine/MasterChrome';
 type S = components['schemas'];
+
+function downloadFilename(title: string) {
+  let name = Array.from(title).filter(character => {
+    const code = character.charCodeAt(0);
+    return code >= 32 && code !== 127 && !'<>:"/\\|?*'.includes(character);
+  }).join('').trim();
+  while (name.startsWith('.')) name = name.slice(1).trimStart();
+  while (name.endsWith('.')) name = name.slice(0, -1).trimEnd();
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  const date = `${String(now.getFullYear()).padStart(4, '0')}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `${name || 'book'}_${date}-${time}.pdf`;
+}
+
 export type ExportActionProps = {
   disabled: boolean;
   sessionId: string;
@@ -65,7 +80,7 @@ export function ExportAction({ disabled, sessionId, pages, context, appearance }
       }
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
-      link.href = url; link.download = 'book.pdf'; link.click();
+      link.href = url; link.download = downloadFilename(context.title); link.click();
       setTimeout(() => URL.revokeObjectURL(url), 0);
     } catch (reason) { setError(String(reason)); }
     finally { setBusy(false); }
