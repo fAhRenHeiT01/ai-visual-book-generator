@@ -4,7 +4,7 @@ import type { ComponentType } from 'react';
 const modules = import.meta.glob('../../src/components/studio/Studio.tsx', { eager: true });
 const Studio = (modules['../../src/components/studio/Studio.tsx'] as { Studio: ComponentType<{ sessionId?: string; debugWorkspace?: boolean }> } | undefined)?.Studio;
 const canvas = vi.hoisted(() => ({ broken: false }));
-vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: () => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div>Canvas</div>; } }));
+vi.mock('../../src/engine/PageCanvas', () => ({ PageCanvas: ({ result, chrome }: { result: { page_id: string }; chrome?: { chapterTitle?: string } }) => { if (canvas.broken) throw new Error('Temporary browser rendering failure'); return <div data-page-id={result.page_id} data-chapter-title={chrome?.chapterTitle ?? ''}>Canvas</div>; } }));
 const context = { title: '', objective: '', tone_keywords: [], audience_mode: 'internal', page_size: 'A4', source_website_url: null };
 const layout = { option_id: 'option_a', strategy_tag: 'clear', archetype: 'minimalist_swiss', rationale: 'Clear reading order', components: [] };
 const pending = { page_id: 'p1', page_number: 1, input_blocks: [], input_assets: [], metrics_ledger: [], option_a: layout, option_b: { ...layout, option_id: 'option_b', rationale: 'Visual rhythm' } };
@@ -29,6 +29,25 @@ beforeEach(() => {
   vi.stubGlobal('localStorage', { getItem: (key: string) => saved.get(key) ?? null, setItem: (key: string, value: string) => saved.set(key, value), removeItem: (key: string) => saved.delete(key) });
 });
 afterEach(() => { cleanup(); canvas.broken = false; vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+test('Studio draft and protected print share source chapter headers instead of the book title', async () => {
+  mockApi();
+  const pages = [1, 2, 3].map(page_number => ({ ...pending, page_id: `p${page_number}`, page_number, selected_option_id: 'option_a',
+    title: page_number === 2 ? 'Separate title' : '',
+    input_blocks: page_number === 2 ? [{ block_id: 'chapter', kind: 'heading', text: '# Results', word_count: 2, char_count: 9 }] : [] }));
+  state.context = { ...context, title: 'Book title' };
+  state.committed_pages = pages;
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  vi.mocked(fetch).mockImplementation(async (url, init) => String(url).endsWith('/compliance')
+    ? Response.json({ status: 'available', eligible: true, audience_mode: 'internal', publishable_pages: pages }) : original(url, init));
+  vi.spyOn(window, 'print').mockImplementation(() => {});
+  mount('s1');
+  const print = await screen.findByRole('button', { name: 'Print draft' });
+  await waitFor(() => expect((print as HTMLButtonElement).disabled).toBe(false));
+  const titles = (selector: string) => Array.from(document.querySelectorAll(`${selector} [data-page-id]`)).map(node => node.getAttribute('data-chapter-title'));
+  expect(titles('.draft-pages')).toEqual(['', 'Separate title', 'Separate title']);
+  fireEvent.click(print);
+  await waitFor(() => expect(titles('#compliance-print')).toEqual(['', 'Separate title', 'Separate title']));
+});
 test('optional setup allows an empty book context and mounts phase two controls', async () => {
   mockApi(); mount();
   expect(screen.getByLabelText('Book title (optional)')).toBeTruthy();
@@ -237,6 +256,7 @@ test('client saves identity and uploaded assets before a lost generation request
   });
   const mounted = mount('s1');
   await screen.findByLabelText('Page text');
+  fireEvent.change(screen.getByLabelText('Page title (optional)'), { target: { value: 'Durable title' } });
   fireEvent.change(screen.getByLabelText('Page text'), { target: { value: 'Original before network loss.' } });
   fireEvent.change(screen.getByLabelText('Page images'), { target: { files: [new File(['image'], 'photo.png', { type: 'image/png' })] } });
   fireEvent.click(screen.getByRole('button', { name: 'Generate options' }));
@@ -246,10 +266,11 @@ test('client saves identity and uploaded assets before a lost generation request
   expect(identity).toBeTruthy();
   mounted.unmount(); mount('s1');
   await screen.findByDisplayValue('Original before network loss.');
+  expect(screen.getByDisplayValue('Durable title')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Retry generation' }));
   await screen.findByRole('alert');
   const calls = vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/pages'));
-  expect(JSON.parse(String(calls.at(-1)?.[1]?.body))).toEqual({ page_id: identity, text: 'Original before network loss.', asset_ids: ['saved-upload'], revise: false });
+  expect(JSON.parse(String(calls.at(-1)?.[1]?.body))).toEqual({ page_id: identity, title: 'Durable title', text: 'Original before network loss.', asset_ids: ['saved-upload'], revise: false });
   expect(vi.mocked(fetch).mock.calls.filter(([url]) => String(url).endsWith('/assets'))).toHaveLength(1);
 });
 

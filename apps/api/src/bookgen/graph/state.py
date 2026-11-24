@@ -12,6 +12,8 @@ class PageState(TypedDict, total=False):
     session_id: str
     context: dict[str, Any]
     text: str
+    title: str | None
+    page_title: str
     assets: list[dict[str, Any]]
     page_id: str
     page_number: int

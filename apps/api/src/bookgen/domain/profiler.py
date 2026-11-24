@@ -29,6 +29,39 @@ class ProfileResult:
     issues: list[ValidationIssue]
 
 
+def _decode_controls(text: str) -> str:
+    for escaped, actual in ((r"\n", "\n"), (r"\r", "\r"), (r"\t", "\t"), (r"\v", "\v"), (r"\f", "\f")):
+        text = text.replace(escaped, actual)
+    return text
+
+
+def normalize_page_input(text: str) -> str:
+    """Canonicalize pasted controls before source blocks and pointers are made.
+
+    Each whitespace control becomes an ordinary space, including its literal
+    escaped spelling. Preserve existing spaces and all readable source copy.
+    Do not use unicode_escape: it would also decode or corrupt user content.
+    """
+    return "".join(" " if character.isspace() else character for character in _decode_controls(text))
+
+
+def infer_page_title(text: str, *, title: str | None = None, settings: ProfilingConfig | None = None) -> str:
+    """Derive display metadata without changing or re-emitting body-copy blocks."""
+    explicit = normalize_page_input(title or '').strip()
+    if explicit:
+        return explicit
+    config = settings if settings is not None else load_settings().profiling
+    if config is None:
+        raise ValueError('Profiling settings are not configured')
+    config.require_complete()
+    heading = next((match.group(1) for line in _decode_controls(text).splitlines()
+        if (match := re.match(config.title.heading, line))), '')
+    source = normalize_page_input(heading or text).strip()
+    candidate = re.split(config.title.sentence_boundary, source, maxsplit=1)[0]
+    words = list(re.finditer(config.block_patterns.word, candidate))[:config.title.max_words]
+    return candidate[:words[-1].end()] if words else ''
+
+
 def _parse_blocks(text: str, config: ProfilingConfig) -> list[AtomicTextBlock]:
     patterns = config.block_patterns
     groups: list[tuple[str, str]] = []

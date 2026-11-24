@@ -11,6 +11,7 @@ from langgraph.types import Command
 
 from bookgen.schemas import BookContext, PageGenerationResult
 from bookgen.schemas.sessions import ActivePage, SessionSnapshot
+from bookgen.domain.profiler import infer_page_title, normalize_page_input
 
 from .nodes import PageNodes
 from .state import PageState
@@ -121,13 +122,15 @@ class PageWorkflow:
         uncommitted = values.get("page_id") not in {page.page_id for page in committed}
         pending = PageGenerationResult.model_validate(result) if result and paused and uncommitted and result.get("page_id") == values.get("page_id") and not result.get("selected_option_id") else None
         active = ActivePage(page_id=values["page_id"], page_number=values["page_number"],
-            text=values.get("text", ""), asset_ids=[asset["asset_id"] for asset in values.get("assets", [])]) if paused and uncommitted and values.get("page_id") else None
+            text=values.get("text", ""), title=values.get('title'), asset_ids=[asset["asset_id"] for asset in values.get("assets", [])]) if paused and uncommitted and values.get("page_id") else None
         return SessionSnapshot(session_id=session_id, example_id=example_id, context=context, pending_review=pending, active_page=active,
             debug_enabled=self.settings.app.debug_mode, debug_active=bool(values.get("debug_mode") and paused),
             committed_pages=committed, current_page_index=len(committed) + 1,
             rolling_layout_history=values.get("rolling_layout_history", []), assets=assets)
 
-    async def generate(self, session_id, *, text, assets=(), page_id=None, revise=False):
+    async def generate(self, session_id, *, text, assets=(), page_id=None, revise=False, title=None, inferred_title=None):
+        title = normalize_page_input(title or '').strip() or None
+        page_title = inferred_title if inferred_title is not None else infer_page_title(text, title=title, settings=self.settings.profiling)
         async with self._page_lock(session_id):
             snapshot = await self.snapshot(session_id)
             if snapshot.debug_active:
@@ -152,7 +155,7 @@ class PageWorkflow:
                     values = checkpoint.values
                     snapshot = await self.snapshot(session_id)
                 unfinished = bool(checkpoint.next or any(task.interrupts for task in checkpoint.tasks))
-                same_input = values.get("text") == text and [asset["asset_id"] for asset in values.get("assets", [])] == [asset.asset_id for asset in assets]
+                same_input = values.get("text") == text and values.get('title') == title and [asset["asset_id"] for asset in values.get("assets", [])] == [asset.asset_id for asset in assets]
                 if unfinished:
                     if (page_id is not None and page_id != values.get("page_id")) or (page_id is None and not same_input):
                         raise PageConflict("A pending page requires selection or recovery before creating another")
@@ -169,6 +172,7 @@ class PageWorkflow:
                         return PageGenerationResult.model_validate(generated["result"])
                     page_id = values["page_id"]
                 state = {"debug_mode": False, "session_id": session_id, "context": snapshot.context.model_dump(mode="json"), "text": text,
+                    'title': title, 'page_title': page_title,
                     "assets": [asset.model_dump(mode="json") for asset in assets], "page_id": page_id or uuid4().hex,
                     "page_number": snapshot.current_page_index, "current_page_index": snapshot.current_page_index,
                     "result": None, "options": [], "validation_issues": [],

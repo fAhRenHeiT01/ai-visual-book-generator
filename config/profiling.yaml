@@ -24,3 +24,7 @@ grouping:
   max_span_chars: 1200
   max_spans: 160
   max_input_chars: 24000
+title:
+  heading: '^\s*#{1,6}\s+(.+?)\s*$'
+  sentence_boundary: '(?<=[.!?])\s+'
+  max_words: 12

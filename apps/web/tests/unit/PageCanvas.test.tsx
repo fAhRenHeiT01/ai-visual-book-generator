@@ -31,7 +31,7 @@ function fixture(archetype: S["LayoutArchetype"] = "full_bleed_hero", kinds: S["
     ...input_assets.map((asset, i) => ({ ...placed(`image${i}`, "image_frame", i ? "media_secondary" : "media_main"), source_asset_id: asset.asset_id })),
     { ...placed("quote", "pull_quote", "callout", ["b1"]), extracted_excerpt: "“copy”, punctuation…", surface_role: "accent_soft", emphasis: true },
   ] };
-  return { page_id: "p1", page_number: 3, input_blocks, input_assets, option_a: layout, option_b: { ...layout, option_id: "b" }, selected_option_id: "a", metrics_ledger: [], repair_attempts: 0, used_fallback: false };
+  return { page_id: "p1", page_number: 3, title: null, input_blocks, input_assets, option_a: layout, option_b: { ...layout, option_id: "b" }, selected_option_id: "a", metrics_ledger: [], repair_attempts: 0, used_fallback: false };
 }
 function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
   expect(Canvas, "PageCanvas must implement the physical page renderer").toBeDefined();

@@ -17,7 +17,7 @@ const draftKey = (id: string) => `bookgen:active-page:${id}`;
 function savedDraft(id: string): S['ActivePage'] | undefined {
   try {
     const draft = JSON.parse(window.localStorage.getItem(draftKey(id)) ?? 'null');
-    if (draft && typeof draft.page_id === 'string' && typeof draft.text === 'string' && Number.isInteger(draft.page_number) && Array.isArray(draft.asset_ids) && draft.asset_ids.every((value: unknown) => typeof value === 'string')) return draft;
+    if (draft && typeof draft.page_id === 'string' && typeof draft.text === 'string' && (draft.title == null || typeof draft.title === 'string') && Number.isInteger(draft.page_number) && Array.isArray(draft.asset_ids) && draft.asset_ids.every((value: unknown) => typeof value === 'string')) return draft;
   } catch { /* Server snapshots remain available when browser storage is blocked. */ }
 }
 export const sessionApi = {
@@ -39,7 +39,7 @@ export const sessionApi = {
     try { window.localStorage.setItem(draftKey(id), JSON.stringify(draft)); } catch { /* Recovery also uses the durable server checkpoint. */ }
   },
   debug: (id: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug'),
-  debugStart: (id: string, text: string, asset_ids: string[], page_id?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids, page_id })),
+  debugStart: (id: string, text: string, asset_ids: string[], page_id?: string, title?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/pages', json({ text, asset_ids, page_id, ...(title ? { title } : {}) })),
   debugStep: (id: string, checkpoint_id: string, response?: string) => request<S['DebugSnapshot']>(prefix(id) + '/debug/step', json({ checkpoint_id, response })),
   appearance: (id: string) => request<S['AppearanceResponse']>(prefix(id) + '/appearance'),
   saveAppearance: (id: string, appearance: S['SessionAppearance']) => request<S['AppearanceResponse']>(prefix(id) + '/appearance', json(appearance, 'PUT')),
@@ -53,7 +53,7 @@ export const sessionApi = {
     files.forEach(file => body.append('files', file));
     return request<S['AssetUploadResponse']>(prefix(id) + '/assets', { method: 'POST', body });
   },
-  generate: (id: string, text: string, asset_ids: string[], page_id?: string, revise = false) => request<S['PageGenerationResult']>(prefix(id) + '/pages', json({ text, asset_ids, page_id, revise })),
+  generate: (id: string, text: string, asset_ids: string[], page_id?: string, revise = false, title?: string) => request<S['PageGenerationResult']>(prefix(id) + '/pages', json({ text, asset_ids, page_id, revise, ...(title ? { title } : {}) })),
   select: (id: string, page: string, option_id: 'option_a' | 'option_b') => request<S['PageGenerationResult']>(prefix(id) + `/pages/${encodeURIComponent(page)}/selection`, json({ option_id })),
   browserPage: (id: string, page: S['PageGenerationResult'], purpose: 'preview' | 'print' = 'preview'): S['PageGenerationResult'] => ({
     ...page,

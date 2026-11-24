@@ -28,6 +28,84 @@ def test_sessions_route_is_registered():
     assert "/api/v1/sessions" in create_app().openapi()["paths"], "sessions route must be registered"
 
 
+@pytest.mark.parametrize('source,normalized', [
+    ('First\nsecond\rthird\tfourth', 'First second third fourth'),
+    (r'First\nsecond\rthird\tfourth', 'First second third fourth'),
+    ('First\r\n\nsecond\\tthird\vfourth\ffifth\x85sixth\u2028last', 'First   second third fourth fifth sixth last'),
+    ('# Title\\n\\nBody\tcopy.', '# Title  Body copy.'),
+])
+def test_page_input_normalizes_controls_before_blocks_and_persists_exact_source(tmp_path, source, normalized):
+    with client(tmp_path) as api:
+        session = api.post('/api/v1/sessions', json={}).json()['session_id']
+        prefix = f'/api/v1/sessions/{session}'
+        response = api.post(prefix + '/pages', json={'page_id': 'normalized', 'text': source})
+        assert response.status_code == 201
+        page = response.json()
+        assert [block['text'] for block in page['input_blocks']] == [normalized]
+        assert page['input_blocks'][0]['char_count'] == len(normalized)
+        assert page['input_blocks'][0]['word_count'] == len(normalized.split())
+        assert page['input_blocks'][0]['kind'] == ('heading' if source.startswith('# ') else 'prose')
+        if source.startswith('# '):
+            assert page['title'] == 'Title'
+        assert api.get(prefix).json()['active_page']['text'] == normalized
+        assert api.post(prefix + '/pages', json={'page_id': 'normalized', 'text': normalized}).json() == page
+        api.post(prefix + '/pages/normalized/selection', json={'option_id': 'option_a'})
+    with client(tmp_path) as api:
+        assert api.get(prefix).json()['committed_pages'][0]['input_blocks'] == page['input_blocks']
+
+
+def test_escaped_control_only_input_is_empty(tmp_path):
+    with client(tmp_path) as api:
+        session = api.post('/api/v1/sessions', json={}).json()['session_id']
+        assert api.post(f'/api/v1/sessions/{session}/pages', json={'text': r'\n\r\t\v\f'}).status_code == 422
+
+
+def test_explicit_title_survives_generation_recovery_revision_selection_and_reload(tmp_path):
+    from bookgen.adapters.llm.mock import MockLLMProvider
+
+    class Unavailable(MockLLMProvider):
+        async def generate_candidate(self, **kwargs):
+            raise RuntimeError('lost response')
+
+    with client(tmp_path) as api:
+        session = api.post('/api/v1/sessions', json={}).json()['session_id']
+        prefix = f'/api/v1/sessions/{session}'
+        body = {'page_id': 'titled', 'text': '# Source heading\nBody\tcopy.', 'title': 'Explicit chapter'}
+        api.app.state.get_workflow().provider = Unavailable()
+        assert api.post(prefix + '/pages', json=body).status_code == 503
+        active = api.get(prefix).json()['active_page']
+        assert active['title'] == 'Explicit chapter'
+        assert active['text'] == '# Source heading Body copy.'
+        changed = {**body, 'title': 'Revised chapter'}
+        assert api.post(prefix + '/pages', json=changed).status_code == 422
+        api.app.state.get_workflow().provider = MockLLMProvider()
+        page = api.post(prefix + '/pages', json={**changed, 'revise': True}).json()
+        assert page['title'] == 'Revised chapter'
+        assert [block['text'] for block in page['input_blocks']] == ['# Source heading Body copy.']
+        assert api.post(prefix + '/pages/titled/selection', json={'option_id': 'option_a'}).status_code == 200
+    with client(tmp_path) as api:
+        assert api.get(prefix).json()['committed_pages'][0]['title'] == 'Revised chapter'
+
+
+def test_debug_title_and_normalized_source_remain_checkpoint_bound(tmp_path):
+    with client(tmp_path) as api:
+        api.app.state.settings.app.debug_mode = True
+        session = api.post('/api/v1/sessions', json={}).json()['session_id']
+        prefix = f'/api/v1/sessions/{session}'
+        body = {'page_id': 'debug-title', 'title': 'Manual chapter', 'text': '# Original\nBody\tcopy.'}
+        started = api.post(prefix + '/debug/pages', json=body)
+        assert started.status_code == 201
+        state = started.json()['state']
+        assert state['text'] == '# Original Body copy.'
+        assert state['title'] == state['page_title'] == 'Manual chapter'
+        assert api.post(prefix + '/debug/pages', json={**body, 'text': state['text']}).status_code == 201
+        assert api.post(prefix + '/debug/pages', json={**body, 'title': 'Changed'}).status_code == 409
+    with client(tmp_path) as api:
+        active = api.get(prefix).json()['active_page']
+        assert active['title'] == 'Manual chapter'
+        assert active['text'] == '# Original Body copy.'
+
+
 def test_saved_session_summaries_are_lightweight_and_resume_durably(tmp_path):
     with client(tmp_path) as api:
         untitled = api.post('/api/v1/sessions', json={}).json()['session_id']

@@ -137,17 +137,17 @@ export function Studio({ sessionId, debugWorkspace = false }: { sessionId?: stri
       {otherWorkflow || (debugging && !debugReview) ? null : session.pending_review ? <ReviewBoundary key={session.pending_review.page_id}><OptionComparison key={session.pending_review.page_id} result={sessionApi.browserPage(session.session_id, session.pending_review)} appearance={appearance} context={session.context} totalPages={(session.committed_pages ?? []).length + 1} busy={!!status} onConfirm={choice => { if (debugReview) { debugStep(choice); return; } void run('Saving selection…', async () => {
         await sessionApi.select(session.session_id, session.pending_review!.page_id, choice);
         await refresh();
-      }); }} /></ReviewBoundary> : <PageComposer key={session.active_page?.page_id ?? session.current_page_index} activePage={session.active_page} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files, revise) => { await run('Generating options…', async () => {
+      }); }} /></ReviewBoundary> : <PageComposer key={session.active_page?.page_id ?? session.current_page_index} activePage={session.active_page} pageNumber={session.current_page_index} busy={!!status} onGenerate={async (text, files, revise, title) => { await run('Generating options…', async () => {
         const assetIds = files.length ? (await sessionApi.upload(session.session_id, files)).assets.map(asset => asset.asset_id) : session.active_page?.asset_ids ?? [];
-        const activePage = { page_id: session.active_page?.page_id ?? crypto.randomUUID(), page_number: session.current_page_index, text, asset_ids: assetIds };
+        const activePage = { page_id: session.active_page?.page_id ?? crypto.randomUUID(), page_number: session.current_page_index, text, asset_ids: assetIds, ...(title ? { title } : {}) };
         sessionApi.remember(session.session_id, activePage);
         setSession({ ...session, active_page: activePage });
         if (debugWorkspace) {
-          setDebug(await sessionApi.debugStart(session.session_id, text, assetIds, activePage.page_id));
+          setDebug(await sessionApi.debugStart(session.session_id, text, assetIds, activePage.page_id, title));
           setSession(await sessionApi.load(session.session_id));
           return;
         }
-        const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise);
+        const page = await sessionApi.generate(session.session_id, text, assetIds, activePage.page_id, revise, title);
         setSession({ ...session, active_page: activePage, pending_review: page });
       }); }} />}
       <ComplianceBanner sessionId={session.session_id} snapshot={session} onDecision={refresh} />

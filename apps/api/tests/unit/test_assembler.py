@@ -51,6 +51,29 @@ def test_default_matter_and_invalid_section_tag():
         assemble_book(snapshot(), options=AssemblyOptions(section_titles={'missing': 'Unknown'}))
 
 
+def test_source_titles_and_chapters_are_deterministic_without_mutating_copy():
+    from bookgen.domain.assembler import assemble_book
+    from bookgen.schemas.export import AssemblyOptions
+    source = snapshot(4)
+    heading = AtomicTextBlock(block_id='heading', kind='heading', text='# Results', word_count=2, char_count=9)
+    source.committed_pages[1].input_blocks.append(heading)
+    source.committed_pages[3].input_blocks = []
+    original = source.model_dump()
+    manifest = assemble_book(source)
+    body = [page for page in manifest.pages if page.kind == 'body']
+    assert [page.title for page in body] == ['Original body copy 1.', '# Results', 'Original body copy 3.', 'Page 4']
+    assert [page.chapter_title for page in body] == ['', '# Results', '# Results', '# Results']
+    assert [page.expected_text for page in body] == [[block.text for block in page.input_blocks] for page in source.committed_pages]
+    assert manifest == assemble_book(source)
+    assert source.model_dump() == original
+    sectioned = assemble_book(source, options=AssemblyOptions(section_titles={'p1': 'Explicit chapter'}))
+    assert [page.chapter_title for page in sectioned.pages if page.kind == 'body'] == ['', 'Explicit chapter', 'Explicit chapter', 'Explicit chapter']
+    source.committed_pages[1].title = 'Separate explicit title'
+    titled = [page for page in assemble_book(source).pages if page.kind == 'body']
+    assert titled[1].title == titled[1].chapter_title == 'Separate explicit title'
+    assert titled[1].result.input_blocks[-1].text == '# Results'
+
+
 def test_ssim_rejects_different_pixels():
     from PIL import Image
     from bookgen.adapters.pdf.playwright_exporter import image_ssim

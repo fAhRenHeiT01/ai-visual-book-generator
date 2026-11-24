@@ -200,6 +200,11 @@ def compliance_report(session_snapshot, *, decisions=None, config=None):
             if decision == 'redact':
                 redactions.append(metric)
         copy = page.model_copy(deep=True)
+        # Inferred titles can end within a metric at the configured word limit.
+        # Project source offsets first, then scrub explicit metadata matches.
+        if copy.title:
+            copy.title = _mask_text(_redact_excerpt(copy.title, [block.block_id for block in page.input_blocks],
+                page.input_blocks, redactions), redactions, redaction=True)
         for block in copy.input_blocks:
             block.text = _mask_block(block, [m for m in redactions if m.source_block_id == block.block_id], redaction=True)
             block.char_count, block.word_count = len(block.text), len(block.text.split())

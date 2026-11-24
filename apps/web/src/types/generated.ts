@@ -361,6 +361,8 @@ export interface components {
             page_number: number;
             /** Text */
             text: string;
+            /** Title */
+            title?: string | null;
         };
         /** AppearanceResponse */
         AppearanceResponse: {
@@ -706,6 +708,8 @@ export interface components {
              * @default
              */
             text: string;
+            /** Title */
+            title?: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -830,6 +834,11 @@ export interface components {
              * @default null
              */
             selected_option_id: string | null;
+            /**
+             * Title
+             * @default null
+             */
+            title: string | null;
             /**
              * Used Fallback
              * @default false

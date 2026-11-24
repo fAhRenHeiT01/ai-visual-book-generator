@@ -10,7 +10,7 @@ from fastapi.responses import Response, StreamingResponse
 from PIL import Image
 
 from bookgen.graph.workflow import PageConflict
-from bookgen.domain.profiler import ImageInput, profile_content
+from bookgen.domain.profiler import ImageInput, infer_page_title, normalize_page_input, profile_content
 from bookgen.schemas import PageGenerationResult
 from bookgen.schemas.sessions import AssetUploadResponse, CreateSessionRequest, GeneratePageRequest, SelectOptionRequest, SessionListResponse, SessionSnapshot
 
@@ -93,7 +93,10 @@ async def generate_page(session_id: str, body: GeneratePageRequest, request: Req
     if any(asset_id not in assets for asset_id in body.asset_ids):
         raise HTTPException(422, "Unknown uploaded asset ID")
     try:
-        return await workflow(request).generate(session_id, text=body.text, assets=[assets[key] for key in body.asset_ids], page_id=body.page_id, revise=body.revise)
+        service = workflow(request)
+        return await service.generate(session_id, text=normalize_page_input(body.text), title=body.title,
+            inferred_title=infer_page_title(body.text, title=body.title, settings=service.settings.profiling),
+            assets=[assets[key] for key in body.asset_ids], page_id=body.page_id, revise=body.revise)
     except PageConflict as exc:
         raise HTTPException(409, str(exc)) from exc
     except ValueError as exc:

@@ -5,6 +5,7 @@ import type { components } from '../../types/generated';
 import { sessionApi } from '../../lib/sessionApi';
 import { PageCanvas } from '../../engine/PageCanvas';
 import { apiOrigin } from '../../config/env';
+import { pageChapterTitles } from '../../engine/MasterChrome';
 type S = components['schemas'];
 export type ExportActionProps = {
   disabled: boolean;
@@ -20,6 +21,7 @@ export function ExportAction({ disabled, sessionId, pages, context, appearance }
   const [publishable, setPublishable] = useState<S['PageGenerationResult'][] | null>(null);
   const [protectedPrint, setProtectedPrint] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const chapters = pageChapterTitles(publishable ?? []);
   useEffect(() => { setMounted(true); }, []);
   useEffect(() => {
     let active = true;
@@ -74,7 +76,7 @@ export function ExportAction({ disabled, sessionId, pages, context, appearance }
     {error && <p className="studio-controls" role="alert">{error}</p>}
     {mounted && createPortal(<>
       <style>{(protectedPrint ? '@media print { body > * { display: none !important; } body > #compliance-print { display: block !important; } }' : '@media print { #compliance-print { display: none !important; } }') + ' @media screen { #compliance-print { display: none; } }'}</style>
-      <div id="compliance-print">{publishable?.map(page => <div className="draft-page" key={page.page_id}><PageCanvas result={sessionApi.browserPage(sessionId, page)} tokens={appearance.tokens} pageSize={context.page_size} chrome={{ config: appearance.chrome, pageNumber: page.page_number, totalPages: publishable.length, chapterTitle: context.title, isCover: page.page_number === 1 }} /></div>)}</div>
+      <div id="compliance-print">{publishable?.map((page, index) => <div className="draft-page" key={page.page_id}><PageCanvas result={sessionApi.browserPage(sessionId, page)} tokens={appearance.tokens} pageSize={context.page_size} chrome={{ config: appearance.chrome, pageNumber: page.page_number, totalPages: publishable.length, chapterTitle: chapters[index] }} /></div>)}</div>
     </>, document.body)}
   </>;
 }

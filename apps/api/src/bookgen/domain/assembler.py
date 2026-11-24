@@ -25,7 +25,8 @@ def assemble_book(snapshot, *, options=None, appearance=None, publishable_pages=
     if set(options.section_titles) - {page.page_id for page in bodies}:
         raise ValueError('Unknown section page')
     rows = []
-    chapter = snapshot.context.title
+    chapter = ''
+    explicit_chapter = False
     def matter(kind, text):
         rows.append((kind, text, chapter, _matter(kind, text)))
     matter('cover', snapshot.context.title or 'Untitled book')
@@ -36,9 +37,13 @@ def assemble_book(snapshot, *, options=None, appearance=None, publishable_pages=
     for body in bodies:
         if body.page_id in options.section_titles:
             chapter = options.section_titles[body.page_id]
+            explicit_chapter = bool(chapter.strip())
             matter('section', chapter)
         # Titles are derived from source text without changing the source block.
-        title = next((block.text for block in body.input_blocks if block.kind == 'heading'), f'Page {body.page_number}')
+        heading = body.title or next((block.text for block in body.input_blocks if block.kind == 'heading' and block.text.strip()), '')
+        title = heading or next((block.text for block in body.input_blocks if block.text.strip()), f'Page {body.page_number}')
+        if heading and not explicit_chapter:
+            chapter = heading
         rows.append(('body', title, chapter, body))
     if options.appendix:
         matter('appendix', options.appendix)
