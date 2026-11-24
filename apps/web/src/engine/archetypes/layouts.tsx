@@ -7,10 +7,12 @@ export type ShapeProps = {
   archetype: components["schemas"]["LayoutArchetype"];
   photoBackground: boolean;
   safeFlow: boolean;
+  composition?: components["schemas"]["PageLayoutAST"]["composition"];
+  mediaPlacement?: components["schemas"]["PageLayoutAST"]["media_placement"];
 };
-function Grid({ children, contentRef, archetype, photoBackground, safeFlow, shape }: ShapeProps & { shape: string }) {
+function Grid({ children, contentRef, archetype, photoBackground, safeFlow, shape, composition = "flow", mediaPlacement = "in_flow" }: ShapeProps & { shape: string }) {
   return <div ref={contentRef} data-testid="page-content" data-renderer-shape={shape}
-    className={`page-content shape-${shape} archetype-${archetype}${photoBackground ? " full-page-photo" : ""}${safeFlow ? " healed-safe-flow" : ""}`}
+    className={`page-content shape-${shape} archetype-${archetype} composition-${composition} media-${mediaPlacement}${photoBackground ? " full-page-photo" : ""}${safeFlow ? " healed-safe-flow" : ""}`}
     style={{ gridTemplateColumns: "repeat(12, minmax(0, 1fr))" }}>{children}</div>;
 }
 export function FullPage(props: ShapeProps) { return <Grid {...props} shape="full_page" />; }

@@ -6,22 +6,24 @@ export const surfaceClasses: Record<S["SurfaceRole"], string> = {
   paper: "surface-paper", surface_tint: "surface-tint", brand_dark: "surface-brand-dark", accent_soft: "surface-accent-soft",
 };
 
-export function SemanticBlock({ component, blocks, assets, fullBleed }: {
+export function SemanticBlock({ component, blocks, assets, fullBleed, emphasis = "balanced", mediaPlacement = "in_flow" }: {
   component: S["PlacedComponent"];
   blocks: ReadonlyMap<string, S["AtomicTextBlock"]>;
   assets: ReadonlyMap<string, S["ImageAssetMeta"]>;
   fullBleed: boolean;
+  emphasis?: S["PageLayoutAST"]["emphasis_treatment"];
+  mediaPlacement?: S["PageLayoutAST"]["media_placement"];
 }) {
   const source = (component.source_block_ids ?? []).flatMap((id) => {
     const block = blocks.get(id);
     return block ? [block] : [];
   });
-  const className = `semantic-block block-${component.component_type} ${surfaceClasses[component.surface_role]}${component.emphasis ? " is-emphasized" : ""}`;
+  const className = `semantic-block block-${component.component_type} ${surfaceClasses[component.surface_role]} hierarchy-${emphasis}${component.emphasis ? " is-emphasized" : ""}`;
   const attrs = { className, "data-component-id": component.component_id, "data-slot": component.slot_id };
   switch (component.component_type) {
     case "image_frame": {
       const asset = component.source_asset_id ? assets.get(component.source_asset_id) : undefined;
-      return asset ? <div {...attrs}><ImageFrame asset={asset} objectFit={component.object_fit} fullBleed={fullBleed} /></div> : null;
+      return asset ? <div {...attrs} data-asset-kind={asset.asset_kind}><ImageFrame asset={asset} objectFit={component.object_fit} fullBleed={fullBleed} placement={mediaPlacement} /></div> : null;
     }
     case "pull_quote":
     case "stat_callout": {
