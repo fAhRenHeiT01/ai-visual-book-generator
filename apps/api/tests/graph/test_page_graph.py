@@ -375,3 +375,94 @@ async def test_private_grouping_keeps_restricted_metrics_and_exact_excerpts(tmp_
     assert report.ledger[0].metric.classification == MetricClassification.INTERNAL
     assert not report.eligible
     repository.close()
+
+@pytest.mark.parametrize('objective,tone,audience,expected', [
+    ('Launch a campaign', [], 'internal', 'campaign_presentation'),
+    ('Financial analysis', [], 'internal', 'consulting_report'),
+    ('Tell our story', [], 'client_facing', 'brand_led_editorial'),
+    ('', ['bold'], 'internal', 'campaign_presentation'),
+    ('', [], 'client_facing', 'consulting_report'),
+    ('', [], 'internal', 'brand_led_editorial'),
+])
+def test_auto_direction_uses_yaml_intent_rules_once(objective, tone, audience, expected):
+    from bookgen.domain.direction import resolve_direction
+    from bookgen.schemas import BookContext
+    context = resolve_direction(BookContext(objective=objective, tone_keywords=tone, audience_mode=audience))
+    assert context.direction == 'auto'
+    assert context.resolved_direction == expected
+    changed = context.model_copy(update={'objective': 'Launch campaign', 'tone_keywords': []})
+    assert resolve_direction(changed).resolved_direction == expected
+
+
+@pytest.mark.parametrize('direction', ['brand_led_editorial', 'consulting_report', 'campaign_presentation'])
+async def test_explicit_direction_persists_apart_from_appearance_and_page_size(tmp_path, direction):
+    from bookgen.schemas import BookContext, PageSize
+    graph, repository = workflow(tmp_path)
+    session = graph.create_session(BookContext(direction=direction, objective='Launch campaign', page_size=PageSize.US_LETTER))
+    assert session.context.resolved_direction == direction
+    appearance = repository.load_appearance(session.session_id)
+    repository.save_appearance(session.session_id, appearance.model_copy(update={'tokens': appearance.tokens.model_copy(update={'theme_id': 'another'})}))
+    context = repository.load_context(session.session_id)
+    assert context.direction == context.resolved_direction == direction
+    assert context.page_size == PageSize.US_LETTER
+    page = await graph.generate(session.session_id, text='# Heading\n\n- One.\n- Two.')
+    assert page.option_a.surface_treatment != page.option_b.surface_treatment
+    assert any(c.component_type == 'heading' for c in page.option_a.components)
+    assert any(c.component_type == 'bullet_list' for c in page.option_b.components)
+    repository.close()
+
+
+async def test_protected_chart_is_checked_on_initial_and_repaired_candidates(tmp_path):
+    from bookgen.schemas import ImageAssetMeta
+    _, _, Mock, _, _ = implementation()
+    class Cropping(Mock):
+        def _candidate(self, **kwargs):
+            page = super()._candidate(**kwargs)
+            for component in page.components:
+                if component.source_asset_id:
+                    component.object_fit = 'cover'
+            return page
+    provider = Cropping()
+    graph, repository = workflow(tmp_path, provider)
+    chart = ImageAssetMeta(asset_id='chart', storage_key='local', mime_type='image/png', width_px=900, height_px=450, aspect_ratio=2, asset_kind='chart')
+    page = await graph.generate(graph.create_session().session_id, text='# Evidence\n\nOriginal copy.', assets=[chart])
+    assert page.used_fallback and page.repair_attempts == 2
+    assert len(provider.repairs) == 4
+    assert all(any(i.code == 'CHART_CROP_FORBIDDEN' for i in repair['issues']) for repair in provider.repairs)
+    assert all(c.object_fit == 'contain' for p in (page.option_a, page.option_b) for c in p.components if c.source_asset_id)
+    repository.close()
+
+async def test_generation_manual_and_repair_share_named_vocabulary_and_bounded_facts():
+    from bookgen.adapters.llm.gemini import GeminiProvider
+    from bookgen.adapters.llm.manual import ManualLLMProvider
+    from bookgen.adapters.llm.context import provider_context
+    from bookgen.config import load_settings
+    from bookgen.domain.fallback import safe_fallback_builder
+    from bookgen.schemas import AtomicTextBlock, BookContext
+    settings = load_settings()
+    blocks = [AtomicTextBlock(block_id='heading', kind='heading', text='Original heading', word_count=2, char_count=16)]
+    pair = safe_fallback_builder(blocks, [])
+    requests = []
+    async def transport(request):
+        requests.append(request)
+        return pair[0]
+    provider = GeminiProvider(storage=None, settings=settings, transport=transport)
+    manual = ManualLLMProvider(storage=None, settings=settings)
+    history = tuple({'page_num': n, 'archetype': 'minimalist_swiss', 'density_class': 'normal', 'has_callout': False, 'unbounded_text': 'Never send this'} for n in range(500))
+    kwargs = dict(context=BookContext(direction='campaign_presentation'), blocks=blocks, assets=[], strategy_tag=settings.llm.strategy_families['option_a'])
+    with provider_context(page_number=501, rhythm_history=history):
+        await provider.generate_candidate(**kwargs)
+        await provider.repair_candidate(**kwargs, candidate=pair[0], issues=[])
+        manual_request = manual._request(**kwargs)
+    for request in [*requests, manual_request]:
+        page = request['context']['current_page_payload']
+        assert page['art_direction']['direction'] == 'campaign_presentation'
+        assert page['art_direction']['semantic_groups'] == [{'block_id': 'heading', 'role': 'heading', 'word_count': 2, 'char_count': 16}]
+        assert page['art_direction']['eligible_treatments']
+        assert 'unbounded_text' not in str(request)
+        assert len(request['context']['sliding_rhythm_window']['pages']) == settings.llm.rhythm_window
+        assert 'composition' in request['response_schema'].model_fields
+    assert requests[0]['context'] == requests[1]['context'] == manual_request['context']
+    chat = manual.chat_input(manual.api_payload(manual_request))['prompt']
+    assert 'surface_treatment' in chat and 'semantic_groups' in chat
+    assert 'named treatments' in requests[1]['repair_directive']

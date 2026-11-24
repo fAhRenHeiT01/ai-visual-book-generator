@@ -200,3 +200,69 @@ safe_flow_fallback:
     media_secondary: {role: media, max_chars: 0, allows_overlay: false}
     callout: {role: text, max_chars: 400, allows_overlay: false}
     footer: {role: text, max_chars: 160, allows_overlay: false}
+
+# Named treatments are shared by offline planning, providers and validation.
+art_direction:
+  default_direction: brand_led_editorial
+  auto_rules:
+    - direction: campaign_presentation
+      keywords: [campaign, launch, persuade, pitch, bold, energetic, promotional]
+    - direction: consulting_report
+      keywords: [report, analysis, financial, strategy, executive, analytical, evidence]
+    - direction: brand_led_editorial
+      keywords: [story, editorial, narrative, brand, thoughtful]
+    - direction: consulting_report
+      keywords: []
+      audiences: [client_facing]
+  styles:
+    brand_led_editorial: {surface_a: brand_panel, surface_b: plain, emphasis_a: headline, emphasis_b: balanced}
+    consulting_report: {surface_a: tinted_band, surface_b: plain, emphasis_a: evidence, emphasis_b: balanced}
+    campaign_presentation: {surface_a: brand_panel, surface_b: tinted_band, emphasis_a: headline, emphasis_b: evidence}
+  heading_slot: header
+  focal_slot: callout
+  protected_forbidden_placements: [panoramic]
+  role_components: {heading: heading, list: bullet_list, caption: caption}
+  focal_components: {quote: pull_quote, metric: stat_callout}
+  treatments:
+    - composition: comparison
+      media_placement: paired
+      emphasis_a: evidence
+      emphasis_b: balanced
+      asset_kinds: [chart, diagram]
+      min_assets: 2
+      archetypes_a: [guided_alternating, dashboard_split]
+      archetypes_b: [dashboard_split, modular_cards]
+    - composition: portrait_story
+      media_placement: portrait_rail
+      emphasis_a: testimonial
+      emphasis_b: balanced
+      required_roles: [quote]
+      asset_kinds: [photo]
+      min_assets: 1
+      max_aspect_ratio: 1
+      archetypes_a: [editorial_asymmetric, guided_alternating]
+      archetypes_b: [top_media_narrative, modular_cards]
+    - composition: opener
+      media_placement: panoramic
+      emphasis_a: headline
+      emphasis_b: balanced
+      asset_kinds: [photo]
+      min_assets: 1
+      max_words: 45
+      min_aspect_ratio: 2
+      archetypes_a: [full_bleed_hero, top_media_narrative]
+      archetypes_b: [minimalist_swiss, section_divider]
+    - composition: flow
+      media_placement: protected
+      emphasis_a: evidence
+      emphasis_b: balanced
+      asset_kinds: [chart, diagram]
+      min_assets: 1
+      archetypes_a: [chart_focus_band, guided_alternating]
+      archetypes_b: [two_col_executive, modular_cards]
+    - composition: flow
+      media_placement: in_flow
+      emphasis_a: balanced
+      emphasis_b: balanced
+      archetypes_a: [editorial_asymmetric, top_media_narrative]
+      archetypes_b: [two_col_executive, modular_cards]

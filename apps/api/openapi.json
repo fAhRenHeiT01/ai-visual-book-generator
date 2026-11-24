@@ -242,6 +242,9 @@
             "$ref": "#/components/schemas/AudienceMode",
             "default": "internal"
           },
+          "direction": {
+            "$ref": "#/components/schemas/BookDirection"
+          },
           "objective": {
             "default": "",
             "title": "Objective",
@@ -250,6 +253,22 @@
           "page_size": {
             "$ref": "#/components/schemas/PageSize",
             "default": "A4"
+          },
+          "resolved_direction": {
+            "anyOf": [
+              {
+                "enum": [
+                  "brand_led_editorial",
+                  "consulting_report",
+                  "campaign_presentation"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved Direction"
           },
           "source_website_url": {
             "anyOf": [
@@ -278,6 +297,16 @@
         },
         "title": "BookContext",
         "type": "object"
+      },
+      "BookDirection": {
+        "enum": [
+          "auto",
+          "brand_led_editorial",
+          "consulting_report",
+          "campaign_presentation"
+        ],
+        "title": "BookDirection",
+        "type": "string"
       },
       "ComplianceDecision": {
         "additionalProperties": false,
@@ -1047,9 +1076,40 @@
             "title": "Components",
             "type": "array"
           },
+          "composition": {
+            "enum": [
+              "flow",
+              "opener",
+              "comparison",
+              "portrait_story"
+            ],
+            "title": "Composition",
+            "type": "string"
+          },
           "density_scale": {
             "default": "normal",
             "title": "Density Scale",
+            "type": "string"
+          },
+          "emphasis_treatment": {
+            "enum": [
+              "balanced",
+              "headline",
+              "evidence",
+              "testimonial"
+            ],
+            "title": "Emphasis Treatment",
+            "type": "string"
+          },
+          "media_placement": {
+            "enum": [
+              "in_flow",
+              "panoramic",
+              "paired",
+              "portrait_rail",
+              "protected"
+            ],
+            "title": "Media Placement",
             "type": "string"
           },
           "option_id": {
@@ -1068,6 +1128,15 @@
           "surface_role": {
             "$ref": "#/components/schemas/SurfaceRole",
             "default": "paper"
+          },
+          "surface_treatment": {
+            "enum": [
+              "plain",
+              "brand_panel",
+              "tinted_band"
+            ],
+            "title": "Surface Treatment",
+            "type": "string"
           }
         },
         "required": [

@@ -260,3 +260,21 @@ def test_grammar_binds_eight_shared_renderer_shapes_and_semantic_slots():
         assert rules[left].renderer_shape == rules[right].renderer_shape
     assert set().union(*(rule.slots for rule in rules.values())) == {
         "header", "body", "col_left", "col_right", "media_main", "media_secondary", "callout", "footer"}
+
+@pytest.mark.parametrize('field,value', [('composition', 'opener'), ('media_placement', 'panoramic'), ('composition', 'portrait_story'), ('media_placement', 'paired')])
+def test_named_treatments_require_source_evidence(field, value):
+    page = layout()
+    setattr(page, field, value)
+    assert_issue(check(page), 'INELIGIBLE_TREATMENT')
+
+
+def test_panorama_cannot_turn_chart_into_background_even_with_photo():
+    from bookgen.domain.profiler import profile_content
+    from bookgen.domain.fallback import safe_fallback_builder
+    blocks = profile_content('A short opening.', storage=None).blocks
+    photo = asset('photo', 'photo').model_copy(update={'aspect_ratio': 3})
+    chart = asset()
+    pair = safe_fallback_builder(blocks, [photo, chart])
+    pair[0].composition = 'opener'
+    pair[0].media_placement = 'panoramic'
+    assert_issue(validator()(pair, blocks, [photo, chart]), 'CHART_CROP_FORBIDDEN')

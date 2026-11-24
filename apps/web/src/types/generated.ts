@@ -400,6 +400,7 @@ export interface components {
         BookContext: {
             /** @default internal */
             audience_mode: components["schemas"]["AudienceMode"];
+            direction?: components["schemas"]["BookDirection"];
             /**
              * Objective
              * @default
@@ -407,6 +408,8 @@ export interface components {
             objective: string;
             /** @default A4 */
             page_size: components["schemas"]["PageSize"];
+            /** Resolved Direction */
+            resolved_direction?: ("brand_led_editorial" | "consulting_report" | "campaign_presentation") | null;
             /**
              * Source Website Url
              * @default null
@@ -420,6 +423,11 @@ export interface components {
             /** Tone Keywords */
             tone_keywords?: string[];
         };
+        /**
+         * BookDirection
+         * @enum {string}
+         */
+        BookDirection: "auto" | "brand_led_editorial" | "consulting_report" | "campaign_presentation";
         /** ComplianceDecision */
         ComplianceDecision: {
             /**
@@ -786,10 +794,25 @@ export interface components {
             /** Components */
             components: components["schemas"]["PlacedComponent"][];
             /**
+             * Composition
+             * @enum {string}
+             */
+            composition?: "flow" | "opener" | "comparison" | "portrait_story";
+            /**
              * Density Scale
              * @default normal
              */
             density_scale: string;
+            /**
+             * Emphasis Treatment
+             * @enum {string}
+             */
+            emphasis_treatment?: "balanced" | "headline" | "evidence" | "testimonial";
+            /**
+             * Media Placement
+             * @enum {string}
+             */
+            media_placement?: "in_flow" | "panoramic" | "paired" | "portrait_rail" | "protected";
             /** Option Id */
             option_id: string;
             /** Rationale */
@@ -798,6 +821,11 @@ export interface components {
             strategy_tag: string;
             /** @default paper */
             surface_role: components["schemas"]["SurfaceRole"];
+            /**
+             * Surface Treatment
+             * @enum {string}
+             */
+            surface_treatment?: "plain" | "brand_panel" | "tinted_band";
         };
         /**
          * PageSize

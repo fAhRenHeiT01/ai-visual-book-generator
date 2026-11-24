@@ -4,7 +4,8 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 
-from bookgen.schemas import AssetKind, ComponentType, LayoutArchetype
+from bookgen.schemas import (AssetKind, AudienceMode, BookDirection, ComponentType,
+    LayoutArchetype, Composition, SurfaceTreatment, EmphasisTreatment, MediaPlacement)
 
 from .base import StrictConfig
 
@@ -42,7 +43,48 @@ class ArchetypeRule(StrictConfig):
         return self
 
 
+class DirectionRule(StrictConfig):
+    direction: BookDirection
+    keywords: list[str]
+    audiences: list[AudienceMode] = Field(default_factory=list)
+
+
+class DirectionStyle(StrictConfig):
+    surface_a: SurfaceTreatment
+    surface_b: SurfaceTreatment
+    emphasis_a: EmphasisTreatment
+    emphasis_b: EmphasisTreatment
+
+
+class TreatmentRule(StrictConfig):
+    composition: Composition
+    media_placement: MediaPlacement
+    emphasis_a: EmphasisTreatment
+    emphasis_b: EmphasisTreatment
+    required_roles: list[str] = Field(default_factory=list)
+    asset_kinds: list[AssetKind] = Field(default_factory=list)
+    min_assets: int = Field(default=0, ge=0)
+    max_words: int | None = Field(default=None, gt=0)
+    min_aspect_ratio: float | None = Field(default=None, gt=0)
+    max_aspect_ratio: float | None = Field(default=None, gt=0)
+    archetypes_a: list[LayoutArchetype]
+    archetypes_b: list[LayoutArchetype]
+
+
+class ArtDirectionConfig(StrictConfig):
+    default_direction: BookDirection
+    auto_rules: list[DirectionRule]
+    styles: dict[BookDirection, DirectionStyle]
+    treatments: list[TreatmentRule] = Field(min_length=1)
+    role_components: dict[str, ComponentType]
+    focal_components: dict[str, ComponentType]
+    heading_slot: SlotId
+    focal_slot: SlotId
+    protected_forbidden_placements: list[MediaPlacement]
+
+
 class GrammarConfig(StrictConfig):
+    art_direction: ArtDirectionConfig
     density_scales: list[Literal["airy", "normal", "compact"]] = Field(min_length=1)
     object_fits: list[Literal["contain", "cover"]] = Field(min_length=1)
     protected_asset_kinds: list[AssetKind] = Field(min_length=1)

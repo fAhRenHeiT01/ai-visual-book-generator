@@ -34,7 +34,8 @@ class MockLLMProvider:
 
     def _candidate(self, *, context, blocks, assets, strategy_tag):
         self.calls.append({"context": context, "blocks": blocks, "assets": assets, "strategy_tag": strategy_tag})
-        pair = safe_fallback_builder(blocks, assets, request_context.get().recent_archetypes, grammar=self.settings.grammar)
+        pair = safe_fallback_builder(blocks, assets, request_context.get().recent_archetypes,
+            grammar=self.settings.grammar, context=context, compliance=self.settings.compliance)
         index = int(strategy_tag == self.settings.llm.strategy_families["option_b"])
         page = pair[index].model_copy(update={"strategy_tag": strategy_tag}, deep=True)
         round_number = self._attempts[strategy_tag]
