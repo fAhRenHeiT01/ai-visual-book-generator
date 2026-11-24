@@ -1,7 +1,7 @@
 """Resolve book intent once and derive named arrangements from bounded page facts."""
 
 from bookgen.config import load_settings
-from bookgen.schemas import BookContext, BookDirection
+from bookgen.schemas import BookContext, BookDirection, ComponentType
 
 
 def resolve_direction(context: BookContext, *, grammar=None) -> BookContext:
@@ -40,10 +40,39 @@ def eligible_treatments(blocks, assets, *, grammar):
     return eligible
 
 
-def arrangement_context(context, blocks, assets, *, grammar):
+def supported_components(context, blocks, *, grammar, metrics=None, compliance=None):
+    """Suggest source-backed roles; metric promotion also needs compliance evidence."""
+    from bookgen.domain.compliance import callout_eligible, compliance_metrics_scan
+    metrics = metrics if metrics is not None else compliance_metrics_scan(blocks, config=compliance)
+    design = grammar.art_direction
+    supported = {}
+    for block in blocks:
+        kinds = [design.role_components.get(block.kind, ComponentType.BODY_PROSE)]
+        focal = design.focal_components.get(block.kind)
+        if focal == ComponentType.STAT_CALLOUT:
+            found = [metric for metric in metrics if metric.source_block_id == block.block_id]
+            if not found or not all(callout_eligible(metric, context.audience_mode, config=compliance) for metric in found):
+                focal = None
+        if focal is not None:
+            kinds.append(focal)
+        supported[block.block_id] = kinds
+    return supported
+
+
+def section_boundaries(blocks, *, grammar):
+    """A later source heading starts a section; decoration never invents a title."""
+    return [block.block_id for i, block in enumerate(blocks)
+        if i and grammar.art_direction.role_components.get(block.kind) == ComponentType.HEADING]
+
+
+def arrangement_context(context, blocks, assets, *, grammar, compliance=None):
     resolved = resolve_direction(context, grammar=grammar)
     return {'direction': resolved.resolved_direction,
         'style': grammar.art_direction.styles[resolved.resolved_direction].model_dump(mode='json'),
         'eligible_treatments': [rule.model_dump(mode='json') for rule in eligible_treatments(blocks, assets, grammar=grammar)],
+        'supported_components': supported_components(resolved, blocks, grammar=grammar, compliance=compliance),
+        'section_boundaries': section_boundaries(blocks, grammar=grammar),
+        'component_treatments': {option: treatment.model_dump(mode='json')
+            for option, treatment in grammar.art_direction.component_treatments.items()},
         'semantic_groups': [{'block_id': block.block_id, 'role': block.kind,
             'word_count': len(block.text.split()), 'char_count': len(block.text)} for block in blocks]}

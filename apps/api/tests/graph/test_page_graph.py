@@ -466,3 +466,42 @@ async def test_generation_manual_and_repair_share_named_vocabulary_and_bounded_f
     chat = manual.chat_input(manual.api_payload(manual_request))['prompt']
     assert 'surface_treatment' in chat and 'semantic_groups' in chat
     assert 'named treatments' in requests[1]['repair_directive']
+
+
+async def test_mock_generation_and_fallback_review_keep_contextual_treatments(tmp_path):
+    from bookgen.domain.validator import deterministic_validator
+    _, _, Mock, _, _ = implementation()
+    for fail_rounds in (0, 10):
+        provider = Mock(fail_rounds=fail_rounds)
+        graph, repository = workflow(tmp_path / str(fail_rounds), provider)
+        text = '# Original title\n\nOriginal body.\n\n# Original section\n\n> Exact customer words.'
+        page = await graph.generate(graph.create_session().session_id, text=text)
+        assert page.used_fallback == bool(fail_rounds)
+        assert page.option_a.rationale != page.option_b.rationale
+        assert any(c.component_type == 'divider_rule' for c in page.option_b.components)
+        assert any(c.component_type == 'pull_quote' and c.surface_role == 'accent_soft' for c in page.option_a.components)
+        assert deterministic_validator([page.option_a, page.option_b], page.input_blocks, []) == []
+        repository.close()
+
+
+def test_provider_guidance_is_source_specific_and_yaml_owned():
+    from bookgen.adapters.llm.gemini import GeminiProvider
+    from bookgen.config import load_settings
+    from bookgen.schemas import AtomicTextBlock, BookContext
+    settings = load_settings()
+    provider = GeminiProvider(storage=None, settings=settings)
+    blocks = [AtomicTextBlock(block_id='h', kind='heading', text='Exact title', word_count=2, char_count=11),
+        AtomicTextBlock(block_id='q', kind='quote', text='Exact quote', word_count=2, char_count=11)]
+    kwargs = dict(context=BookContext(), blocks=blocks, assets=[], strategy_tag=settings.llm.strategy_families['option_a'])
+    request = provider._request(**kwargs)
+    facts = request['context']['current_page_payload']['art_direction']
+    assert facts['supported_components'] == {'h': ['heading'], 'q': ['body_prose', 'pull_quote']}
+    assert facts['section_boundaries'] == []
+    assert facts['component_treatments']['option_a']['focal_surface'] == 'accent_soft'
+    assert facts['component_treatments']['option_b']['section_dividers'] is True
+    assert 'rationale' in provider.prompts['strategy_option_a'].text
+    assert 'divider' in provider.prompts['strategy_option_b'].text
+    assert 'only facts present in the returned layout' in provider.prompts['system_art_director'].text
+    blocks[1].kind = 'paragraph'
+    facts = provider._request(**kwargs)['context']['current_page_payload']['art_direction']
+    assert facts['supported_components']['q'] == ['body_prose']

@@ -181,3 +181,91 @@ def test_treatment_budgets_and_focal_slot_capacities_are_respected():
     assert deterministic_validator(pair, blocks, [], grammar=grammar) == []
     assert all(c.slot_id == 'body' for page in pair for c in page.components)
     assert all(c.extracted_excerpt is None for page in pair for c in page.components)
+
+
+def contextual_blocks():
+    return [AtomicTextBlock(block_id=f'b{i}', kind=kind, text=text,
+        word_count=len(text.split()), char_count=len(text)) for i, (kind, text) in enumerate([
+            ('heading', 'A supplied title'), ('paragraph', 'Original supporting copy.'),
+            ('heading', 'A supplied section'), ('quote', 'Exactly what the customer said.'),
+            ('list', '- An original action'), ('caption', 'Original media caption.'),
+        ])]
+
+
+def test_rationales_describe_each_actual_hierarchy_and_media_without_copy():
+    blocks = contextual_blocks()
+    _, assets = inputs(2, ['chart'])
+    pair = builder()(blocks, assets)
+    assert pair[0].rationale != pair[1].rationale
+    for page in pair:
+        assert page.archetype.value.replace('_', ' ') in page.rationale
+        assert f'{page.column_count}-column' in page.rationale
+        assert 'heading' in page.rationale
+        assert 'pull quote' in page.rationale
+        assert 'chart' in page.rationale and 'contain' in page.rationale
+        assert 'photo' not in page.rationale and 'stat callout' not in page.rationale
+        assert not any(block.text in page.rationale for block in blocks)
+        assert len(page.rationale) <= 280
+
+
+def test_semantic_treatments_differ_with_real_sections_and_exact_callouts():
+    from bookgen.domain.validator import deterministic_validator
+    blocks = contextual_blocks()
+    pair = builder()(blocks, [])
+    assert deterministic_validator(pair, blocks, []) == []
+    assert not any(c.component_type == 'divider_rule' for c in pair[0].components)
+    dividers = [c for c in pair[1].components if c.component_type == 'divider_rule']
+    assert len(dividers) == 1
+    assert all(not c.source_block_ids and not c.source_asset_id for c in dividers)
+    second_heading = next(c for c in pair[1].components if c.source_block_ids == ['b2'])
+    assert second_heading.slot_id == dividers[0].slot_id == 'body'
+    assert pair[1].components.index(second_heading) == pair[1].components.index(dividers[0]) + 1
+    for page, surface in zip(pair, ['accent_soft', 'paper']):
+        focal = next(c for c in page.components if c.component_type == 'pull_quote')
+        assert focal.surface_role == surface
+        assert focal.extracted_excerpt == blocks[3].text
+        assert [ref for c in page.components if not c.extracted_excerpt for ref in c.source_block_ids] == [b.block_id for b in blocks]
+    assert 'divider' not in pair[0].rationale and 'divider' in pair[1].rationale
+
+
+@pytest.mark.parametrize('role', ['paragraph', 'caption', 'metric'])
+def test_unsupported_sources_do_not_invent_titles_dividers_or_focal_elements(role):
+    blocks, _ = inputs(2, [])
+    blocks = [blocks[0].model_copy(update={'kind': role})]
+    for page in builder()(blocks, [], metrics=[]):
+        assert not any(c.component_type in ('heading', 'divider_rule', 'pull_quote', 'stat_callout') for c in page.components)
+        assert 'heading' not in page.rationale and 'divider' not in page.rationale
+        assert 'chart' not in page.rationale and 'photo' not in page.rationale
+
+
+def test_rationale_uses_placed_facts_when_focal_capacity_is_unavailable():
+    grammar = load_settings().grammar
+    for rule in grammar.archetypes().values():
+        if grammar.art_direction.focal_slot in rule.slots:
+            rule.slots[grammar.art_direction.focal_slot].max_chars = 0
+    for page in builder()(contextual_blocks(), [], grammar=grammar):
+        assert 'pull quote' not in page.rationale
+        assert not any(c.extracted_excerpt for c in page.components)
+
+
+def test_component_profiles_and_rationale_templates_follow_loaded_grammar():
+    grammar = load_settings().grammar
+    profile = grammar.art_direction.component_treatments['option_b']
+    profile.section_dividers = False
+    profile.heading_emphasis = True
+    profile.focal_surface = 'surface_tint'
+    grammar.art_direction.rationale.layout = 'Configured {archetype}: {components}; {media}.'
+    page = builder()(contextual_blocks(), [], grammar=grammar)[1]
+    assert page.rationale.startswith('Configured two col executive:')
+    assert not any(c.component_type == 'divider_rule' for c in page.components)
+    assert all(c.emphasis for c in page.components if c.component_type == 'heading')
+    assert next(c for c in page.components if c.extracted_excerpt).surface_role == 'surface_tint'
+
+
+def test_dividers_are_omitted_if_the_body_slot_forbids_decoration():
+    from bookgen.domain.validator import deterministic_validator
+    grammar = load_settings().grammar
+    grammar.slot_role_components['text'].remove(grammar.art_direction.divider_component)
+    pair = builder()(contextual_blocks(), [], grammar=grammar)
+    assert deterministic_validator(pair, contextual_blocks(), [], grammar=grammar) == []
+    assert not any(c.component_type == 'divider_rule' for page in pair for c in page.components)

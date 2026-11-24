@@ -43,6 +43,35 @@ function mount(result = fixture(), extra: Partial<CanvasProps> = {}) {
 }
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 describe("PageCanvas", () => {
+  test("option previews expose semantic section rhythm and focal surfaces without changing source pointers", () => {
+    const result = fixture("editorial_asymmetric", ["chart", "diagram"]);
+    result.input_blocks[0].kind = "heading";
+    result.input_blocks[2].kind = "heading";
+    result.option_a.components[1].source_block_ids = ["b1"];
+    result.option_a.components.splice(2, 0, placed("section-heading", "heading", "body", ["b2"]));
+    Object.assign(result.option_a, { composition: "flow", media_placement: "protected", surface_treatment: "brand_panel", emphasis_treatment: "headline" });
+    result.option_b = { ...result.option_a, option_id: "b", archetype: "two_col_executive", surface_treatment: "plain", emphasis_treatment: "balanced",
+      components: result.option_a.components.map(component => ({ ...component, emphasis: false,
+        surface_role: component.component_type === "pull_quote" ? "paper" : component.surface_role })),
+    };
+    result.option_b.components.splice(2, 0, placed("section-rule", "divider_rule", "body"));
+    const before = JSON.stringify(result);
+    const first = mount(result);
+    expect(first.container.querySelector(".block-pull_quote")?.className).toContain("surface-accent-soft");
+    expect(first.container.querySelector(".block-heading")?.className).toContain("hierarchy-headline");
+    expect(screen.queryByRole("separator")).toBeNull();
+    const copyA = Array.from(first.container.querySelectorAll("[data-source-block-id]")).map(el => el.textContent);
+    first.unmount();
+    const second = mount(result, { layout: result.option_b });
+    expect(screen.getByRole("separator").getAttribute("data-slot")).toBe("body");
+    expect(screen.getByRole("separator").nextElementSibling?.getAttribute("data-component-id")).toBe("section-heading");
+    expect(second.container.querySelector(".block-pull_quote")?.className).toContain("surface-paper");
+    expect(second.container.querySelector(".block-heading")?.className).toContain("hierarchy-balanced");
+    expect(Array.from(second.container.querySelectorAll("[data-source-block-id]")).map(el => el.textContent)).toEqual(copyA);
+    for (const image of screen.getAllByRole("img")) expect(image.className).toContain("object-contain");
+    expect(screen.getByTestId("page-canvas").style.getPropertyValue("--brand-accent")).toBe(tokens.color_brand_accent);
+    expect(JSON.stringify(result)).toBe(before);
+  });
   test("compose thumbnail URLs encode session and asset IDs independently", () => {
     expect(sessionApi.assetThumbnailUrl("session / 1", "asset / 2")).toBe("/api/v1/sessions/session%20%2F%201/assets/asset%20%2F%202?thumbnail=true");
   });

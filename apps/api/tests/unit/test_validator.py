@@ -54,6 +54,25 @@ def test_valid_pair_is_accepted():
     assert check() == []
 
 
+def test_contextual_dividers_and_focal_surfaces_keep_pointer_and_chart_guards():
+    from bookgen.domain.fallback import safe_fallback_builder
+    blocks = [block('h', 'Source title'), block('p', 'Original prose.'),
+        block('h2', 'Another section'), block('q', 'Exact quote.')]
+    for source, role in zip(blocks, ['heading', 'paragraph', 'heading', 'quote']):
+        source.kind = role
+    assets = [asset(kind='chart'), asset('diagram', 'diagram')]
+    pair = safe_fallback_builder(blocks, assets)
+    before = [page.model_dump(mode='json') for page in pair]
+    assert validator()(pair, blocks, assets) == []
+    assert [page.model_dump(mode='json') for page in pair] == before
+    assert any(c.component_type == 'divider_rule' for c in pair[1].components)
+    focal = next(c for c in pair[0].components if c.extracted_excerpt)
+    focal.extracted_excerpt = 'Invented quotation'
+    next(c for c in pair[0].components if c.source_asset_id).object_fit = 'cover'
+    codes = {issue.code for issue in validator()(pair, blocks, assets)}
+    assert {'HALLUCINATED_EXCERPT', 'CHART_CROP_FORBIDDEN'} <= codes
+
+
 @pytest.mark.parametrize("ids, code", [([], "MISSING_BLOCK_ID"), (["b1", "fake"], "UNKNOWN_BLOCK_ID")])
 def test_block_completeness(ids, code):
     page = layout()
