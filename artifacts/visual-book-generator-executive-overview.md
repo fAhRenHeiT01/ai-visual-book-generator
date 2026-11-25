@@ -45,4 +45,4 @@ The browser sends a page-sized input to the API. Profiling and span grouping pre
 | 4 | Estimate remaining page capacity from text spans, image ratios, and rendered overflow measurements. | Earlier warnings and more reliable layout choices. |
 | 5 | Tune prompts and token budgets; offer controlled image restyling, especially for chart accent and background colors while preserving data and legibility. | Lower generation cost and stronger visual cohesion. |
 
-*Basis: [Technical Architecture and TDD Execution Plan](../ai_powered_visual_book_generator_technical_architecture_tdd_execution_plan.md) and the current implementation. Future items are proposed capabilities.*
+*Basis: [Technical Architecture and TDD Execution Plan](ai_powered_visual_book_generator_technical_architecture_tdd_execution_plan.md) and the current implementation. Future items are proposed capabilities.*
